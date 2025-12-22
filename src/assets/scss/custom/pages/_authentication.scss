@@ -1,0 +1,20 @@
+// 
+// authentication.scss
+//
+.bg-pattern {
+    // background-image: url("../images/bg.jpg");
+    background-image: url("https://res.cloudinary.com/harshdubey1198/image/upload/v1739445362/bg-main_bqlcaa.jpg");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
+
+.auth-logo {
+    &.logo-light {
+        display: $display-none !important;
+    }
+
+    &.logo-dark {
+        display: $display-block !important;
+    }
+}

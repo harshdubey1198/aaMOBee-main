@@ -1,0 +1,103 @@
+/*
+Template Name: aaMOBeeAdmin & Dashboard Template
+Author: MagnifyingIndia
+Version: 1.3.0
+Contact: MagnifyingIndia.in@gmail.com
+File: Custom Bootstrap Css File
+*/
+
+//Core files
+@import "./node_modules/bootstrap/scss/functions";
+@import "./node_modules/bootstrap/scss/variables";
+@import "variables";
+@import "variables-dark";
+
+@import "./node_modules/bootstrap/scss/bootstrap";
+@import "custom/components/root";
+@import "custom/components/reboot";
+@import "custom/components/backgrounds";
+@import "custom/components/badge";
+@import "custom/components/buttons";
+@import "custom/components/breadcrumb";
+@import "custom/components/card";
+@import "custom/components/dropdown";
+@import "custom/components/nav";
+@import "custom/components/table";
+@import "custom/components/pagination";
+@import "custom/components/progress";
+
+@media print {
+    .text-right {
+        text-align: right !important;
+    }
+    .text-left {
+        text-align: left !important;
+    }
+    .card {
+        border: none !important;
+    }
+    .row {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+    }
+    .col-md-6 {
+        width: 50% !important;
+        float: left !important;
+    }
+    .col-md-3 {
+        width: 25% !important;
+    }
+    .right-t-col3{
+        display: flex !important;
+        flex-direction: column !important;
+        // justify-content: end;
+        margin-right: 25%;
+    }
+    .value-in-words {
+        font-size: 12px !important;
+        overflow-wrap: break-word !important;
+    }
+    // .my-1{
+    //     margin:10px 0 !important;
+    // }
+    .marginleft-25{
+        margin-left: 25% !important;
+    }
+    .marginleft-5{
+        margin-left: 5% !important;
+    }
+    .marginleft-15{
+        margin-left: 15% !important;
+    }
+}
+.bx-show{
+    color: #0a8a76;
+}
+.bx-show:hover{
+    color: $primary;
+}
+// .bx:hover{
+//     color: lightblue;
+// }
+.bx-trash{
+    color: rgb(190, 0, 0);
+}
+.bx-trash:hover{
+    color: red;
+}
+
+.bx-x:hover{
+    color: red;
+}
+.bx-check:hover{
+    color: green;
+}
+.bx-printer:hover{
+    color: blue;
+}
+.bx-edit{
+    color: #0e5996;
+}
+.bx-edit:hover{
+    color: #157bce;
+}

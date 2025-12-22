@@ -1,0 +1,18 @@
+// 
+// Page-title
+// 
+
+.page-title-box {
+    // padding-bottom: 20px;
+
+    .breadcrumb {
+        background-color: transparent;
+        padding: 0 !important;
+    }
+
+    h4 {
+        font-size: 24px;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+}

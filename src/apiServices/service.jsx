@@ -1,0 +1,1026 @@
+import axios from "axios";
+import constant from "./constant";
+
+const token = JSON.parse(localStorage.getItem("authUser"))?.token;
+const id = JSON.parse(localStorage.getItem("authUser"))?.response?._id;
+const creatorId = JSON.parse(localStorage.getItem("authUser"))?.response?._id;
+const firmId =
+  JSON.parse(localStorage.getItem("authUser"))?.response?.adminId ||
+  JSON.parse(localStorage.getItem("authUser"))?.response?.firmId;
+const Role = JSON.parse(localStorage.getItem("authUser"))?.response?.role;
+
+const createAxiosInstance = axios.create({
+  baseURL: `${constant.appBaseUrl}/api/`,
+  headers: {
+    "Content-Type": "multipart/form-data",
+    Authorization: token ? `Bearer ${token}` : null,
+  },
+});
+
+const axiosInstance = axios.create({
+  baseURL: `${constant.appBaseUrl}/api/`,
+});
+
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = JSON.parse(localStorage.getItem("authUser"))?.token;
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => Promise.reject(error.response?.data || "Something went wrong")
+);
+
+export const updateUserById = async (id, updateData) => {
+  try {
+    const response = await axiosInstance.put(`/auth/update/${id}`, updateData);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to get all leads
+export const getAllLeads = async () => {
+  try {
+    const response = await axiosInstance.get("/lead/get-leads");
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to get all leads by firm id
+export const getLeadsByFirmId = async (firmId) => {
+  try {
+    const response = await axiosInstance.get(
+      `/lead/get-lead-by-firm/${firmId}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// lead by id
+export const getLeadById = async (id) => {
+  try {
+    const response = await axiosInstance.get(`/lead/get-lead/${id}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to add lead
+export const addLead = async (lead) => {
+  try {
+    const response = await axiosInstance.post("/lead/create-lead", lead);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to update lead
+export const updateLeadById = async (id, lead) => {
+  try {
+    const response = await axiosInstance.put(`/lead/update-lead/${id}`, lead);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+// to delete lead
+export const deleteLeadById = async (id) => {
+  try {
+    const response = await axiosInstance.delete(`/lead/delete-lead/${id}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+// multiple delete leads
+export const deleteMultipleLeads = async (data) => {
+  try {
+    const response = await axiosInstance.delete("/lead/delete-multiple-leads", {
+      data,
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+// to assign lead to employee
+export const assignLeadsToEmployee = async (data) => {
+  try {
+    const response = await axiosInstance.post("/task/create-task", data);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to get firm users
+export const getFirmUsers = async () => {
+  try {
+    const response = await axiosInstance.get("/auth/getCompany");
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// ro get company for admin
+export const getCompanyForAdmin = async (id) => {
+  try {
+    const response = await axiosInstance.get(`/auth/getCompany/${id}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to get user id data using crmuser id
+export const getCrmUserById = async () => {
+  try {
+    const response = await axiosInstance.get(`crmuser/crmsuser-account/${id}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to get tasks
+export const getAllTasks = async () => {
+  try {
+    const response = await axiosInstance.get("/task/get-tasks");
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// get tasks by firmId
+
+export const getTasksByFirmId = async (firmId) => {
+  try {
+    const response = await axiosInstance.get(
+      `/task/get-task-by-firm/${firmId}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to update the task
+export const updateTask = async (id, task) => {
+  try {
+    const response = await axiosInstance.put(`/task/update-task/${id}`, task);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to reassign task to employee
+export const updateAssignees = async (id, data) => {
+  try {
+    const response = await axiosInstance.put(
+      `/task/update-assignee/${id}`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+//to update task
+export const updateTaskOrLead = async (id, updateData) => {
+  try {
+    const response = await axiosInstance.put(
+      `/task/update-task/${id}`,
+      updateData
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// get tasks by assignee id
+export const getTasksByAssignee = async (id) => {
+  try {
+    const response = await axiosInstance.get(`/task/assignedto/${id}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+//   role management
+export const getRoles = async () => {
+  try {
+    const response = await axiosInstance.get("/role/get-roles");
+    const filteredRoles = response.data.data.filter(
+      (role) => role.deleted_at === null
+    );
+    // console.log(filteredRoles);
+    return filteredRoles;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to create role
+export const createRole = async (role) => {
+  try {
+    const response = await axiosInstance.post("/role/create-role", role);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.message || "Failed to create role");
+    }
+    throw new Error("Network error or server not responding");
+  }
+};
+
+// update role
+export const updateRoleById = async (id, role) => {
+  try {
+    const response = await axiosInstance.put(`/role/update-role/${id}`, role);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to delete role
+export const deleteRoleById = async (id) => {
+  try {
+    const response = await axiosInstance.delete(`/role/delete-role/${id}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to create crm users
+export const createCrmUser = async (user) => {
+  try {
+    const response = await axiosInstance.post(
+      `/crmuser/create-crmsuser/${creatorId}`,
+      user
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+// to update crm users
+export const updateCrmUser = async (userId, user) => {
+  try {
+    const response = await axiosInstance.put(
+      `/crmuser/update-crmsuser/${userId}`,
+      user
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// update crm user password
+export const updateCrmUserPassword = async (passwordData) => {
+  try {
+    const response = await axiosInstance.post(
+      `/crmuser/update-crmpassword/${id}`,
+      passwordData
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating CRM user password:", error);
+    throw error.response?.data || error;
+  }
+};
+
+// to get crm users
+export const getCrmUsers = async (firmId) => {
+  try {
+    const response = await axiosInstance.get(`/crmuser/get-crmsuser/${firmId}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to upload leads by xlsx , csv , json
+export const uploadLeads = async (data) => {
+  try {
+    const response = await axiosInstance.post("/lead/importLead", data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+export const createUser = async (data, clientId) => {
+
+    const response = await axiosInstance.post(
+      `/auth/createUser/${clientId}`, data,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );  
+    return response;
+
+};
+
+
+//  to export leads
+export const exportLeads = async (data) => {
+  try {
+    const response = await axiosInstance.post("/lead/exportLead", data, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+//  update lead status by userId and leadId
+export const updateLeadStatus = async (id, data) => {
+  try {
+    const response = await axiosInstance.put(
+      `/lead/update-leadstatus/${id}`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    return error.response ? error.response.data : error;
+  }
+};
+
+//  get firm data using id
+export const getFirmById = async () => {
+  try {
+    const response = await axiosInstance.get(`/auth/getfirm/${firmId}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+export const getCompanyData = async (firmId) => {
+  try {
+    const response = await axiosInstance.get(`/auth/getfirm/${firmId}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// get all plans
+export const getAllPlans = async () => {
+  try {
+    const response = await axiosInstance.get("/plan/all");
+    return response.data.response;
+  } catch (error) {
+    return error;
+  }
+};
+
+//  to approve status of client
+export const approveClient = async (id, data) => {
+  try {
+    const response = await axiosInstance.put(`/auth/approveClient/${id}`, data);
+    return response.data;
+  } catch (error) {
+    return error.response ? error.response.data : error;
+  }
+};
+
+//  to inactive status of client
+export const inactiveClient = async (id, data) => {
+  try {
+    const response = await axiosInstance.put(`/auth/userInactive/${id}`, data);
+    return response.data;
+  } catch (error) {
+    return error.response ? error.response.data : error;
+  }
+};
+
+//  blogcategory create api
+
+export const createBlogCategory = async (data) => {
+  try {
+    const response = await axiosInstance.post(
+      `/blogcategory/create-blogCategory/${id}`,
+      data
+    );
+    console.log(id);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to get all blog categories
+export const getBlogCategories = async () => {
+  try {
+    const response = await axiosInstance.get(
+      "/blogcategory/get-blogcategories"
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to get single blog category by id
+export const getBlogCategoryById = async (id) => {
+  try {
+    const response = await axiosInstance.get(
+      `/blogcategory/get-blogCategory/${id}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to update blog category
+
+export const updateBlogCategory = async (id, data) => {
+  try {
+    const response = await axiosInstance.put(
+      `/blogcategory/update-blogCategory/${id}`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to delete blog category
+export const deleteBlogCategory = async (id) => {
+  try {
+    const response = await axiosInstance.delete(
+      `/blogcategory/delete-blogCategory/${id}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to create blog
+export const createBlog = async (data) => {
+  try {
+    const response = await createAxiosInstance.post(`/blog/create-blog`, data);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to get all blogs
+export const getBlogs = async () => {
+  try {
+    const response = await axiosInstance.get("/blog/get-blogs");
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to get blog by Id
+export const getBlogById = async (id) => {
+  try {
+    const response = await axiosInstance.get(`/blog/get-blog/${id}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to update blog by id
+export const updateBlog = async (id, data) => {
+  try {
+    const response = await axiosInstance.put(`/blog/update-blog/${id}`, data);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// get blogs by blog_slug
+export const getBlogBySlug = async (slug) => {
+  try {
+    const response = await axiosInstance.get(`/blog/get-blog-slug/${slug}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to delete blog by id
+export const deleteBlog = async (id) => {
+  try {
+    const response = await axiosInstance.delete(`/blog/delete-blog/${id}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// feedback api services
+
+export const createFeedback = async (data) => {
+  try {
+    const response = await createAxiosInstance.post(
+      `/feedback/create-feedback`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const getAllFeedbacks = async () => {
+  try {
+    const response = await axiosInstance.get("/feedback/get-feedbacks");
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const getFeedbackById = async (id) => {
+  try {
+    const response = await axiosInstance.get(`/feedback/get-feedback/${id}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const updateFeedback = async (id, data) => {
+  try {
+    const response = await createAxiosInstance.put(
+      `/feedback/update-feedback/${id}`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const deleteFeedbackById = async (id) => {
+  try {
+    const response = await axiosInstance.delete(
+      `/feedback/delete-feedback/${id}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// get item category
+export const getItemCategories = async () => {
+  try {
+    const response = await axiosInstance.get(
+      `/category/get-categories/${firmId}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const getItemSubCategories = async (categoryId) => {
+  try {
+    const response = await axiosInstance.get(
+      `/category/subcategories/${categoryId}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const getVendors = async () => {
+  try {
+    const response = await axiosInstance.get(`/vendor/get-vendors/${firmId}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const getBrands = async () => {
+  try {
+    const response = await axiosInstance.get(`/brand/get-brands/${firmId}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const getTaxes = async () => {
+  try {
+    const response = await axiosInstance.get(`/tax/get-taxes/${firmId}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const getBoms = async (firmId) => {
+  try {
+    const response = await axiosInstance.post(`/bom/get-bom`, {
+      firmId,
+    });
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const getInventoryItems = async (firmId) => {
+  try {
+    const response = await axiosInstance.get(`/inventory/get-items/${firmId}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const createBom = async (data) => {
+  try {
+    const response = await axiosInstance.post(`/bom/create-bom`, data);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+//get all production orders using firmId in the body , post api
+export const getProductionOrders = async () => {
+  try {
+    const response = await axiosInstance.post(
+      `/productionorder/get-productionorders`,
+      {
+        firmId,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+// get production order by id
+export const getProductionOrderById = async (id) => {
+  try {
+    const response = await axiosInstance.get(
+      `/productionorder/get-productionorder/${id}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// create production order
+export const createProductionOrder = async (data) => {
+  try {
+    const response = await axiosInstance.post(
+      `/productionorder/create-productionorder`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// update production order quantity
+export const updateProductionOrderQuantity = async (id, data) => {
+  try {
+    const response = await axiosInstance.put(
+      `/productionorder/update-productionorder/${id}`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// update production order status
+export const updateProductionOrderStatus = async (id, data) => {
+  try {
+    const response = await axiosInstance.put(
+      `/productionorder/update-productionorderstatus/${id}`,
+      data
+    );
+    return response;
+  } catch (error) {
+    return error;
+  }
+};
+
+// to get firm wise wastage
+export const getFirmWastage = async (firmId) => {
+  try {
+    const response = await axiosInstance.get(
+      `/wasteinventory/get-wasteManagments/${firmId}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const getWastageById = async (id) => {
+  try {
+    const response = await axiosInstance.get(
+      `/wasteinventory/get-wasteManagment/${id}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// get customers for firm
+export const getCustomers = async (firmId) => {
+  try {
+    const response = await axiosInstance.get(
+      `/customer/get-customers/${firmId}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+// update customer
+export const updateCustomer = async (customerId, customerData) => {
+  try {
+    const response = await axiosInstance.put(
+      `/customer/update-customer/${customerId}`,
+      customerData
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const getItemCategoriesmain = async (firmId) => {
+  try {
+    const response = await axiosInstance.get(
+      `/category/get-categories/${firmId}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const getVendorsmain = async (firmId) => {
+  try {
+    const response = await axiosInstance.get(`/vendor/get-vendors/${firmId}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const getBrandsmain = async (firmId) => {
+  try {
+    const response = await axiosInstance.get(`/brand/get-brands/${firmId}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const getProductionOrdersmain = async (firmId) => {
+  try {
+    const response = await axiosInstance.post(
+      `/productionorder/get-productionorders`,
+      {
+        firmId,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+export const getTaxesmain = async (firmId) => {
+  try {
+    const response = await axiosInstance.get(`/tax/get-taxes/${firmId}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const getPaymentDetails = async () => {
+  try {
+    const response = await axiosInstance.get(`/payment/payment-detail/${id}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+export const getPaymentDetailsMain = async (id) => {
+  try {
+    const response = await axiosInstance.get(`/payment/payment-detail/${id}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const createBilling = async (data) => {
+  try {
+    const response = await axiosInstance.post(`/billing/create-bill`, data);
+    return response;
+  } catch (error) {
+    return error;
+  }
+};
+export const createItem = async (data, createdBy) => {
+    const response = await axiosInstance.post(`/inventory/create-item/${createdBy}`, data);
+    return response;
+};
+// get firm bills by firm Id
+export const getFirmBills = async (firmId) => {
+  try {
+    const response = await axiosInstance.get(
+      `/billing/get-bills-by-firm/${firmId}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+//  Set Permissions (POST)
+export const setUserPermissions = async (userId, sidebarAccess) => {
+  try {
+    const response = await axiosInstance.post(
+      `/auth/set-permissions/${userId}`,
+      {
+        sidebarAccess,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+//   Get Permissions (GET)
+
+export const getUserSidebar = async (userId) => {
+  try {
+    const response = await axiosInstance.get(`/auth/get-sidebar/${userId}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// Query Form Request (POST)
+export const QueryFormRequest = async (data) => {
+  try {
+    const response = await axiosInstance.post(
+      `/blog/create-contact-message`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// Get All Contact Messages (GET)
+export const getAllContactMessages = async (page = 1, limit = 10) => {
+  try {
+    const response = await axiosInstance.get(
+      `/blog/get-all-contact-messages?page=${page}&limit=${limit}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// get user services for inventory creation
+
+export const getUserServices = async (firmId) => {
+  try {
+    const response = await axiosInstance.get(
+      `/inventory/user-services/${firmId}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// create firmIndustryService
+export const createFirmIndustryService = async (data) => {
+  try { 
+    const response = await axiosInstance.post(
+      "/inventory/create-user-industry",
+      data
+    );
+    return response.data;
+  } catch (error) {
+    // console.error("Error creating firm industry service:", error);
+    throw error.response?.data || error;
+  }
+};
+
+// get clients data for the dashboard
+export const clientDashboard = async (userId) => {
+  try {
+    const response = await axiosInstance.get(`/inventory/get-count-condition/${userId}`);
+    return response.data;
+  }
+  catch (error) {
+    console.error("Error fetching client dashboard data:", error);
+    throw error.response?.data || error;
+  }
+}
+// for firm users dashboard 
+export const firmUsersDashboard = async (userId) => {
+  try {
+    const response = await axiosInstance.get(`/inventory/get-count-condition-firm/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching firm users dashboard data:", error);
+    throw error.response?.data || error;
+  }
+};
+
+// for Super Admin dashboard
+export const superAdminDashboard = async (userId) => {
+  try {
+    const response = await axiosInstance.get(`/role/getData/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching firm users dashboard data:", error);
+    throw error.response?.data || error;
+    
+  }
+};
+
+
+export const getInvoiceById = async (id) => {
+    const response = await axiosInstance.get(`/invoice/get-invoice/${id}`);
+    return response.data;
+};
+
+// ✅ Update invoice by ID
+export const updateInvoiceById = async (id, updatedInvoiceData) => {
+    const response = await axiosInstance.put(`/invoice/edit-invoice/${id}`, updatedInvoiceData);
+    return response.data;
+};
+
+export const rejectInvoiceById = async (id) => {
+    const response = await axiosInstance.put(`/invoice/reject-invoice/${id}`);
+    return response.data;
+};
+export const deleteFirm = async (firmId) => {
+    const response = await axiosInstance.delete(`/auth/delete-firm/${firmId}`);
+    return response;
+};
+
+
+export default axiosInstance;

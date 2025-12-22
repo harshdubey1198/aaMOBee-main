@@ -1,0 +1,88 @@
+const taskServices = require("../services/task.services")
+const { createResult } = require("../utils/utills")
+
+const taskController = {}
+
+taskController.createTask = async (req, res) => {
+    try {
+        const newTask = await taskServices.createTask(req.body)
+        return res.status(200).json(createResult("Task created Succefully", newTask))
+    } catch (error) {
+        console.log("error creating task", error.message)
+        return res.status(500).json(createResult(null, null, error.message ));
+    }
+}
+
+taskController.getAllTasks = async (req, res) => {
+    try {
+        const Tasks = await taskServices.getAllTasks()
+        return res.status(200).json(createResult("Task fetched Succefully", Tasks))
+    } catch (error) {
+        console.log("error creating task", error.message)
+        return res.status(500).json(createResult(null, null, error.message ));
+    }
+}
+
+taskController.getTaskById = async (req, res) => {
+    try {
+        const Task = await taskServices.getTaskById(req.params.id)
+        return res.status(200).json(createResult("Task fetched Succefully", Task))
+    } catch (error) {
+        console.log("error creating task", error.message)
+        return res.status(500).json(createResult(null, null, error.message ));
+    }
+}
+taskController.getTaskByFirmId = async (req, res) => {
+    try {
+        const firmId = req.params.id;
+;
+  
+      const tasks = await taskServices.getTaskByFirmId(firmId);
+      return res.status(200).json(createResult("Tasks fetched successfully", tasks));
+    } catch (error) {
+      console.log("Error fetching task by firm ID:", error.message);
+      return res.status(500).json(createResult(null, null, error.message));
+    }
+  };
+
+taskController.updateTask = async (req, res) => {
+    try {
+        const updatedTask = await taskServices.updateTask(req.params.id, req.body)
+        return res.status(200).json(createResult("Task updated Succefully", updatedTask))
+    } catch (error) {
+        console.log("error updating task", error.message)
+        return res.status(500).json(createResult(null, null, error.message ));
+    }
+}
+
+taskController.updateAssignees = async (req, res) => {
+    try {
+        const updateAssignees = await taskServices.updateAssignees(req.params.id, req.body)
+        return res.status(200).json(createResult("Task Assignee updated Succefully", updateAssignees))
+    } catch (error) {
+        console.log("error updating task assignee", error.message)
+        return res.status(500).json(createResult(null, null, error.message ));
+    }
+}
+
+taskController.markMissedTasks = async (req, res) => {
+    try {
+        const markMissedTasks = await taskServices.markMissedTasks()
+        return res.status(200).json(createResult("Tasks marked as missed.", markMissedTasks))
+    } catch (error) {
+        console.log("failed to tasks marked as missed.", error.message)
+        return res.status(500).json(createResult(null, null, error.message ));
+    }
+}
+
+taskController.getTasksByAssignee = async (req, res) => {
+    try {
+        const tasks = await taskServices.getTasksByAssignee(req.params.id);
+        return res.status(200).json(createResult("Tasks fetched successfully", tasks));
+    } catch (error) {
+        console.log("Error fetching tasks by assignee", error.message);
+        return res.status(500).json(createResult(null, null, error.message));
+    }
+}
+
+module.exports = taskController

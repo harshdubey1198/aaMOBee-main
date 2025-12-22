@@ -1,0 +1,170 @@
+import React, { useState } from 'react';
+import { Button, Modal, ModalBody, ModalFooter, ModalHeader, Input, Row, Col, Card, CardBody } from 'reactstrap';
+import { toast } from 'react-toastify';
+
+function QuantityUpdateModal({
+  modalOpen,
+  setModalOpen,
+  selectedOrder,
+  handleUpdateQuantity,
+}) {
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [newQuantity, setNewQuantity] = useState(selectedOrder?.quantity || '');
+  const [newNote, setNewNote] = useState(selectedOrder?.notes || '');
+  // console.log(selectedOrder, 'selectedOrder');
+const handleSave = () => {
+  if (selectedOrder?.status !== "created") {
+    toast.error("You can only update quantity if the order is in 'Created' status.");
+    return;
+  }
+
+  const updatedData = {
+    quantity: newQuantity,
+    notes: Array.isArray(newNote) ? newNote : [newNote],
+  };
+  handleUpdateQuantity(selectedOrder._id, updatedData);
+};
+
+  return (
+    <Modal isOpen={modalOpen} toggle={() => setModalOpen(!modalOpen)} size="lg">
+      <ModalHeader toggle={() => setModalOpen(!modalOpen)}>
+        {isEditMode ? `Edit Order #${selectedOrder?.productionOrderNumber}` : `View Order #${selectedOrder?.productionOrderNumber}`}
+      </ModalHeader>
+      <ModalBody>
+        <Row>
+          <Col md={6}>
+            <div>
+              <strong>Product Name:</strong> {selectedOrder?.bomId?.productName}
+            </div>
+            <div>
+              <strong>Order Created By:</strong> {selectedOrder?.createdBy?.firstName} {selectedOrder?.createdBy?.lastName}
+            </div>
+            <div>
+              <strong>Notes:</strong> {isEditMode ? (
+                <Input
+                  type="text"
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Enter note for this update"
+                  required
+                />
+              ) : (
+                // selectedOrder?.notes
+                // array has objects came 
+                selectedOrder?.notes.map((note, index) => (
+                  <div key={index}>
+                    {index+1}  {note.toUpperCase()} 
+                  </div>
+                ))
+              )}
+            </div>
+          </Col>
+          <Col md={6}>
+            <div>
+              <strong>Order Date:</strong> {new Date(selectedOrder?.createdAt).toLocaleString()}
+            </div>
+            <div>
+              <strong>Updated On:</strong> {new Date(selectedOrder?.updatedAt).toLocaleString()}
+            </div>
+            <div>
+              <strong>Status:</strong>{' '}
+              {selectedOrder?.status
+                .split('_')
+                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ')}
+            </div>
+          </Col>
+        </Row>
+
+        <Card className="mt-3">
+          <CardBody>
+            <h5>Raw Materials:</h5>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Item Name</th>
+                    <th style={{width:"90px"}}>Qty Type</th>
+                    <th>Quantity</th>
+                    <th>Cost Price</th>
+                    <th>Selling Price</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedOrder?.rawMaterials?.map((rawMaterial, index) => (
+                    <tr key={index}>
+                      <td><strong>{rawMaterial?.itemId?.name}</strong></td>
+                      <td>{rawMaterial?.itemId?.qtyType}</td>
+                      <td>
+                          {rawMaterial?.itemId?.quantity.length > 0 ? rawMaterial?.itemId?.quantity : rawMaterial?.variants?.map((variant) => variant.quantity).join(', ') + " "}
+                         units
+                        </td>
+                      <td>₹{rawMaterial?.itemId?.costPrice}</td>
+                      <td>₹{rawMaterial?.itemId?.sellingPrice}</td>
+                      <td>{rawMaterial?.itemId?.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardBody>
+        </Card>
+
+        <div className="form-group mt-3">
+          <label htmlFor="quantity">Quantity:</label>
+          {isEditMode ? (
+  <div>
+    <Input
+      type="number"
+      id="quantity"
+      value={newQuantity}
+      onChange={(e) => setNewQuantity(e.target.value)}
+      required
+      placeholder="Enter new quantity"
+    />
+    <div>Current Quantity: {selectedOrder?.quantity} units</div>
+  </div>
+) : (
+  <div>
+    {/* {selectedOrder?.quantity} units */}
+    <Input 
+        type="text"
+        value={selectedOrder?.quantity}
+        readOnly
+    />
+    {/* <button onClick={() => setIsEditMode(true)}>Edit</button> */}
+  </div>
+)}
+
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        {isEditMode ? (
+          <>
+            <Button color="primary" onClick={handleSave}>
+              Save Changes
+            </Button>{' '}
+            <Button color="secondary" onClick={() => setIsEditMode(false)}>
+              Cancel
+            </Button>
+          </>
+        ) : (
+         <Button
+            color="primary"
+            onClick={() => setIsEditMode(true)}
+            disabled={selectedOrder?.status !== "created"}
+          >
+            Edit
+          </Button>
+
+        )}
+        <Button color="secondary" onClick={() => setModalOpen(false)}>
+          Close
+        </Button>
+      </ModalFooter>
+    </Modal>
+  );
+}
+
+export default QuantityUpdateModal;

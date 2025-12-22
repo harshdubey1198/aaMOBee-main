@@ -1,0 +1,543 @@
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom';
+import { Button, Col, FormGroup, Input, Label, Modal, ModalBody, ModalFooter, ModalHeader, Row, Tooltip } from 'reactstrap';
+import Select from "react-select";
+
+function BomCreateModal({ isOpen, toggle, setSellingPrice, firmId, toggleBomModal, formData, setFormData, categories, subCategories, vendors, brands, taxes, taxId, selectedTaxTypes, items, setItems, setBomModal, fetchSubCategories, fetchItems, fetchBrands, fetchVendors, fetchTaxes, fetchCategories, fetchBoms, handleMaterialChange, handleVariantChange, addMaterialField, addVariantField, removeMaterialField, removeVariantField, saveBom, calculateTotalCostPrice }) {
+  const effectiveFirmId = firmId;
+  const [categoryTooltipOpen, setCategoryTooltipOpen] = useState(false);
+  const [brandTooltipOpen, setBrandTooltipOpen] = useState(false);
+  const [vendorTooltipOpen, setVendorTooltipOpen] = useState(false);
+
+  // States for managing modal visibility
+  // const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  // const [brandModalOpen, setBrandModalOpen] = useState(false);
+  // const [vendorModalOpen, setVendorModalOpen] = useState(false);
+
+  const navigate = useNavigate();
+
+  // Toggle Tooltip for Category
+  const toggleCategoryTooltip = () => setCategoryTooltipOpen(!categoryTooltipOpen);
+
+  // Toggle Tooltip for Brand
+  const toggleBrandTooltip = () => setBrandTooltipOpen(!brandTooltipOpen);
+
+  // Toggle Tooltip for Vendor
+  const toggleVendorTooltip = () => setVendorTooltipOpen(!vendorTooltipOpen);
+
+  // // Toggle Category Modal
+  // const toggleCategoryModal = () => setCategoryModalOpen(!categoryModalOpen);
+
+  // // Toggle Brand Modal
+  // const toggleBrandModal = () => setBrandModalOpen(!brandModalOpen);
+
+  // // Toggle Vendor Modal
+  // const toggleVendorModal = () => setVendorModalOpen(!vendorModalOpen);
+
+  useEffect(() => {
+    setFormData(prevData => ({
+      ...prevData,
+      sellingPrice: Number(prevData.sellingPrice),
+      subcategoryId: prevData.subcategoryId || null
+    }));
+  }, [formData.qtyType, formData.rawMaterials, formData.sellingPrice,
+  formData.taxId, formData.selectedTaxTypes, formData.vendor,
+  formData.brand, formData.subcategoryId, formData.categoryId
+    , formData.productName, formData.qtyType, formData.estimatedCost
+  ]);
+  console.log("gta", formData.subcategoryIdx);
+  return (
+    <Modal isOpen={isOpen} toggle={toggle}>
+      <ModalHeader toggle={toggleBomModal}>Add BOM</ModalHeader>
+      <ModalBody>
+        <Row>
+          <Col md={6}>
+            <FormGroup>
+              <Label for="productName">BOM Name</Label>
+              <Input
+                id="productName"
+                placeholder='Enter Product Name'
+                type="text"
+                value={formData.productName}
+                onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+              />
+            </FormGroup>
+          </Col>
+          <Col md={3}>
+            <FormGroup>
+              <Label for="category">Category
+                {categories?.length === 0 ? (
+                  <span style={{ color: 'red' }}> *</span> // Red asterisk for not available
+                ) : (
+                  <span style={{ color: 'green' }}> *</span> // Green checkmark for available
+                )}
+              </Label>
+              <div className="d-flex align-items-center">
+                <Input
+                  type="select"
+                  value={formData.categoryId}
+                  onChange={(e) => {
+                    const selectedCategory = e.target.value;
+                    setFormData({ ...formData, categoryId: selectedCategory });
+                    fetchSubCategories(selectedCategory);
+                  }}
+                  onMouseEnter={toggleCategoryTooltip}  // Show tooltip on hover
+                  onMouseLeave={toggleCategoryTooltip}  // Hide tooltip on hover out
+                >
+                  <option value="">Select Category</option>
+                  {categories?.length > 0 ? (
+                    categories.map((cat) => (
+                      <option key={cat._id} value={cat._id}>
+                        {cat.categoryName}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>No categories available</option>
+                  )}
+                </Input>
+                <i
+                  // id="vendor-icon"
+                  className="bx bx-plus"
+                  style={{
+                    fontSize: '24px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    backgroundColor: 'lightblue',
+                    padding: '2px',
+                    marginLeft: '5px',
+                    borderRadius: '5px',
+                  }}
+                  onClick={() => navigate('/manage-category')}
+                ></i>
+
+              </div>
+              {/* Category Tooltip */}
+              {categories.length === 0 && (
+                <Tooltip
+                  placement="top"
+                  isOpen={categoryTooltipOpen}
+                  target="category"
+                  toggle={toggleCategoryTooltip}
+                  style={{
+                    backgroundColor: '#f39c12',  // Warning yellow
+                    color: '#fff',               // White text color
+                    borderRadius: '5px',         // Rounded corners
+                    padding: '10px 15px',        // Adjust padding
+                    fontSize: '14px',            // Adjust font size
+                    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)', // Add shadow for effect
+                    border: '2px solid #e67e22', // Dark orange border for warning effect
+                  }}
+                >
+                Category Not Available? Please add using the "+" button.
+                </Tooltip>
+              )}
+            </FormGroup>
+          </Col>
+          {/* </Row>
+        <Row> */}
+          {subCategories?.length > 0 && (
+            <Col md={3}>
+              <FormGroup>
+                <Label for="subCategory">Sub Category</Label>
+                <Input
+                  type="select"
+                  value={formData.subcategoryId}
+                  onChange={(e) => setFormData({ ...formData, subcategoryId: e.target.value })}
+                >
+                  <option value="">Select Subcategory</option>
+                  {subCategories?.length > 0 ? (
+                    subCategories.map((subCat) => (
+                      <option key={subCat._id} value={subCat._id}>
+                        {subCat.categoryName}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>No subcategories available</option>
+                  )}
+                </Input>
+              </FormGroup>
+            </Col>
+          )}
+          <Col md={3}>
+            <FormGroup>
+              <Label for="vendor">Vendor
+                {vendors?.length === 0 ? (
+                  <span style={{ color: 'red' }}> *</span> // Red asterisk for not available
+                ) : (
+                  <span style={{ color: 'green' }}> *</span> // Green checkmark for available
+                )}             </Label>
+              <div className="d-flex align-items-center">
+                <Input
+                  type="select"
+                  value={formData.vendor}
+                  onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
+                  onMouseEnter={toggleVendorTooltip}  // Show tooltip on hover
+                  onMouseLeave={toggleVendorTooltip}  // Hide tooltip on hover out
+                >
+                  <option value="">Select Vendor</option>
+                  {vendors?.length > 0 ? (
+                    vendors.map((vendor) => (
+                      <option key={vendor._id} value={vendor._id}>
+                        {vendor.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>No vendors available</option>
+                  )}
+                </Input>
+                <i
+                  id="vendor-icon"
+                  className="bx bx-plus"
+                  style={{
+                    fontSize: '24px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    backgroundColor: 'lightblue',
+                    padding: '2px',
+                    marginLeft: '5px',
+                    borderRadius: '5px',
+                  }}
+                  onClick={() => navigate('/suppliers-vendors')}
+                ></i>
+
+              </div>
+              {/* Vendor Tooltip */}
+              {vendors.length === 0 && (
+                <Tooltip
+                  placement="top"
+                  isOpen={vendorTooltipOpen}
+                  target="vendor-icon"
+                  toggle={toggleVendorTooltip}
+                  style={{
+                    backgroundColor: '#f39c12',  // Warning yellow
+                    color: '#fff',               // White text color
+                    borderRadius: '5px',         // Rounded corners
+                    padding: '10px 15px',        // Adjust padding
+                    fontSize: '14px',            // Adjust font size
+                    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)', // Add shadow for effect
+                    border: '2px solid #e67e22', // Dark orange border for warning effect
+                  }}
+                >
+                 Vendor Not Available? Please add using the "+" button.
+                </Tooltip>
+              )}
+            </FormGroup>
+          </Col>
+
+          <Col md={3}>
+            <FormGroup>
+              <Label for="brand">Brand
+                {brands?.length === 0 ? (
+                  <span style={{ color: 'red' }}> *</span> // Red asterisk for not available
+                ) : (
+                  <span style={{ color: 'green' }}> *</span> // Green checkmark for available
+                )}
+              </Label>
+              <div className="d-flex align-items-center">
+                <Input
+                  type="select"
+                  value={formData.brand}
+                  onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                  onMouseEnter={toggleBrandTooltip}  // Show tooltip on hover
+                  onMouseLeave={toggleBrandTooltip}  // Hide tooltip on hover out
+                >
+                  <option value="">Select Brand</option>
+                  {brands?.length > 0 ? (
+                    brands.map((brand) => (
+                      <option key={brand._id} value={brand._id}>
+                        {brand.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>No brands available</option>
+                  )}
+                </Input>
+                <i
+                  className="bx bx-plus"
+                  style={{
+                    fontSize: '24px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    backgroundColor: 'lightblue',
+                    padding: '2px',
+                    marginLeft: '5px',
+                    borderRadius: '5px',
+                  }}
+                  onClick={() => navigate('/brands')}
+                ></i>
+
+              </div>
+              {/* Brand Tooltip */}
+              {brands.length === 0 && (
+                <Tooltip
+                  placement="top"
+                  isOpen={brandTooltipOpen}
+                  target="brand"
+                  toggle={toggleBrandTooltip}
+                  style={{
+                    backgroundColor: '#f39c12',  // Warning yellow
+                    color: '#fff',               // White text color
+                    borderRadius: '5px',         // Rounded corners
+                    padding: '10px 15px',        // Adjust padding
+                    fontSize: '14px',            // Adjust font size
+                    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)', // Add shadow for effect
+                    border: '2px solid #e67e22', // Dark orange border for warning effect
+                  }}
+                >
+                  Brand Not Available? Please add using the "+" button.
+                </Tooltip>
+              )}
+            </FormGroup>
+          </Col>
+          <Col md={3}>
+            <FormGroup>
+              <Label for="qtyType">Qty Type</Label>
+              <Input
+                type="select"
+                value={formData.qtyType}
+                onChange={(e) => setFormData({ ...formData, qtyType: e.target.value })}
+              >
+                <option value="">Select Qty Type</option>
+                <option value="pcs">Pieces</option>
+                <option value="grams">Gm</option>
+                <option value="kg">Kg</option>
+                <option value="centimeters">Centimeter</option>
+                <option value="feet">Feet</option>
+                <option vlaue="meters">Meters</option>
+                <option value="litre">Litre</option>
+              </Input>
+            </FormGroup>
+          </Col>
+          <Col md={3}>
+            <Label for="estimatedCost">Estimated Cost</Label>
+            <Input
+              type="number"
+              value={calculateTotalCostPrice()}
+              disabled
+            />
+          </Col>
+          <Col md={3}>
+            <FormGroup>
+              <Label for="sellingPrice">Selling Price</Label>
+              <Input
+                type="number"
+                value={formData.sellingPrice || ""}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Allow empty value or convert to a number
+                  const numericValue = value === "" ? "" : parseFloat(value);
+                  setFormData({ ...formData, sellingPrice: numericValue });
+                }}
+                onKeyDown={(e) => {
+                  // Prevent unwanted keys like "e", "+", "-", etc.
+                  if (["e", "+", "-"].includes(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+              />
+            </FormGroup>
+          </Col>
+
+          <Col md={3}>
+            <FormGroup>
+              <Label for="tax">Tax Selection</Label>
+              <Input
+                type="select"
+                value={formData.taxId}
+                onChange={(e) => setFormData({ ...formData, taxId: e.target.value })}
+              >
+                <option value="">Select Tax</option>
+                {taxes?.length > 0 ? (
+                  taxes.map((tax) => (
+                    <option key={tax._id} value={tax._id}>
+                      {tax.taxName}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No taxes available</option>
+                )}
+              </Input>
+            </FormGroup>
+          </Col>
+          <Col md={3}>
+            <FormGroup>
+              <Label className="form-label">Select Tax Types</Label>
+              <Select
+                isMulti
+                name="selectedTaxTypes"
+                value={(formData.selectedTaxTypes || []).map(id => {
+                  const tax = taxes?.find(t => t.taxRates?.some(rate => rate._id === id));
+                  const taxRate = tax?.taxRates?.find(rate => rate._id === id);
+
+                  return {
+                    value: id,
+                    label: taxRate ? `${taxRate.taxType} - ${taxRate.rate}%` : "N/A"
+                  };
+                })}
+                onChange={(selectedOptions) => {
+                  const selectedIds = selectedOptions.map(option => option.value);
+                  console.log('Selected Tax Type IDs:', selectedIds);
+
+                  setFormData({
+                    ...formData,
+                    selectedTaxTypes: selectedIds,
+                  });
+                }}
+                options={(taxes?.find(tax => tax._id === formData.taxId)?.taxRates || []).map(taxRate => ({
+                  value: taxRate._id,
+                  label: `${taxRate.taxType} - ${taxRate.rate}%`,
+                }))}
+              />
+            </FormGroup>
+          </Col>
+
+        </Row>
+        {/* Add Modals for Category, Vendor, and Brand */}
+        {/* <CategoryModal isOpen={categoryModalOpen} toggle={toggleCategoryModal} fetchCategories={fetchCategories} /> */}
+        {/* <VendorModal isOpen={vendorModalOpen} toggle={toggleVendorModal} fetchVendors={fetchVendors} />
+        <BrandModal isOpen={brandModalOpen} toggle={toggleBrandModal} fetchBrands={fetchBrands} /> */}
+
+        <h6 className="text-primary">Materials</h6>
+        {formData.rawMaterials?.map((material, materialIndex) => (
+          <Row key={materialIndex} className="mb-3">
+            <Col md={3}>
+              <Label>Material</Label>
+              <Input
+                type="select"
+                value={material.itemId}
+                onChange={(e) => handleMaterialChange(materialIndex, 'itemId', e.target.value)}
+              >
+                <option value="">Select Material</option>
+                {items.length > 0 ? (
+                  items.map((item) => (
+                    <option key={item._id} value={item._id}>
+                      {item.name} - {item.qtyType}
+                      {/* {item.variants?.length > 0 && (
+                              <span className="text-muted">✅</span>
+                            )} */}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No items available</option>
+                )}
+              </Input>
+
+            </Col>
+            {/* if variant in the item doesn't exist we will see this quantity for the item  */}
+            {!items.find((item) => item._id === material.itemId)?.variants.length > 0 && (
+              <Col md={2}>
+                <Label>Quantity</Label>
+                <Input
+                  type="text"
+                  placeholder='Enter Quantity'
+                  value={material.quantity}
+                  onChange={(e) => {
+                    const newValue = Math.max(0, Number(e.target.value));
+                    handleMaterialChange(materialIndex, 'quantity', newValue);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === '-' || e.key === 'e') {
+                      e.preventDefault();
+                    }
+                  }}
+                />
+              </Col>
+            )}
+
+            <Col md={2}>
+              <Label>Waste (%)</Label>
+              <Input
+                type="number"
+                value={material.wastePercentage}
+                onChange={(e) => handleMaterialChange(materialIndex, 'wastePercentage', e.target.value)}
+              />
+            </Col>
+            <Col md={2} className="d-flex align-items-center">
+              <i className='bx bx-trash' style={{ fontSize: '1.5rem', marginTop: '29px', cursor: 'pointer' }} onClick={() => removeMaterialField(materialIndex)}></i>
+            </Col>
+            <Col md={12} className="mt-2">
+              {material.variants?.map((variant, variantIndex) => (
+                <Row key={variantIndex} className="mb-2">
+                  <h6 className="text-primary">Variants</h6>
+                  <Col md={3}>
+                    <Label>Variant</Label>
+                    <Input
+                      type="select"
+                      value={variant.variantId}
+                      onChange={(e) =>
+
+                        handleVariantChange(materialIndex, variantIndex, 'variantId', e.target.value)
+
+                      }
+                    >
+                      <option value="">Select Variant</option>
+                      {items
+                        .find((item) => item._id === material.itemId)
+                        ?.variants.map((v) => (
+                          <option key={v._id} value={v._id}>
+                            {v.optionLabel} - {v.stock} Qty
+                          </option>
+                        ))}
+                    </Input>
+                  </Col>
+                  <Col md={2}>
+                    <Label>Quantity</Label>
+                    <Input
+                      type="text"
+                      value={variant.quantity}
+                      onChange={(e) => {
+                        const newValue = Math.max(Number(e.target.value));
+                        handleVariantChange(materialIndex, variantIndex, 'quantity', newValue);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === '-' || e.key === 'e') {
+                          e.preventDefault();
+                        }
+                      }}
+                    />
+
+                  </Col>
+                  <Col md={2}>
+                    <Label>Waste (%)</Label>
+                    <Input
+                      type="number"
+                      value={variant.wastePercentage ?? 0}
+                      onChange={(e) =>
+                        handleVariantChange(materialIndex, variantIndex, 'wastePercentage', e.target.value)}
+                    />
+                  </Col>
+                  <Col md={2}>
+                    <i className='bx bx-trash' style={{ fontSize: '1.5rem', marginTop: '29px', cursor: 'pointer' }} onClick={() => removeVariantField(materialIndex, variantIndex)}></i>
+                  </Col>
+                </Row>
+              ))}
+
+              {/* variant length > 0 */}
+              {items.find((item) => item._id === material.itemId)?.variants.length > 0 && (
+                <Col md={2}>
+                  <Button color="success" onClick={() => addVariantField(materialIndex)}>
+                    Add Variant
+                  </Button>
+                </Col>
+              )}
+            </Col>
+          </Row>
+        ))}
+        <Button color="success" onClick={addMaterialField}>
+          Add Material
+        </Button>
+
+      </ModalBody>
+      <ModalFooter>
+        <Button color="primary" onClick={saveBom}>
+          Save
+        </Button>
+        <Button color="secondary" onClick={toggle}>
+          Cancel
+        </Button>
+      </ModalFooter>
+    </Modal>
+  )
+}
+
+export default BomCreateModal
