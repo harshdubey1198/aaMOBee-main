@@ -8,7 +8,14 @@ const BrandModal = ({ isOpen,idToUse, toggle, brandToEdit, onBrandUpdated, setTr
   const [loading, setLoading] = useState(false);
   const authuser = JSON.parse(localStorage.getItem("authUser")).response;
   const userId = authuser._id;
-
+  const blockIfDemo = (actionName) => {
+      if (authuser?.isDemo) {
+        setLoading(false);
+        toast.error(`Demo accounts cannot create a new ${actionName}`);
+        return true; 
+      }
+      return false; 
+    };
   useEffect(() => {
     if (brandToEdit) {
       setBrand({
@@ -77,6 +84,7 @@ const BrandModal = ({ isOpen,idToUse, toggle, brandToEdit, onBrandUpdated, setTr
 
 
   const handleSubmit = async () => {
+    if (blockIfDemo("brand")) return;
     if (!brand.name) {
       toast.error("Please enter the brand name.");
       return;

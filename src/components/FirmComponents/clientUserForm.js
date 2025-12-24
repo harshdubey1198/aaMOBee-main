@@ -15,19 +15,28 @@ const ClientUserCreateForm = ({ isOpen, toggle, setTrigger, selectedFirmId, form
   // });
   const [address, setAddress] = useState({});
   const authuser = JSON.parse(localStorage.getItem("authUser"));
+  const blockIfDemo = (actionName) => {
+      if (authuser?.response?.isDemo) {
+        setLoading(false);
+        toast.error(`Demo accounts cannot create a new ${actionName}`);
+        return true; 
+      }
+      return false; 
+    };
+  const [loading, setLoading] = useState(false);
   const firmId = formValues.firmId;
   useEffect(() => {
-  if(selectedFirmId){
-    const selectedFirm = firms.find((firm) => firm._id === selectedFirmId);
-    // console.log("inside selectedFirmId");
-    if (selectedFirm) {
-      setFormValues((prevState) => ({
-        ...prevState,
-        firmName: selectedFirm.companyTitle,
-        firmId: selectedFirm._id,
-      }));
-    } 
-  }
+    if (selectedFirmId) {
+      const selectedFirm = firms.find((firm) => firm._id === selectedFirmId);
+      // console.log("inside selectedFirmId");
+      if (selectedFirm) {
+        setFormValues((prevState) => ({
+          ...prevState,
+          firmName: selectedFirm.companyTitle,
+          firmId: selectedFirm._id,
+        }));
+      }
+    }
   }, [selectedFirmId]);
   const handleFirmChange = (e) => {
     const selectedFirm = firms.find((firm) => firm.companyTitle === e.target.value);
@@ -44,7 +53,7 @@ const ClientUserCreateForm = ({ isOpen, toggle, setTrigger, selectedFirmId, form
     if (authuser) {
       axios.get(`${process.env.REACT_APP_URL}/auth/getCompany/${authuser?.response._id}`)
         .then((response) => {
-          setFirms(response);  
+          setFirms(response);
           // console.log(response, "Firms");
         })
         .catch((error) => {
@@ -53,97 +62,88 @@ const ClientUserCreateForm = ({ isOpen, toggle, setTrigger, selectedFirmId, form
     }
   }, []);
   const handleSubmit = (e) => {
+    if (blockIfDemo("users")) return;
     e.preventDefault();
     setError("");
     setSuccess("");
+    setLoading(true); // start loader
 
-    // if (checkEmptyFields(formValues)) {
-    //   setError("Fill All the Fields");
-    //   toast.error("Fill All the Fields");
-    //   return;
-    // }
-    if (!formValues.firstName || !formValues.lastName || !formValues.email || !formValues.mobile || !formValues.role )
-    {
+    if (!formValues.firstName || !formValues.lastName || !formValues.email || !formValues.mobile || !formValues.role) {
       setError("Fill All the Fields");
       toast.error("Fill All the Fields");
+      setLoading(false);
       return;
     }
-
 
     if (!validateEmail(formValues.email)) {
       setError("Invalid Email");
       toast.error("Invalid Email");
+      setLoading(false);
       return;
     }
-    
-    if (!validatePhone(formValues.mobile)) {
+
+    if (!validatePhone(`${formValues.mobileCode}${formValues.mobile}`)) {
       setError("Invalid Phone Number");
       toast.error("Invalid Phone Number");
+      setLoading(false);
       return;
     }
-    // if (formValues.password !== formValues.confirmPassword) {
-    //   setError("Passwords do not match");
-    //   toast.error("Passwords do not match");
-    //   return;
-    // }
 
-    // if (Object.keys(address).length === 0) {
-    //   setError("Address is required");
-    //   toast.error("Address is required");
-    //   return;
-    // }
     if (!formValues.firmId) {
       setError("No firm selected");
       toast.error("No firm selected");
+      setLoading(false);
       return;
     }
 
     fetch(`${process.env.REACT_APP_URL}/auth/createUser/${firmId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...formValues,
-        address
+        mobile: `${formValues.mobileCode || ""}${formValues.mobile || ""}`,
+        address,
+      }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          const error = await response.json();
+          toast.error(error.error);
+          setLoading(false);
+          return;
+        }
+        await response.json();
+        setError("");
+        setTrigger((prev) => prev + 1);
+        setFormValues({
+          firstName: "",
+          lastName: "",
+          email: "",
+          mobile: "",
+          mobileCode: "+91",
+          birthday: "",
+          gender: "",
+          role: "",
+        });
+        setAddress({});
+        toggle();
+        toast.success("User added successfully.");
       })
-    })
-    .then(async (response) => {
-      if (!response.ok) {
-        const error = await response.json();
-        // console.log(error.error, "Error creating user");
-        toast.error(error.error);
-        return;
-      }
-      const data = await response.json();
-      toast.success("User added successfully.");
-      setError("");
-      setTrigger((prev) => prev + 1);
-      setFormValues({
-        firstName: "",
-        lastName: "",
-        email: "",
-        mobile: "",
-        // password: "",
-        // confirmPassword: "",
-        birthday: "",
-        gender: "",
-        role: "",
+      .catch((error) => {
+        console.log("Full error object:", error);
+        toast.error("Error creating user");
+      })
+      .finally(() => {
+        setLoading(false); // always stop loader
       });
-      setAddress({});
-      toggle();
-    })
-    .catch((error) => {
-      console.log("Full error object:", error);
-      // toast.error("Error creating user");
-    });
   };
+
 
   const formatDate = (date) => {
     const [year, month, day] = date.split("-");
     return `${day}-${month}-${year}`;
   };
-  
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormValues((prevState) => ({
@@ -151,7 +151,7 @@ const ClientUserCreateForm = ({ isOpen, toggle, setTrigger, selectedFirmId, form
       [name]: value,
     }));
   };
-  
+
 
   const handleAddressChange = (e) => {
     const { name, value } = e.target;
@@ -162,101 +162,138 @@ const ClientUserCreateForm = ({ isOpen, toggle, setTrigger, selectedFirmId, form
   };
 
   return (
-    <Modal isOpen={isOpen} toggle={toggle}>
-      <ModalHeader toggle={toggle}>Add New User</ModalHeader>
+    <Modal isOpen={isOpen} toggle={toggle} className="modal-dialog-centered">
+      <ModalHeader toggle={toggle} className=" text-white" style={{
+        background: "var(--bs-header-dark-bg)",
+      }}>Add New User</ModalHeader>
       <ModalBody>
         <form onSubmit={handleSubmit}>
           <Row>
-           <Col md={6}> 
-              <FormGroup>
-                  <Label>Firm Name</Label>
-                  <Input
-                    type="select"
-                    name="firmName"
-                    value={formValues.firmName} 
-                    onChange={handleFirmChange}
-                  >
-                    <option value="">Select Firm</option>
-                    {firms.map((firm) => (
-                      <option key={firm._id} value={firm.companyTitle}>
-                        {firm.companyTitle}
-                      </option>
-                    ))}
-                  </Input>
-                </FormGroup>
+            <Col md={6}>
+              <FormGroup className="mb-3">
+                <Label for="firmName" className="form-label">Firm Name</Label>
+                <Input
+                  type="select"
+                  name="firmName"
+                  id="firmName"
+                  value={formValues.firmName}
+                  onChange={handleFirmChange}
+                  className="form-select"
+                >
+                  <option value="">Select Firm</option>
+                  {firms.map((firm) => (
+                    <option key={firm._id} value={firm.companyTitle}>
+                      {firm.companyTitle}
+                    </option>
+                  ))}
+                </Input>
+              </FormGroup>
             </Col>
             <Col md={6}>
-                <FormGroup>
-                    <Label>Role</Label>
-                    <Input
-                      type="select"
-                      name="role"
-                      value={formValues.role}
-                      onChange={handleChange}
-                    >
-                      <option value="">Select Role</option>
-                      {availableRoles.map((role) => (
-                        <option key={role} value={role}>
-                          {role?.replace(/[_-]/g, " ") 
-                                    .replace(/\b\w/g, (char) => char.toUpperCase())}
-                        </option>
-                      ))}
-                    </Input>
-                  </FormGroup>
-              </Col>
+              <FormGroup className="mb-3">
+                <Label for="role" className="form-label">Role</Label>
+                <Input
+                  type="select"
+                  name="role"
+                  id="role"
+                  value={formValues.role}
+                  onChange={handleChange}
+                  className="form-select"
+                >
+                  <option value="">Select Role</option>
+                  {availableRoles.map((role) => (
+                    <option key={role} value={role}>
+                      {role?.replace(/[_-]/g, " ")
+                        .replace(/\b\w/g, (char) => char.toUpperCase())}
+                    </option>
+                  ))}
+                </Input>
+              </FormGroup>
+            </Col>
           </Row>
           <Row>
             <Col md={6}>
-              <FormGroup>
-                <Label>First Name</Label>
+              <FormGroup className="mb-3">
+                <Label for="firstName" className="form-label">First Name</Label>
                 <Input
                   name="firstName"
+                  id="firstName"
                   value={formValues.firstName}
                   placeholder="First Name"
                   onChange={handleChange}
+                  className="form-control"
                 />
               </FormGroup>
-             
-              </Col>
+
+            </Col>
 
             <Col md={6}>
-              
-              <FormGroup>
-                <Label>Last Name</Label>
+
+              <FormGroup className="mb-3">
+                <Label for="lastName" className="form-label">Last Name</Label>
                 <Input
                   name="lastName"
+                  id="lastName"
                   placeholder="Last Name"
                   value={formValues.lastName}
                   onChange={handleChange}
+                  className="form-control"
                 />
               </FormGroup>
             </Col>
 
             <Col md={6}>
-                <FormGroup>
-                  <Label>Email</Label>
-                  <Input
-                    name="email"
-                    type="text"
-                    placeholder="Email"
-                    value={formValues.email}
-                    onChange={handleChange}
-                  />
-                </FormGroup>
-              </Col>
+              <FormGroup className="mb-3">
+                <Label for="email" className="form-label">Email</Label>
+                <Input
+                  name="email"
+                  type="email"
+                  id="email"
+                  placeholder="Email"
+                  value={formValues.email}
+                  onChange={handleChange}
+                  className="form-control"
+                />
+              </FormGroup>
+            </Col>
 
-              <Col md={6}>
-                <FormGroup>
-                  <Label>Mobile</Label>
+            <Col md={6}>
+              <FormGroup className="mb-3">
+                <Label for="mobile" className="form-label">Mobile</Label>
+                <div className="d-flex">
+                  <Input
+                    type="select"
+                    name="mobileCode"
+                    value={formValues.mobileCode}
+                    onChange={handleChange}
+                    style={{
+                      width: "120px",
+                      borderRadius: "6px 0 0 6px",
+                      borderRight: "0",
+                    }}
+                  >
+                    <option value="+91">🇮🇳 +91</option>
+                    <option value="+971">🇦🇪 +971</option>
+                    <option value="+966">🇸🇦 +966</option>
+                    <option value="+60">🇲🇾 +60</option>
+                    <option value="+1">🇺🇸 +1</option>
+                    <option value="+44">🇬🇧 +44</option>
+                  </Input>
                   <Input
                     name="mobile"
-                    placeholder="Mobile"
+                    id="mobile"
+                    placeholder="Enter mobile number"
                     value={formValues.mobile}
                     onChange={handleChange}
+                    className="form-control"
+                    style={{
+                      borderRadius: "0 6px 6px 0",
+                    }}
                   />
-                </FormGroup>
-              
+                </div>
+              </FormGroup>
             </Col>
+
           </Row>
 
           {/* <AddressForm
@@ -264,16 +301,24 @@ const ClientUserCreateForm = ({ isOpen, toggle, setTrigger, selectedFirmId, form
             handleAddressChange={handleAddressChange}
           /> */}
 
-          <ModalFooter>
-            <Button color="secondary" onClick={toggle}>
+          <ModalFooter className="px-0 pb-0">
+            <Button color="secondary" onClick={toggle} className="btn btn-secondary">
               Cancel
             </Button>
-            <Button type="submit" color="primary">
-              Submit
+            <Button type="submit" color="primary" className="btn btn-primary" disabled={loading}>
+              {loading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Submitting...
+                </>
+              ) : (
+                "Submit"
+              )}
             </Button>
+
           </ModalFooter>
         </form>
-        
+
       </ModalBody>
     </Modal>
   );

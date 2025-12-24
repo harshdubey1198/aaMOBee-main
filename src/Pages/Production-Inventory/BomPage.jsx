@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Breadcrumbs from '../../components/Common/Breadcrumb';
-import { createBom, getBoms, getBrandsmain, getInventoryItems, getItemCategoriesmain, getItemSubCategories, getTaxes, getVendorsmain } from '../../apiServices/service';
+import { createBom, getBoms, getBrandsmain, getFirmById, getInventoryItems, getItemCategoriesmain, getItemSubCategories, getTaxes, getVendorsmain } from '../../apiServices/service';
 import { Table, Button, Input} from 'reactstrap';
 import BomCreateModal from '../../Modal/ProductionModals/BomCreateModal';
 import FirmSwitcher from '../Firms/FirmSwitcher';
@@ -56,8 +56,9 @@ const fetchBoms = async () => {
     setLoading(true);
     try {
         const result = await getBoms(effectiveFirmId);
-        setBoms(result.data || []);
-        setFilteredBoms(result.data);
+        const decorated = decorateBoms(result.data || []);
+        setBoms(decorated);
+        setFilteredBoms(decorated);
         result.data.length === 0 && toast.info("No BOMs found");
         (result.data.length > 0) && toast.success("BOMs fetched successfully");
     } catch (err) {
@@ -66,6 +67,27 @@ const fetchBoms = async () => {
     setLoading(false);
 };
 
+const decorateBoms = (boms) => {
+  return boms.map(bom => {
+    const firmId = bom.firmId?._id || bom.firmId;
+    const firmTitle = bom.firmId?.companyTitle || "Self Firm";
+
+    return {
+      ...bom,
+      brandName: resolveEntity(bom.brand, firmId, firmTitle),
+      vendorName: resolveEntity(bom.vendor, firmId, firmTitle),
+      manufacturerName: resolveEntity(bom.manufacturer, firmId, firmTitle),
+    };
+  });
+};
+
+const resolveEntity = (entity, firmId, firmTitle) => {
+  if (!entity) return "N/A";
+  if (typeof entity === "string") {
+    return entity === firmId ? firmTitle : entity;
+  }
+  return entity.name || entity.companyTitle || "N/A";
+};
 
   const fetchItems = async () => {
     try {
@@ -96,23 +118,58 @@ const fetchBoms = async () => {
       console.error(err);
     }
   };
-  const fetchVendors = async () => { 
-    try {
-      const result = await getVendorsmain(effectiveFirmId);
+const fetchVendors = async () => {
+  try {
+    const result = await getVendorsmain(effectiveFirmId);
+
+    if (result.data && result.data.length > 0) {
       setVendors(result.data || []);
-      // console.log(result.data);
-    } catch (err) {
-      console.error(err);
+    } else {
+      // No vendors → fallback to firm companyTitle
+      const firmResult = await getFirmById(effectiveFirmId);
+      if (Array.isArray(firmResult) && firmResult.length > 0 && firmResult[0].companyTitle) {
+        setVendors([
+          {
+            _id: "self",
+            name: firmResult[0].companyTitle
+          }
+        ]);
+      } else {
+        setVendors([]);
+      }
     }
-  };
+  } catch (err) {
+    console.error("Error fetching vendors:", err);
+  }
+};
+
 const fetchBrands = async () => {
-    try {
-      const result = await getBrandsmain(effectiveFirmId);
+  try {
+    const result = await getBrandsmain(effectiveFirmId);
+
+    if (result.data && result.data.length > 0) {
       setBrands(result.data || []);
-    } catch (err) {
-      console.error(err);
+    } else {
+      // No brands → fallback to firm companyTitle
+      const firmResult = await getFirmById(effectiveFirmId);
+      if (Array.isArray(firmResult) && firmResult.length > 0 && firmResult[0].companyTitle) {
+        setBrands([
+          {
+            _id: "self",
+            name: firmResult[0].companyTitle
+          }
+        ]);
+      } else {
+        setBrands([]);
+      }
     }
-  };
+  } catch (err) {
+    console.error("Error fetching brands:", err);
+  }
+};
+
+
+
   
   const fetchTaxes = async () => {
     try {
@@ -286,7 +343,7 @@ const minimumSellingPrice = (costPrice) => {
     <React.Fragment>
       <div className="page-content">
         <Breadcrumbs title="Production/Manufacturing" breadcrumbItem="Product Recipes" />
-        <div className='d-flex gap-2 align-items-center'>
+        <div className='d-flex flex-wrap gap-2 align-items-center'>
           {userRole!=="client_admin" && ( 
             <Button color="primary" onClick={toggleBomModal} style={{fontSize:"10.5px",lineHeight:"1", minWidth:'105px'}}>
               Add BOM
@@ -297,6 +354,16 @@ const minimumSellingPrice = (costPrice) => {
             <FirmSwitcher selectedFirmId={selectedFirmId} onSelectFirm={setSelectedFirmId} />
           )}
           <i className='bx bx-refresh cursor-pointer'  style={{fontSize: "24.5px",fontWeight: "bold",color: "black",transition: "color 0.3s ease"}} onClick={refetchData} onMouseEnter={(e) => e.target.style.color = "green"}  onMouseLeave={(e) => e.target.style.color = "black"}></i>
+            {userRole === "client_admin" && (
+              <div 
+                className="alert alert-warning d-flex align-items-center mb-0 py-1 px-2" 
+                style={{ fontSize: "13px", borderRadius: "6px" }}
+              >
+                <i className="bx bx-info-circle me-2" style={{ fontSize: "16px" }}></i>
+                <span>Please contact your Firm Admin to create recipes (BOM).</span>
+              </div>
+            )}
+
         </div>
           <div className='mt-3'>
             <Input type="text" value={searchTerm} onChange={handleSearch} placeholder="Search by Product Name" />
@@ -359,7 +426,7 @@ const minimumSellingPrice = (costPrice) => {
                 ))}
               </div>
             <BomCreateModal isOpen={bomModal} toggle={toggleBomModal} formData={formData} setFormData={setFormData} saveBom={saveBom} handleMaterialChange={handleMaterialChange} handleVariantChange={handleVariantChange} addMaterialField={addMaterialField} removeMaterialField={removeMaterialField} addVariantField={addVariantField}  removeVariantField={removeVariantField} calculateTotalCostPrice={calculateTotalCostPrice} categories={categories}  subCategories={subCategories} vendors={vendors}  brands={brands}  taxes={taxes} taxId={taxId}  selectedTaxTypes={selectedTaxTypes} items={items}  fetchSubCategories={fetchSubCategories} fetchBoms={fetchBoms} fetchBrands={fetchBrands} fetchVendors={fetchVendors} fetchTaxes={fetchTaxes} fetchItems={fetchItems} fetchCategories={fetchCategories} minimumSellingPrice={minimumSellingPrice} setSellingPrice={setSellingPrice} firmId={effectiveFirmId} />
-            <BomDetailsModal isOpen={bomDetailsModal} toggle={() => setBomDetailsModal(!bomDetailsModal)} selectedBom={selectedBom} />
+            <BomDetailsModal isOpen={bomDetailsModal} toggle={() => setBomDetailsModal(!bomDetailsModal)} selectedBom={selectedBom} firmTitle={selectedBom?.firmId?.companyTitle} />
       </div>
     </React.Fragment>
   );

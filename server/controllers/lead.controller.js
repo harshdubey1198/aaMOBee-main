@@ -23,46 +23,55 @@ leadController.importLeads = async (req, res) => {
       if (err instanceof multer.MulterError) {
         return res
           .status(400)
-          .json(createResult(null, null, `Multer error: ${err.message}`));
+          .json(createResult(null, true, `Multer error: ${err.message}`));
       } else if (err) {
         return res
           .status(400)
-          .json(createResult(null, null, `File upload error: ${err.message}`));
+          .json(createResult(null, true, `File upload error: ${err.message}`));
       }
+
       const { firmId } = req.body;
       if (!firmId) {
         return res
           .status(400)
-          .json(createResult(null, null, "firmId is required"));
+          .json(createResult(null, true, "firmId is required"));
       }
-      // Validate file existence
+
       if (!req.files || !req.files.file || req.files.file.length === 0) {
         return res
           .status(400)
-          .json(createResult(null, null, "No file uploaded"));
+          .json(createResult(null, true, "No file uploaded"));
       }
 
-      // Process the CSV file (buffer) in the service
-      // const leads = await leadService.importLeads(req.files.file[0].buffer, firmId);
       const file = req.files.file[0];
-      const leads = await leadService.importLeads(file.buffer, firmId, file.originalname);
+      const result = await leadService.importLeads(file.buffer, firmId, file.originalname);
 
+      if (result.error) {
+        // Validation / file errors
+        return res.status(200).json(
+          createResult(null, true, result.message, {
+            invalidRows: result.invalidRows || []
+          })
+        );
+      }
+
+      // ✅ Always respond when success
       return res.status(200).json(
         createResult("Leads imported successfully", {
-          totalLeads: leads.length,
-          leads,
+          totalLeads: result.leads.length,
+          leads: result.leads
         })
       );
+
     } catch (error) {
       console.error("Error importing leads:", error.message);
       return res
         .status(500)
-        .json(
-          createResult(null, null, error.message || "Internal Server Error")
-        );
+        .json(createResult(null, true, error.message || "Internal Server Error"));
     }
   });
 };
+
 
 leadController.exportLeads = async (req, res) => {
   try {

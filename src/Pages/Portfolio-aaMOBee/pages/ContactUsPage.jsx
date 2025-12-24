@@ -1,17 +1,21 @@
-import React, { useState } from 'react';
-import HeaderWithDashboard from '../components/headerWithDashboard';
-import Footer from '../components/footer';
-import Select from 'react-select';
-import { toast } from 'react-toastify';
-import { QueryFormRequest } from '../../../apiServices/service'; 
+import React, { useState } from "react";
+import HeaderWithDashboard from "../components/headerWithDashboard";
+import Footer from "../components/footer";
+import Select from "react-select";
+import { toast } from "react-toastify";
+import { QueryFormRequest, SendContactOtpRequest } from "../../../apiServices/service";
+import { Modal, Button } from "react-bootstrap";
 
 function ContactUsPage() {
   const [showProducts, setShowProducts] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    message: '',
+    name: "",
+    email: "",
+    message: "",
   });
   const [reason, setReason] = useState(null);
   const [customSubject, setCustomSubject] = useState("");
@@ -32,40 +36,83 @@ function ContactUsPage() {
     { value: "account", label: "Account Update" },
     { value: "data", label: "Data Issue" },
     { value: "partner", label: "Partner Inquiry" },
-    { value: "others", label: "Others" }
+    { value: "others", label: "Others" },
   ];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.name || !formData.email || !formData.message || (!reason && !customSubject)) {
-      toast.error("Please fill all fields properly.");
-      return;
+  // STEP 1: Send OTP API
+const handleSendClick = async (e) => {
+  e.preventDefault();
+
+  if (!formData.name || !formData.email || !formData.message || (!reason && !customSubject)) {
+    toast.error("Please fill all fields properly.");
+    return;
+  }
+
+  setIsLoading(true);
+  try {
+    const otpRes = await SendContactOtpRequest({
+      email: formData.email,
+      name: formData.name
+    });
+
+    // ✅ Always open modal if no error occurred
+    if (otpRes) {
+      toast.success(otpRes?.message || "OTP sent to your email!");
+      setShowOtpModal(true);  // ✅ open OTP modal here
+    } else {
+      toast.error("Failed to send OTP!");
     }
+  } catch (error) {
+    console.error(error);
+    toast.error("Error while sending OTP!");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-    const finalSubject = customSubject || (reason && reason.label);
+  // STEP 2: Submit Contact Form with OTP
+const handleOtpSubmit = async () => {
+  if (!otp) {
+    toast.error("Please enter the OTP.");
+    return;
+  }
 
-    try {
-      const payload = {
-        name: formData.name,
-        email: formData.email,
-        subject: finalSubject,
-        message: formData.message,
-      };
-      const res = await QueryFormRequest(payload);
+  const finalSubject = customSubject || (reason && reason.label);
+
+  setIsLoading(true);
+  try {
+    const formDataPayload = new FormData();
+    formDataPayload.append("name", formData.name);
+    formDataPayload.append("email", formData.email);
+    formDataPayload.append("subject", finalSubject);
+    formDataPayload.append("message", formData.message);
+    formDataPayload.append("otp", otp);
+
+    const res = await QueryFormRequest(formDataPayload);
+
+    if (res?.data) {
       toast.success("Message sent successfully!");
-      setFormData({ name: '', email: '', message: '' });
+      setFormData({ name: "", email: "", message: "" });
       setReason(null);
-      setCustomSubject('');
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to send message. Try again!");
+      setCustomSubject("");
+      setOtp("");
+      setShowOtpModal(false);
+    } else {
+      toast.error(res?.message || "Failed to send message!");
     }
-  };
+  } catch (error) {
+    console.error(error);
+    toast.error("Error while submitting message!");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <>
@@ -81,10 +128,9 @@ function ContactUsPage() {
       >
         <div className="container">
           <div className="row g-5">
-
             <div className="col-lg-6">
               <h3 className="mb-4 fw-bold">Contact Us</h3>
-              <form className="p-4 shadow rounded bg-white" onSubmit={handleSubmit}>
+              <form className="p-4 shadow rounded bg-white" onSubmit={handleSendClick}>
                 <div className="mb-3">
                   <label className="form-label">Full Name</label>
                   <input
@@ -122,7 +168,7 @@ function ContactUsPage() {
                       if (selected.value !== "others") {
                         setCustomSubject(selected.label);
                       } else {
-                        setCustomSubject('');
+                        setCustomSubject("");
                       }
                     }}
                     required
@@ -157,8 +203,8 @@ function ContactUsPage() {
                   />
                 </div>
 
-                <button type="submit" className="btn btn-primary px-4 rounded-pill">
-                  Send Message
+                <button type="submit" className="btn btn-primary px-4 rounded-pill" disabled={isLoading}>
+                  {isLoading ? "Please wait..." : "Send Message"}
                 </button>
               </form>
             </div>
@@ -167,17 +213,7 @@ function ContactUsPage() {
               <h3 className="mb-4 fw-bold">Country Support & Timing</h3>
 
               {/* India Card */}
-              <div
-                className="card mb-3"
-                style={{
-                  background: "rgba(255, 255, 255, 0.25)",
-                  borderRadius: "16px",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
-                  border: "1px solid rgba(255, 255, 255, 0.3)",
-                  boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.1)"
-                }}
-              >
+              <div className="card mb-3" style={{ background: "rgba(255, 255, 255, 0.25)", borderRadius: "16px", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid rgba(255, 255, 255, 0.3)", boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.1)" }}>
                 <div className="card-body">
                   <h5 className="card-title">🇮🇳 India</h5>
                   <p className="mb-1"><strong>Support Hours:</strong> Mon–Sat, 10:00 AM – 6:00 PM (IST)</p>
@@ -188,17 +224,7 @@ function ContactUsPage() {
               </div>
 
               {/* UAE Card */}
-              <div
-                className="card mb-3"
-                style={{
-                  background: "rgba(255, 255, 255, 0.25)",
-                  borderRadius: "16px",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
-                  border: "1px solid rgba(255, 255, 255, 0.3)",
-                  boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.1)"
-                }}
-              >
+              <div className="card mb-3" style={{ background: "rgba(255, 255, 255, 0.25)", borderRadius: "16px", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid rgba(255, 255, 255, 0.3)", boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.1)" }}>
                 <div className="card-body">
                   <h5 className="card-title">🇦🇪 United Arab Emirates (UAE)</h5>
                   <p className="mb-1"><strong>Support Hours:</strong> Mon–Fri, 9:00 AM – 5:00 PM (GST)</p>
@@ -207,12 +233,39 @@ function ContactUsPage() {
                   <p className="text-muted">Support in English & Basic Arabic</p>
                 </div>
               </div>
-
             </div>
-
           </div>
         </div>
       </div>
+
+      {/* OTP Modal */}
+     <Modal 
+  show={showOtpModal} 
+  onHide={() => setShowOtpModal(false)} 
+  centered
+  backdrop="static"   // ⬅️ Prevent closing on outside click
+  keyboard={false}    // ⬅️ Optional: prevent closing on ESC key
+>
+  <Modal.Header closeButton>
+    <Modal.Title>Enter OTP</Modal.Title>
+  </Modal.Header>
+  <Modal.Body>
+    <input
+      type="text"
+      className="form-control"
+      placeholder="Enter OTP"
+      value={otp}
+      onChange={(e) => setOtp(e.target.value)}
+    />
+  </Modal.Body>
+  <Modal.Footer>
+    <Button variant="secondary" onClick={() => setShowOtpModal(false)}>Cancel</Button>
+    <Button variant="primary" onClick={handleOtpSubmit} disabled={isLoading}>
+      {isLoading ? "Verifying..." : "Submit"}
+    </Button>
+  </Modal.Footer>
+</Modal>
+
       <Footer />
     </>
   );

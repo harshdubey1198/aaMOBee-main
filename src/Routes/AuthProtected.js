@@ -12,10 +12,56 @@ const AuthProtected = (props) => {
   
   useEffect(() => {
     if (authUser) {
+
+      if (authUser.response?.isDemo && authUser.response?.expiresAt) {
+  const expiry = new Date(authUser.response.expiresAt).getTime();
+  const now = new Date().getTime();
+  const timeLeft = expiry - now;
+
+  const totalSeconds = Math.floor(timeLeft / 1000);
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  const totalHours = Math.floor(totalMinutes / 60);
+  const totalDays = Math.floor(totalHours / 24);
+  const totalMonths = Math.floor(totalDays / 30);
+
+  const months = totalMonths;
+  const days = totalDays % 30;
+  const hours = totalHours % 24;
+  const minutes = totalMinutes % 60;
+  const seconds = totalSeconds % 60;
+
+  // console.log(
+  //   `Demo User expiry in: ${months}m ${days}d ${hours}h ${minutes}m ${seconds}s`
+  // );
+
+  if (timeLeft > 0) {
+    // Check every hour to avoid overflow issues
+    const checkInterval = setInterval(() => {
+      const now = new Date().getTime();
+      if (now >= expiry) {
+        clearInterval(checkInterval);
+        localStorage.removeItem("authUser");
+        console.log("Demo User Expired - Logged Out Automatically");
+        window.location.href = "/login";
+      }
+    }, 60 * 60 * 1000); // every 1 hour
+
+    return () => clearInterval(checkInterval);
+  } else {
+    localStorage.removeItem("authUser");
+    console.log("Demo User Expired - Logged Out Immediately");
+    window.location.href = "/login";
+    return;
+  }
+}
+
+
       const token = authUser.token;
   
       try {
         const { exp } = JSON.parse(atob(token.split(".")[1])); 
+        // const decoded = JSON.parse(atob(token.split(".")[1]));
+        // console.log(decoded);
         const currentTimeInSeconds = Math.floor(new Date().getTime() / 1000);
         const timeUntilExpiryInSeconds = exp - currentTimeInSeconds;
         const timeUntilExpiryInMs = timeUntilExpiryInSeconds * 1000;
@@ -46,6 +92,9 @@ const AuthProtected = (props) => {
     }
   }, [authUser]);
 
+  if (location.pathname === "/demo/login") {
+      return <>{props.children}</>;
+    }
 
   if (loading) {
     return  <Navigate to={{ pathname: "/login", state: { from: location } }} />;

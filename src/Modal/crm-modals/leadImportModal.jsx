@@ -7,7 +7,7 @@ const LeadImportModal = ({ isOpen, toggle , firmId }) => {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   // let firmId = "67ee693d20139d610280ff86";
-  console.log("firmId" , firmId)
+  // console.log("firmId" , firmId)
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
@@ -26,16 +26,19 @@ const LeadImportModal = ({ isOpen, toggle , firmId }) => {
     setLoading(true);
     try {
       const response = await uploadLeads(formData);
+      console.log(response);
       if (response.message === "Leads imported successfully") {
         console.log(response);
         toast.success("Leads imported successfully!");
         toggle();
       } else {
+        // console.log(response?.error)
         // throw new Error(response.message || "Failed to import leads");
-        toast.success(response.message || "Failed to import leads");
+        toast.error(response?.error || "Failed to import leads");
       }
     } catch (error) {
-      toast.error(error.message || "Error importing leads.");
+      console.log(error);
+      // toast.error(error);
     } finally {
       setLoading(false);
     }

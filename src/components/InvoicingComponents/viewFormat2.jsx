@@ -1,8 +1,5 @@
 import React, { forwardRef } from 'react';
 
-
-const termsAndConditions = "Full payment is due upon receipt of this invoice. Late payments may incur additional charges or interest as per the applicable laws.";
-
 const styles = {
     container: {
         backgroundColor: '#0D4251',
@@ -86,6 +83,7 @@ const currencyOptions = [
 ];
 
 const ViewFormat2 = forwardRef(({ invoiceData }, ref) => {
+    const termsAndConditions = invoiceData?.termsAndConditions || "Full payment is due upon receipt of this invoice. Late payments may incur additional charges.";
     const selectInvoice = invoiceData?.firmId || {};
     const companyAddress = selectInvoice.address || [];
     const currencyCode = selectInvoice.currency || "INR";
@@ -237,8 +235,14 @@ const ViewFormat2 = forwardRef(({ invoiceData }, ref) => {
 
                 {/* Terms */}
                 <p style={styles.terms}>
-                    <strong>Terms & Conditions:</strong> {termsAndConditions}
+                    <strong>Terms & Conditions:</strong>
                 </p>
+                <ol>
+                    {termsAndConditions.split("\n").map((line, i) => (
+                        <li key={i}>{line}</li>
+                    ))}
+                </ol>
+
             </div>
         </div>
     );

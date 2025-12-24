@@ -169,7 +169,7 @@ const Header = (props) => {
             }
             {role === "client_admin" ? (
               <ul className="top-navbar-links" id="nav-links">
-                <li><Link to="/my-businesses">Firms</Link></li>
+                <li><Link to="/my-businesses">My businesses</Link></li>
                 <li><Link to="/pricing">Pricing</Link></li>
                 <li><Link to="/product-list">Inventory</Link></li>
               </ul>
@@ -177,9 +177,9 @@ const Header = (props) => {
             }
             {role === "firm_admin" ? (
               <ul className="top-navbar-links" id="nav-links">
-                <li><Link to="/team-access">Users</Link></li>
+                <li><Link to="/team-access">My Team</Link></li>
                 <li><Link to="/product-list">Inventory</Link></li>
-                <li><Link to="/all-invoices">Invoices</Link></li>
+                <li><Link to="/all-invoices">All Invoices</Link></li>
               </ul>
             ) : null  
               }
@@ -193,7 +193,7 @@ const Header = (props) => {
               {role === "employee" ? (
                 <ul className="top-navbar-links" id="nav-links">
                 <li><Link to="/product-list">Inventory</Link></li>
-                <li><Link to="/add-new-product">Add Item</Link></li>
+                <li><Link to="/add-new-product">Add Inventory</Link></li>
                 </ul>
                 ) : null
                 }
@@ -239,7 +239,7 @@ const Header = (props) => {
               </div>
             </div> */}
 
-            <LanguageDropdown />
+            {/* <LanguageDropdown /> */}
             <button
               type="button"
               className="btn header-item noti-icon right-bar-toggle waves-effect"

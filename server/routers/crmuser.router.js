@@ -15,5 +15,8 @@ router.post('/reset-crmpassword', crmUserController.resetCRMUserPassword);
 router.put('/update-crmsuser/:id',tokenVerification, crmUserController.updateCrmsAccount);
 // router.delete('/delete-crmsuser/:id', tokenVerification, crmUserController.deleteCrmsUser);
 
+// Admin reset CRM user password
+router.put('/admin-reset-crmpassword/:id',tokenVerification,crmUserController.adminResetCrmPassword);
+
 
 module.exports = router;

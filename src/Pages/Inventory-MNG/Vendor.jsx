@@ -17,6 +17,15 @@ function Vendor() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [vendorToDelete, setVendorToDelete] = useState(null);
   const [trigger, setTrigger] = useState(0);
+  const authuser = JSON.parse(localStorage.getItem("authUser"));
+  const authUser = authuser?.response;
+  const isDemo = authUser?.isDemo;
+
+  
+  const token = authuser.token;
+  const userId = authuser.response._id;
+  const firmId = JSON.parse(localStorage.getItem('authUser'))?.response?.adminId || JSON.parse(localStorage.getItem('authUser'))?.response?.firmId;
+  const role = JSON.parse(localStorage.getItem("authUser")).response.role;
   const [vendorData, setVendorData] = useState({
     name: "",
     contactPerson: "",
@@ -24,12 +33,6 @@ function Vendor() {
     email: "",
     address: { h_no: "", city: "", state: "", zip_code: "", country: "", nearby: "" }
   });
-
-  const authuser = JSON.parse(localStorage.getItem("authUser"));
-  const token = authuser.token;
-  const userId = authuser.response._id;
-  const firmId = JSON.parse(localStorage.getItem('authUser'))?.response?.adminId || JSON.parse(localStorage.getItem('authUser'))?.response?.firmId;
-  const role = JSON.parse(localStorage.getItem("authUser")).response.role;
   const [selectedFirmId, setSelectedFirmId] = useState(null);
   const idToUse = role === "client_admin" ? selectedFirmId : firmId;
   
@@ -151,7 +154,20 @@ const confirmDeleteVendor = async () => {
 };
 
 
-
+const blockIfDemo = (actionName) => {
+  if (authuser?.response?.isDemo) {
+    toast.error(`Demo accounts cannot ${actionName}`);
+    return true;
+  }
+  return false;
+};
+  const blockIfNoBusiness = () => {
+    if (!selectedFirmId) {
+      toast.info("Please add/select a business first to continue");
+      return true; 
+    }
+    return false; 
+  };
   const refetchVendors = () => {
     setTrigger(trigger + 1);
   };
@@ -175,7 +191,8 @@ const confirmDeleteVendor = async () => {
           <Button
             color="primary"
             onClick={() => {
-              setEditMode(false);
+              if (blockIfNoBusiness()) return; 
+              setEditMode(false); 
               setVendorData({ name: "", contactPerson: "", phone: "", email: "", address: { h_no: "", city: "", state: "", zip_code: "", country: "", nearby: "" } });
               toggleModal();
             }}
@@ -217,7 +234,7 @@ const confirmDeleteVendor = async () => {
             </tr>
           ) : (
             vendors.map((vendor, index) => (
-              <tr key={vendor._id} onClick={() => handleEditClick(vendor)}>
+              <tr key={vendor._id} onClick={() => { if (blockIfDemo("edit a Vendor")) return; handleEditClick(vendor); }}>
                 <th scope="row">{index + 1}</th>
                 <td>{vendor.name}</td>
                 <td>{vendor.contactPerson}</td>
@@ -229,7 +246,7 @@ const confirmDeleteVendor = async () => {
                   }
                   }
                 >
-                    <i className="bx bx-trash" style={{ cursor: "pointer", fontSize:"24px" }} onClick={() => handleDeleteClick(vendor)}></i>
+                    <i className="bx bx-trash" style={{ cursor: "pointer", fontSize:"24px" }} onClick={() => { if (blockIfDemo("delete a Vendor")) return; handleDeleteClick(vendor); }}></i>
                 </td>
               </tr>
             ))

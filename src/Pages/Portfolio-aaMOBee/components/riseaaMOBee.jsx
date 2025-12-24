@@ -23,17 +23,31 @@ function RiseaaMOBee() {
         src={sirEnhanced}
         alt="India Map"
         className="ceo rise-div2"
+        loading="lazy"
+        decoding="async"
+        draggable="false"
+        fetchpriority="low"
+        /* replace with actual intrinsic dimensions */
+        width={640}
+        height={720}
       />
+
       <div className="rise-logo">
         <img
           src={aamobeeLogo}
           alt="aaMOBee Logo"
           className="rise-img"
-          //  loading="lazy"
+          loading="lazy"
+          decoding="async"
+          draggable="false"
+          fetchpriority="low"
+          /* replace with actual intrinsic dimensions */
+          width={220}
+          height={60}
         />
       </div>
     </div>
   );
 }
 
-export default RiseaaMOBee;
+export default React.memo(RiseaaMOBee);

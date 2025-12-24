@@ -4,28 +4,37 @@ const User = require('../schemas/user.schema');
 
 let PlansServices = {};
 
-PlansServices.createPlan = async (id,data) => {
-    try {
-        const superAdmin = await User.findById(id).select("-password");
-        if (!superAdmin) {
-            return Promise.reject("Not authorized to add plan");
-        }
-        if(superAdmin.role !== 'super_admin'){
-            return Promise.reject("Not authorized to add plan");
-        }
-
-        const existingPlan = await Plan.findOne({ title: data.title });
-        if (existingPlan) {
-            return Promise.reject("A plan with this title already exists.");
-        }
-
-        const plan = await Plan.create(data);
-        return plan;
-    } catch (err) {
-        console.log("error adding plan", err);
-        return Promise.reject("Error adding plan. Try again later!");
+PlansServices.createPlan = async (id, data) => {
+  try {
+    const superAdmin = await User.findById(id).select("-password");
+    if (!superAdmin || superAdmin.role !== "super_admin") {
+      return Promise.reject("Not authorized to add plan");
     }
-}
+
+    const existingPlan = await Plan.findOne({ title: data.title });
+    if (existingPlan) {
+      return Promise.reject("A plan with this title already exists.");
+    }
+
+    // 🔹 sanitize prices & offers
+    if (Array.isArray(data.prices)) {
+      data.prices = data.prices.map((p) => ({
+        ...p,
+        offers: (p.offers || []).map((o) => ({
+          ...o,
+          days: o.durationValue ? o.durationValue * 30 : o.days, // auto-calc
+        })),
+      }));
+    }
+
+    const plan = await Plan.create(data);
+    return plan;
+  } catch (err) {
+    console.log("error adding plan", err);
+    return Promise.reject("Error adding plan. Try again later!");
+  }
+};
+
 
 PlansServices.getAllPlans = async () => {
     try {
@@ -72,19 +81,43 @@ PlansServices.getFirmPLan = async (firmId) => {
 }
 
 
-PlansServices.updatePlan = async (planId, updateData)  => {
-    try {
-        const updatedPlan = await Plan.findOneAndUpdate( { _id: planId }, updateData, { new: true } );
-        if (!updatedPlan) {
-            return Promise.reject("Plan not found or update failed");
-        }
-        
-        return updatedPlan
-    } catch (error) {
-        console.error("Error updating plan:", error);
-        return Promise.reject("Unable to Update Plan");
+PlansServices.updatePlan = async (planId, updateData) => {
+  try {
+    if (Array.isArray(updateData.prices)) {
+      updateData.prices = updateData.prices.map((p) => ({
+        ...p,
+        offers: (p.offers || []).map((o) => {
+          const durationVal = Number(o.durationValue) || 0;
+          let computedDays = o.days || 30;
+
+          if (o.durationType === "monthly" && durationVal > 0)
+            computedDays = durationVal * 30;
+          else if (o.durationType === "yearly" && durationVal > 0)
+            computedDays = durationVal * 365;
+          else if (o.durationType === "custom" && durationVal > 0)
+            computedDays = durationVal * 30;
+
+          return { ...o, days: computedDays };
+        }),
+      }));
     }
-}
+
+
+    const updatedPlan = await Plan.findOneAndUpdate(
+      { _id: planId },
+      updateData,
+      { new: true }
+    );
+    if (!updatedPlan) {
+      return Promise.reject("Plan not found or update failed");
+    }
+    return updatedPlan;
+  } catch (error) {
+    console.error("Error updating plan:", error);
+    return Promise.reject("Unable to Update Plan");
+  }
+};
+
 
 PlansServices.deletePlan = async (planId) => {
     try {

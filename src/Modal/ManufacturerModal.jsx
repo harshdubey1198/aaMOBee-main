@@ -17,7 +17,14 @@ const ManufacturerModal = ({ isOpen,idToUse , toggle,manufacturerAdd, manufactur
   const [loading, setLoading] = useState(false);
   const authUser = JSON.parse(localStorage.getItem("authUser")).response;
   const userId = authUser._id;
-
+  const blockIfDemo = (actionName) => {
+        if (authUser?.isDemo) {
+          setLoading(false);
+          toast.error(`Demo accounts cannot create a new ${actionName}`);
+          return true; 
+        }
+        return false; 
+      };
   useEffect(() => {
     if (manufacturerToEdit) {
       setManufacturer(manufacturerToEdit);
@@ -57,6 +64,7 @@ const ManufacturerModal = ({ isOpen,idToUse , toggle,manufacturerAdd, manufactur
   };
 
   const handleSubmit = async () => {
+    if (blockIfDemo("manufacturer")) return;
     if (!manufacturer.name) {
       toast.error("Please enter the manufacturer name.");
       return;

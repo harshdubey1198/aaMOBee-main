@@ -25,7 +25,7 @@ body {
 }
 
 #particles-js {
-  min-height: 100vh;
+  min-height: 110vh;
 }
 #particles-js canvas {
   pointer-events: auto;
@@ -182,12 +182,13 @@ body {
   .adv-banner {
     max-width: 410px !important;
     width: auto !important;
-    top: 65px !important;
+    top: 35px !important;
+    max-height: 460px !important;
   }
   .info-1 {
     position: absolute;
     right: 3%;
-    top: 51% !important;
+    top: 55% !important;
     /* height: 30px; */
     /* background: #000; */
     width: 90% !important;
@@ -196,9 +197,9 @@ body {
   .banner-txt {
     font-size: 24px !important;
   }
-  .bns {
+  /* .bns {
     font-size: 14px !important;
-  }
+  } */
   .bfs {
     width: 52% !important;
     margin-top: -36px !important;
@@ -211,10 +212,11 @@ body {
     bottom: 6% !important;
   }
   .review-div  {
-    padding-left: 7% !important;
+    padding-left: 0% !important;
   }
   .row1 {
     flex-wrap: wrap;
+    margin-top: -13px;
   }
   .review-class {
     width: 32% !important;
@@ -266,6 +268,7 @@ body {
   .cld-p2 {
     width: 100% !important;
     bottom: 130px !important;
+    padding-top: 27px !important;
   }
 
   .gtc {
@@ -302,6 +305,7 @@ body {
   }
   .pricing-card {
     width: 350px !important;
+    margin-top: 45px !important;
   }
 
   .pricing-card:hover{
@@ -393,7 +397,7 @@ body {
     font-size: 24px !important;
   }
   .email-us-container {
-    width: 100% !important;
+    width: 195px !important;
   }
 
   .hr {
@@ -571,6 +575,41 @@ body {
 
   .review-class {
     width: auto !important;
+  }
+}
+
+@media (max-width: 500px) {
+  .info-1 {
+    width: 100% !important;
+    text-align: center !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: -143px;
+    padding: 0 15px;
+  }
+
+  .info-1 .banner-txt {
+    font-size: 20px !important;
+    line-height: 1.4;
+    /* margin-bottom: 20px; */
+    display: block;
+  }
+
+  .info-1 .content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .info-1 .bns {
+    margin: -40px auto;
+  }
+
+   .review-div h4 {
+    text-align: center !important;
+    width: 100%;
   }
 }
 
@@ -1026,6 +1065,13 @@ h4{
   color: white;
 }
 
+@media (width<998px) {
+  .cld-btn{
+    height: 40px;
+  }
+}
+
+
 .user-favourites {
   background: #171c22;
   padding: 40px 10%;
@@ -1253,9 +1299,9 @@ input:checked + .slider:before {
   background: white;
   border: 1px solid #ddd;
   border-radius: 8px;
-  padding: 20px;
+  padding: 20px 10px;
   margin-top: 10px;
-  min-width: 250px;
+  min-width: 280px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   position: relative;
   transition: transform 0.5s ease-in-out;
@@ -1496,9 +1542,11 @@ input:checked + .slider:before {
 .reviewer {
   display: block;
   width: 80px;
-  height: auto;
+  height: 80px;
   border-radius: 50%;
   background: white;
+  padding:5px;
+  object-fit: contain;
 }
 .reviewer-name {
   font-weight: bolder;
@@ -1745,7 +1793,7 @@ input:checked + .slider:before {
   width: 59px;
 }
 .footer-section {
-  min-height: 800px;
+  /* min-height: 800px; */
   background: #191821;
   display: flex;
   flex-direction: column;
@@ -1842,7 +1890,7 @@ input:checked + .slider:before {
   background-color: #fff;
   border-radius: 50px;
   padding: 10px 20px;
-  width: 300px;
+  width: 210px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   font-family: Arial, sans-serif;
 }
@@ -2176,3 +2224,57 @@ nav .nav-link:hover {
 
 .pagi a:hover:not(.active) {background-color: #ddd;}
 
+.scroll-anchor {
+  scroll-margin-top: 100px; /* adjust to your fixed header height */
+}
+
+.nav-link {
+  cursor: pointer;
+}
+
+.offers-section {
+    background: #f8f9ff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin: 15px 0;
+    font-size: 14px;
+  }
+.offer-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between; 
+    border-bottom: 1px dashed #ddd;
+    padding: 6px 0;
+}
+.offer-duration {
+    font-weight: 600;
+    color: #0c424e;
+    text-transform: capitalize;
+}
+
+.price-column {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; 
+    /* margin-left: auto; */
+}
+
+.offer-price {
+    font-weight: 700;
+}
+.offer-original {
+    font-size: 13px;
+    color: #999;
+    margin: 0; 
+}
+
+.offer-save {
+    background: #38a169;
+    color: white;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 10px; 
+}

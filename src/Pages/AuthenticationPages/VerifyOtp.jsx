@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { fetchUserCurrency } from "../../utils/fetchUserCurrency";
+import { useRazorpay } from "react-razorpay";
+import { getSettings } from "../../apiServices/service";
 
 const VerifyOtp = () => {
   const authuser = JSON.parse(localStorage.getItem("authUser"));
@@ -12,13 +14,34 @@ const VerifyOtp = () => {
   const [otp, setOtp] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const { isLoading, Razorpay } = useRazorpay();
   const [isResending, setIsResending] = useState(false);
   const [canResend, setCanResend] = useState(true);
   const [resendTimeout, setResendTimeout] = useState(null);
-  const [currency, setCurrency] = useState({ code: 'INR', symbol: '₹' });
-  const [showModal, setShowModal] = useState(false);  // State for showing modal
+  const [currency, setCurrency] = useState('INR');
+  const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
+  // const RAZORPAY_KEY="rzp_test_RCgVrVrmvJdgXN";
+  const RAZORPAY_KEY="rzp_live_RCkabhPcYupdB7";
+  const [activeGateway, setActiveGateway] = useState(null);
+  // console.log(activeGateway);
   const UserId = localStorage.getItem("userId");
+  useEffect(() => {
+  const fetchGateway = async () => {
+    try {
+      const res = await getSettings();
+      if (res?.data?.length > 0) {
+        const pg = res.data[0].paymentGateways;
+        if (pg.razorpay.status) setActiveGateway("razorpay");
+        else if (pg.stripe.status) setActiveGateway("stripe");
+      }
+    } catch (err) {
+      console.error("Failed to fetch gateway", err);
+    }
+  };
+  fetchGateway();
+}, []);
+
   // const token = authuser?.token;
   // const config = {
   //   headers: {
@@ -57,6 +80,7 @@ const VerifyOtp = () => {
       setError("");
     }
   };
+// const planPrice = parseFloat(localStorage.getItem("planPrice") || "0");
 
   // const handleSubmit = async (e) => {
   //   e.preventDefault();
@@ -171,21 +195,61 @@ const handleSubmit = async (e) => {
     const planPrice = parseFloat(localStorage.getItem("planPrice") || "0");
 
     if (planPrice > 0) {
-      const checkoutResponse = await axios.post(
-        `${process.env.REACT_APP_URL}/payment/create-checkout-session`,
-        {
-          email: useremail,
-          planId: storedPlanId,
-          currency: currency,
-        }
-      );
-
-      if (checkoutResponse.data.checkoutUrl) {
-        window.location.href = checkoutResponse.data.checkoutUrl;
-        return;
-      } else {
-        toast.error("Failed to retrieve checkout URL. Please try again.");
+    const gateway = activeGateway;
+  if (gateway === "razorpay") {
+    const orderResponse = await axios.post(
+      `${process.env.REACT_APP_URL}/payment/razorpay/create-order`,
+      {
+        email: useremail,
+        planId: storedPlanId,
+        currency: currency,
+        amount: localStorage.getItem("planPrice"),
+        userId: UserId,
       }
+    );
+
+    const options = {
+      key: RAZORPAY_KEY,
+      amount: orderResponse.response.amount,
+      currency: orderResponse.response.currency,
+      order_id: orderResponse.response.orderId,
+      name: "aaMOBee",
+      description: "Plan Purchase",
+      handler: async function (response) {
+        try {
+          await axios.post(`${process.env.REACT_APP_URL}/payment/razorpay/verify-payment`, {
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          });
+          toast.success("Payment successful & verified!");
+          window.location.href = "https://aamobee.com/login"; 
+        } catch (err) {
+          toast.error("Payment verification failed!");
+        }
+      },
+      prefill: { email: useremail },
+    };
+    const rzp = new Razorpay(options);
+    rzp.open();
+
+  } else if (gateway === "stripe") {
+    const checkoutResponse = await axios.post(
+      `${process.env.REACT_APP_URL}/payment/create-checkout-session`,
+      {
+        email: useremail,
+        planId: storedPlanId,
+        currency: localStorage.getItem("planCurrency"), 
+        amount: planPrice,
+      }
+    );
+    if (checkoutResponse.data.checkoutUrl) {
+      window.location.href = checkoutResponse.data.checkoutUrl;
+    } else {
+      toast.error("Failed to retrieve Stripe checkout URL.");
+    }
+  }
+
     } else {
       // Call the free plan payment API
       await axios.post(`${process.env.REACT_APP_URL}/payment/free-plan`, {
@@ -201,6 +265,7 @@ const handleSubmit = async (e) => {
   } catch (err) {
     const errorMessage =
       err.response?.data?.message || "Invalid OTP or Payment Issue";
+      console.log(err);
     toast.error(errorMessage);
     setError(errorMessage);
   } finally {

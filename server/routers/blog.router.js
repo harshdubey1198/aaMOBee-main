@@ -13,8 +13,13 @@ router.delete('/delete-blog/:id', tokenVerification, blogController.deleteBlog);
 
 
 // Contact Message //
-router.post('/create-contact-message', blogController.createContactMessage);
+// router.post('/create-contact-message', blogController.createContactMessage);
 router.get('/get-all-contact-messages', blogController.getAllContactMessages);
+
+router.post('/send-contact-otp', blogController.sendContactOTP);
+
+// Verify OTP & Save Message
+router.post('/create-contact-message', blogController.verifyContactOTP);
 
 module.exports = router;
 

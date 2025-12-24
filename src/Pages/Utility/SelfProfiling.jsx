@@ -18,11 +18,12 @@ function SelfProfiling() {
     //     selfProfiling()
     // }
     // ,[])
-const getDisplayRole = (role) => {
-    if (role === "client_admin") return "Super Admin";
-    return role?.replace(/[_-]/g, " ")
-                .replace(/\b\w/g, (char) => char.toUpperCase());
-  };
+  const getDisplayRole = (role) => {
+      if (role === "client_admin") return "Super Admin";
+      if (role === "super_admin") return "Control Panel";
+       return role?.replace(/[_-]/g, " ")
+                   .replace(/\b\w/g, (char) => char.toUpperCase());
+   };
 
   const renderRow = (label, value) => (
     <Row className="mb-2 align-items-start justify-content-start" style={{ gap: "10px" }}>
@@ -65,7 +66,7 @@ const getDisplayRole = (role) => {
                     </div>
                     <Row className='d-flex justify-content-evenly align-items-center mt-4'> 
                         <Col lg={4} sm={12} className="mb-3 d-flex justify-content-center align-items-center">
-<img src={authuser?.avatar} alt="profile" className="avatar-xl" style={{ width: isDesktop ? 120 : isTablet ? 100 : 80, height: isDesktop ? 120 : isTablet ? 100 : 80, borderRadius: "50%" }} />
+                         <img src={authuser?.avatar} alt="profile" className="avatar-xl" style={{ width: isDesktop ? 120 : isTablet ? 100 : 80, height: isDesktop ? 120 : isTablet ? 100 : 80, borderRadius: "50%" }} />
                         </Col>
                         <Col lg={8} sm={12} className="mb-3">
                         <div>

@@ -11,9 +11,12 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app); // Create HTTP server
 
-app.use(cors()); 
-app.use(bodyParser.urlencoded({ limit: '10mb', extended: false }));
-app.use(bodyParser.json({ limit: '10mb' }));
+// ✅ Add this to get correct client IP behind proxies (like Render, Vercel, NGINX)
+app.set("trust proxy", true);
+
+app.use(cors());
+app.use(bodyParser.urlencoded({ limit: "25mb", extended: false }));
+app.use(bodyParser.json({ limit: "25mb" }));
 
 connectDB();
 
@@ -44,8 +47,18 @@ const productionOrderRouter = require("./routers/productionorder.router");
 const wasteInventoryRouter = require("./routers/wasteinventory.router");
 const notificationRouter = require("./routers/notification.router");
 const manuallbillRouter = require("./routers/bill.router");
-
+const settingsRoute = require("./routers/settings.router");
+const demoUserRoute = require("./routers/demoUser.router");
+const FAQRoutes = require("./routers/faq.router"); 
+const pdfEmbedRoutes = require("./routers/pdfEmbedRoutes.js");
+const chatRoute = require("./routers/chatRoutes.js");
+const userChatbotRoutes = require('./routers/userChatbotRoutes');
+const departmentRouter = require("./routers/department.router");
+const designationRouter = require("./routers/designation.router");
+const hrmsRouter = require("./routers/hrms.router");
 app.use("/api/auth", userRoute);
+app.use("/api/faqs", FAQRoutes);
+app.use("/api/demo", demoUserRoute);
 app.use("/api/plan", planRoute);
 app.use("/api/payment", paymentRoute);
 app.use("/api/category", categoryRoute);
@@ -65,9 +78,16 @@ app.use("/api/blog", blogRouter);
 app.use("/api/feedback", feedBackRouter);
 app.use("/api/bom", bomRouter);
 app.use("/api/productionorder", productionOrderRouter);
-app.use("/api/wasteinventory", wasteInventoryRouter); 
+app.use("/api/wasteinventory", wasteInventoryRouter);
 app.use("/api/notification", notificationRouter);
 app.use("/api/billing", manuallbillRouter);
+app.use("/api/settings", settingsRoute);
+app.use("/api/embed", pdfEmbedRoutes);
+app.use("/api/chat", chatRoute);
+app.use('/api/chatbot', userChatbotRoutes); 
+app.use("/api/department", departmentRouter);
+app.use("/api/designation", designationRouter);
+app.use("/api/hrms", hrmsRouter);
 
 app.get("/", (req, res) => {
   res.send("Welcome to aaMOBee Main Server!");

@@ -76,7 +76,7 @@ if (shouldUpdate) {
         >
           <img
             className="rounded-circle header-profile-user"
-            src={userImage}
+            src={userImage || "https://res.cloudinary.com/harshdubey1198/image/upload/v1759746422/user_mw69nd.png"}
             alt="Header Avatar"
           />
           {/* <span className="d-none d-xl-inline-block ms-2 me-2">{username}</span> */}

@@ -327,7 +327,7 @@ const handleSubmit = async (e) => {
                   <BackButton />
                   <h4 className="mb-0">Business Branding</h4>
                 </div>
-                          <div className="col-lg-6 col-md-6 col-sm-12 mb-3 text-end m-text-center">
+              <div className="col-lg-6 col-md-6 col-sm-12 mb-3 text-end m-text-center">
                 {authUser?.response?.role === "client_admin" && (
                   <FirmSwitcher
                     // firms={firmsData}
@@ -348,86 +348,86 @@ const handleSubmit = async (e) => {
                <Form onSubmit={handleSubmit}>
                      <div className=' d-flex flex-row justify-content-center'>
                       <Col lg={3} md={3} sm={12} className="mb-3 d-flex justify-content-center align-items-center">
-<div
-  className="avatar-upload-wrapper position-relative"
-  style={{ width: '150px', height: '150px' }}
->
-  {fetchedFirmDetails.avatar ? (
-    <img
-      src={
-        typeof fetchedFirmDetails.avatar === "string"
-          ? fetchedFirmDetails.avatar
-          : URL.createObjectURL(fetchedFirmDetails.avatar)
-      }
-      alt="Firm Avatar"
-      className="img-fluid"
-      style={{
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
-        borderRadius: '10px',
-        cursor: 'pointer'
-      }}
-    />
-  ) : (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        border: '2px dashed #ccc',
-        borderRadius: '10px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        color: '#888',
-        fontSize: '14px'
-      }}
-    >
-      Upload Logo
-    </div>
-  )}
+                        <div
+                          className="avatar-upload-wrapper position-relative"
+                          style={{ width: '150px', height: '150px' }}
+                        >
+                          {fetchedFirmDetails.avatar ? (
+                            <img
+                              src={
+                                typeof fetchedFirmDetails.avatar === "string"
+                                  ? fetchedFirmDetails.avatar
+                                  : URL.createObjectURL(fetchedFirmDetails.avatar)
+                              }
+                              alt="Firm Avatar"
+                              className="img-fluid"
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'contain',
+                                borderRadius: '10px',
+                                cursor: 'pointer'
+                              }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                border: '2px dashed #ccc',
+                                borderRadius: '10px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                color: '#888',
+                                fontSize: '14px'
+                              }}
+                            >
+                              Upload Logo
+                            </div>
+                          )}
 
-  {/* Pencil icon shown always, positioned over image */}
-  <button
-    type="button"
-    className="edit-avatar-btn position-absolute"
-    onClick={() => document.getElementById('avatarUploadInput').click()}
-    style={{
-      bottom: '10px',
-      right: '10px',
-      backgroundColor: '#ffffffcc',
-      border: 'none',
-      borderRadius: '50%',
-      padding: '6px',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}
-    aria-label="Edit Logo"
-  >
-    <i className="mdi mdi-pencil"></i>
-  </button>
+                          {/* Pencil icon shown always, positioned over image */}
+                          <button
+                            type="button"
+                            className="edit-avatar-btn position-absolute"
+                            onClick={() => document.getElementById('avatarUploadInput').click()}
+                            style={{
+                              bottom: '10px',
+                              right: '10px',
+                              backgroundColor: '#ffffffcc',
+                              border: 'none',
+                              borderRadius: '50%',
+                              padding: '6px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                            aria-label="Edit Logo"
+                          >
+                            <i className="mdi mdi-pencil"></i>
+                          </button>
 
-  <input
-    type="file"
-    accept="image/*"
-    id="avatarUploadInput"
-    style={{ display: 'none' }}
-    onChange={(e) => {
-      const file = e.target.files[0];
-      if (file) {
-        setFetchedFirmDetails(prev => ({
-          ...prev,
-          avatar: file
-        }));
-      }
-    }}
-  />
-</div>
-</Col>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            id="avatarUploadInput"
+                            style={{ display: 'none' }}
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                setFetchedFirmDetails(prev => ({
+                                  ...prev,
+                                  avatar: file
+                                }));
+                              }
+                            }}
+                          />
+                        </div>
+                        </Col>
 
                      </div>
                     <Row>

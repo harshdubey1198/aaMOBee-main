@@ -11,6 +11,7 @@ export const masterAdminSidebarData = () => [
     subItem: [
       { sublabel: "Manage Clients", link: "/clients-management" },
       { sublabel: "Client Portal", link: "/clients-portal" },
+      { sublabel: "Demo Users", link:"/demo-users"},
       { sublabel: "Track Payments", link: "/clients-payments" },
       { sublabel: "Client Invoices", link: "/clients/invoices" },
       { sublabel: "Client Statements", link: "/clients/statements" },
@@ -22,7 +23,7 @@ export const masterAdminSidebarData = () => [
     subItem:[
       {sublabel:"Create New Plan",link:"/create-plan"},
       {sublabel:"Manage Plans",link:"/manage-plan"},
-      // {sublabel:"All Plans",link:"/pricing"},
+      { sublabel:"Pricing", link:"/pricing"},    
     ]
   },
   {
@@ -76,6 +77,14 @@ export const masterAdminSidebarData = () => [
     subItem: [
       { sublabel: "View Feedbacks", link: "/all-feedbacks" },
       { sublabel: "Feedback Analytics", link: "/feedbacks/analytics" },
+    ],
+  },
+  {
+    label: "FAQs",
+    icon: "mdi mdi-comment-account-outline",
+    subItem: [
+      { sublabel: "FAQ List", link: "/faq-list" },
+      { sublabel: "Feedback Analytics", link: "/faq-detail/:slug",hidden:true },
     ],
   },
   {
@@ -133,11 +142,11 @@ export const masterAdminSidebarData = () => [
     ],
   },
   {
-    label: "Preferences",
+    label: "Settings",
     icon: "mdi mdi-cog-outline",
     subItem: [
       { sublabel: "General Settings", link: "/preferences/general" },
-      { sublabel: "Company Settings", link: "/firm-branding" },
+      { sublabel: "Payment Settings", link: "/payment-settings" },
       { sublabel: "Security Settings", link: "/preferences/security" },
       { sublabel: "Role Management" , link:"/crm/user-roles"},
       // { sublabel: "Notification Settings", link: "/preferences/notifications" },
@@ -292,18 +301,19 @@ export const masterAdminSidebarData = () => [
         
         // }
       ];
-      export const firmAdminSidebarData =()=>[
-        {
-          label: "Dashboard",
-          icon: "mdi mdi-home-variant-outline",
-          url: "/dashboard",
-        },
-        
-        // {
-          //   label: "google maps",
-          //   icon: "mdi mdi-home-variant-outline",
-          //   url: "/maps-google",
-          // },
+
+  export const firmAdminSidebarData =()=>[
+    {
+      label: "Dashboard",
+      icon: "mdi mdi-home-variant-outline",
+      url: "/dashboard",
+    },
+    
+    // {
+      //   label: "google maps",
+      //   icon: "mdi mdi-home-variant-outline",
+      //   url: "/maps-google",
+      // },
     {
       label:"Company",
       icon:"mdi mdi-domain",

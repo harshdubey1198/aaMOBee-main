@@ -4,6 +4,8 @@ const BlogServices = require('../services/blog.services');
 const { createResult } = require('../utils/utills');
 const { upload } = require('../utils/multer');
 const uploadToCloudinary = require('../utils/cloudinary');
+const nodemailer = require('nodemailer');
+
 
 const blogController = {};
 
@@ -137,12 +139,32 @@ blogController.updateBlogBySlug = async (req, res) => {
 };
 
 // Create Contact Message//
-blogController.createContactMessage = async (req, res) => {
+// blogController.createContactMessage = async (req, res) => {
+//     try {
+//         const contactMessage = await BlogServices.createContactMessage(req.body);
+//         return res.status(200).json(createResult('Contact message created successfully', contactMessage));
+//     } catch (error) {
+//         console.error('Error updating blog:', error.message);
+//         return res.status(400).json(createResult(null, null, error.message));
+//     }
+// };
+
+blogController.sendContactOTP = async (req, res) => {
     try {
-        const contactMessage = await BlogServices.createContactMessage(req.body);
-        return res.status(200).json(createResult('Contact message created successfully', contactMessage));
+        const result = await BlogServices.sendContactOTP(req.body);
+        return res.status(200).json(createResult(result, null));
     } catch (error) {
-        console.error('Error updating blog:', error.message);
+        console.error('Error sending OTP:', error.message);
+        return res.status(400).json(createResult(null, null, error.message));
+    }
+};
+
+blogController.verifyContactOTP = async (req, res) => {
+    try {
+        const result = await BlogServices.verifyContactOTP(req.body);
+        return res.status(200).json(createResult('Contact message created successfully', result));
+    } catch (error) {
+        console.error('Error verifying OTP:', error.message);
         return res.status(400).json(createResult(null, null, error.message));
     }
 };

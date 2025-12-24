@@ -53,4 +53,11 @@ router.get(
   inventoryController.getCountConditionFirm
 );
 
+router.get(
+  "/item-sales-data/:itemId",
+  // tokenVerification,
+  inventoryController.getItemSalesData
+);
+router.get("/all-items-sales-report",  inventoryController.getAllItemsSalesReport);
+
 module.exports = router;

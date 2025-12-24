@@ -2,6 +2,8 @@ const Notification = require("../schemas/notification.schema");
 const User = require("../schemas/user.schema");
 const Item = require("../schemas/inventoryItem.schema");
 const Invoice = require("../schemas/invoice.schema");
+const DemoUserLogs = require("../schemas/demoUserLogs.schema");
+
 const handleUserJoin = async (socket, userId) => {
   socket.join(userId);
   console.log(`User ${userId} joined notifications room.`);
@@ -25,7 +27,10 @@ const handleNewNotification = async (io, newNotification) => {
   const { userId, _id } = newNotification;
 
   try {
-    await User.updateOne({ _id: userId }, { $addToSet: { notifications: _id } });
+    await User.updateOne(
+      { _id: userId },
+      { $addToSet: { notifications: _id } }
+    );
     console.log(`New Notification ID ${_id} added to user ${userId}`);
 
     io.to(userId.toString()).emit("newNotification", newNotification);
@@ -57,7 +62,9 @@ const handleNotificationDelete = async (io, documentKey) => {
   const deletedNotificationId = documentKey._id;
 
   try {
-    const affectedUser = await User.findOne({ notifications: deletedNotificationId });
+    const affectedUser = await User.findOne({
+      notifications: deletedNotificationId,
+    });
 
     if (affectedUser) {
       await User.updateOne(
@@ -65,7 +72,9 @@ const handleNotificationDelete = async (io, documentKey) => {
         { $pull: { notifications: deletedNotificationId } }
       );
 
-      console.log(`Deleted Notification ID ${deletedNotificationId} removed from user ${affectedUser._id}`);
+      console.log(
+        `Deleted Notification ID ${deletedNotificationId} removed from user ${affectedUser._id}`
+      );
 
       io.to(affectedUser._id.toString()).emit("notificationDeleted", {
         _id: deletedNotificationId,
@@ -80,22 +89,29 @@ const handleCriticalItemNotification = async (io, itemId) => {
   console.log(`handleCriticalItemNotification called for item: ${itemId}`);
 
   try {
-    const item = await Item.findById(itemId).populate("firmId", "companyTitle adminId");
+    const item = await Item.findById(itemId).populate(
+      "firmId",
+      "companyTitle adminId"
+    );
     if (!item) {
       console.log(`No item found for ID: ${itemId}`);
       return;
     }
-    if (item.qtyType === 'service') {
+    if (item.qtyType === "service") {
       console.log(`Skipping stock alert for service item: ${item.name}`);
       return;
     }
 
     console.log(`Item found: ${item.name}, Quantity: ${item.quantity}`);
 
-    const [outOfStock, lowStock, criticalStock] = item.criticalStockAlerts || [0, 2, 5];
+    const [outOfStock, lowStock, criticalStock] = item.criticalStockAlerts || [
+      0, 2, 5,
+    ];
 
     if (item.quantity <= criticalStock) {
-      console.log(`Stock is critical for item: ${item.name} - Quantity: ${item.quantity}`);
+      console.log(
+        `Stock is critical for item: ${item.name} - Quantity: ${item.quantity}`
+      );
 
       let notificationMessage = `Warning! Item "${item.name}" stock is at ${item.quantity}.`;
       if (item.quantity === outOfStock) {
@@ -109,8 +125,11 @@ const handleCriticalItemNotification = async (io, itemId) => {
       const usersToNotify = await User.find({
         $or: [
           { _id: item.firmId.adminId, role: "client_admin" },
-          { adminId: item.firmId._id, role: { $in: ["firm_admin", "employee"] } }
-        ]
+          {
+            adminId: item.firmId._id,
+            role: { $in: ["firm_admin", "employee"] },
+          },
+        ],
       });
 
       console.log("Firm Admin ID:", item.firmId._id);
@@ -135,12 +154,21 @@ const handleCriticalItemNotification = async (io, itemId) => {
           type: "stock_alert",
         });
 
-        console.log(`Notification created for ${user.role} - ID: ${user._id}:`, newNotification);
+        console.log(
+          `Notification created for ${user.role} - ID: ${user._id}:`,
+          newNotification
+        );
 
-        io.to(user._id.toString()).emit("stockAlert", { message: userNotificationMessage });
+        io.to(user._id.toString()).emit("stockAlert", {
+          message: userNotificationMessage,
+        });
       }
 
-      console.log(`Notification sent to firm ${item.firmId.companyTitle} & admin ${item.firmId?.adminId || "undefined"}`);
+      console.log(
+        `Notification sent to firm ${item.firmId.companyTitle} & admin ${
+          item.firmId?.adminId || "undefined"
+        }`
+      );
     } else {
       console.log(`Stock level is sufficient for item: ${item.name}`);
     }
@@ -148,7 +176,6 @@ const handleCriticalItemNotification = async (io, itemId) => {
     console.error("Error handling critical item notification:", error);
   }
 };
-
 
 // const handleDuePaymentNotification = async (io) => {
 //   try {
@@ -229,7 +256,7 @@ const handleCriticalItemNotification = async (io, itemId) => {
 //           type: "due_payment",
 //           relatedId: invoice._id,
 //           date: new Date(),
-//         }); 
+//         });
 
 //         console.log(`Notification Created for ${user.role} (${user._id}):`, newNotification);
 
@@ -240,7 +267,6 @@ const handleCriticalItemNotification = async (io, itemId) => {
 
 //         console.log(` Notification sent to user ${user._id}`);
 //       }
-
 
 //       console.log(`Due payment notifications processed for Invoice #${invoice.invoiceNumber}`);
 //     }
@@ -261,16 +287,18 @@ const handleDuePaymentNotification = async (io) => {
 
     // 1. Fetch due invoices
     const dueInvoices = await Invoice.find({
-      status: { $in: ['unpaid', 'partially paid'] },
+      status: { $in: ["unpaid", "partially paid"] },
       dueDate: { $lte: todayEnd },
-      amountDue: { $gt: 0 }
+      amountDue: { $gt: 0 },
     }).populate("firmId", "companyTitle adminId");
 
     console.log(`Found ${dueInvoices.length} invoices with due payments.`);
 
     for (const invoice of dueInvoices) {
       if (!invoice?.firmId) {
-        console.log(`Skipping invoice ${invoice.invoiceNumber}: No firm associated.`);
+        console.log(
+          `Skipping invoice ${invoice.invoiceNumber}: No firm associated.`
+        );
         continue;
       }
 
@@ -279,19 +307,19 @@ const handleDuePaymentNotification = async (io) => {
       // 2. Get client admin (user whose _id is firm.adminId and role is 'client_admin')
       const clientAdmin = await User.findOne({
         _id: firm.adminId,
-        role: "client_admin"
+        role: "client_admin",
       });
 
       // 3. Get firm admins
       const firmAdmins = await User.find({
         adminId: firm._id,
-        role: "firm_admin"
+        role: "firm_admin",
       });
 
       // 4. Get accountants
       const accountants = await User.find({
         adminId: firm._id,
-        role: "accountant"
+        role: "accountant",
       });
 
       // 5. Combine all roles to notify
@@ -318,9 +346,10 @@ const handleDuePaymentNotification = async (io) => {
           createdAt: { $gte: twentyFourHoursAgo },
         });
 
-
         if (alreadyNotified) {
-          console.log(`Already notified ${user.role} (${user._id}) for Invoice #${invoice.invoiceNumber}`);
+          console.log(
+            `Already notified ${user.role} (${user._id}) for Invoice #${invoice.invoiceNumber}`
+          );
           continue;
         }
 
@@ -343,7 +372,10 @@ const handleDuePaymentNotification = async (io) => {
           date: new Date(),
         });
 
-        console.log(`Notification created for ${user.role} (${user._id}):`, newNotification);
+        console.log(
+          `Notification created for ${user.role} (${user._id}):`,
+          newNotification
+        );
 
         io.to(user._id.toString()).emit("duePaymentAlert", {
           message,
@@ -360,9 +392,58 @@ const handleDuePaymentNotification = async (io) => {
   }
 };
 
+const createDemoLog = async ({ demoUserId, actionLogs, routeLogs }) => {
+  try {
+    // console.log("=== createDemoLog called ===");
+    // console.log("Received demoUserId:", demoUserId);
+    // console.log("Raw actionLogs:", actionLogs);
+    // console.log("Raw routeLogs:", routeLogs);
 
+    // Ensure logs are arrays
+    actionLogs = Array.isArray(actionLogs)
+      ? actionLogs
+      : actionLogs
+      ? [actionLogs]
+      : [];
+    routeLogs = Array.isArray(routeLogs)
+      ? routeLogs
+      : routeLogs
+      ? [routeLogs]
+      : [];
 
+    // console.log("Normalized actionLogs:", actionLogs);
+    // console.log("Normalized routeLogs:", routeLogs);
 
+    let demoLog = await DemoUserLogs.findOne({ demoUserId });
+    // console.log("Existing demoLog found:", !!demoLog);
+
+    if (!demoLog) {
+      demoLog = await DemoUserLogs.create({
+        demoUserId,
+        actionLogs,
+        routeLogs,
+      });
+      console.log("Created new demoLog:", demoLog);
+    } else {
+      if (actionLogs.length) {
+        // console.log(`Appending ${actionLogs.length} action log(s)`);
+        demoLog.actionLogs.push(...actionLogs);
+      }
+      if (routeLogs.length) {
+        // console.log(`Appending ${routeLogs.length} route log(s)`);
+        demoLog.routeLogs.push(...routeLogs);
+      }
+      await demoLog.save();
+      // console.log("Updated existing demoLog:", demoLog);
+    }
+
+    console.log(`Demo log successfully updated for user: ${demoUserId}`);
+    return demoLog;
+  } catch (error) {
+    console.error("Error creating/updating demo log:", error);
+    throw error;
+  }
+};
 
 module.exports = {
   handleUserJoin,
@@ -371,4 +452,6 @@ module.exports = {
   handleNotificationDelete,
   handleCriticalItemNotification,
   handleDuePaymentNotification,
+  //demo user logs
+  createDemoLog,
 };

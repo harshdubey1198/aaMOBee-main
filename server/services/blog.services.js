@@ -1,8 +1,11 @@
 const Blog = require('../schemas/blog.schema');
+const OtpModel = require('../schemas/otp.schema.js')
 const ContactMessage = require('../schemas/ContactMessage.js');
 const slugify = require('slugify');
 const uploadToCloudinary = require('../utils/cloudinary');
 const { queryResponse } = require('../utils/mailer.js');
+const nodemailer = require('nodemailer');
+
 
 const BlogServices = {};
 
@@ -194,25 +197,96 @@ BlogServices.updateBlogBySlug = async (slug, body) => {
 
 
 // CREATE CONTACT MESSAGE //
-BlogServices.createContactMessage = async (body) => {
-  const { name, email, subject, message } = body;
+// BlogServices.createContactMessage = async (body) => {
+//   const { name, email, subject, message } = body;
 
-  if (!name || !email || !subject || !message) {
-    throw new Error('All fields (name, email, subject, message) are required.');
-  }
+//   if (!name || !email || !subject || !message) {
+//     throw new Error('All fields (name, email, subject, message) are required.');
+//   }
 
-  const newMessage = new ContactMessage({
-    name,
-    email,
-    subject,
-    message,
-  });
+//   const newMessage = new ContactMessage({
+//     name,
+//     email,
+//     subject,
+//     message,
+//   });
 
-  await newMessage.save();
+//   await newMessage.save();
 
-  await queryResponse(email, name, subject);
+//   await queryResponse(email, name, subject);
 
-  return newMessage;
+//   return newMessage;
+// };
+
+BlogServices.sendContactOTP = async (body) => {
+    const { email , name } = body;
+
+    if (!email || !name) {
+        throw new Error('Name and Email are required');
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Save OTP in DB
+    await OtpModel.create({
+        email,
+        otp,
+        expiresAt: Date.now() + 10 * 60 * 1000 // 10 min expiry
+    });
+
+    // Configure email transport
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.GOOGLE_MAIL,
+            pass: process.env.GOOGLE_PASS,
+        },
+        tls: {
+        rejectUnauthorized: false // Allow self-signed certs
+    }
+    });
+
+    const mailOptions = {
+        from: process.env.GOOGLE_MAIL,
+        to: email,
+        subject: 'Email Verification OTP',
+        text: `Hello ${name},\n\nYour OTP for verification is: ${otp}\nThis OTP will expire in 5 minutes.\n\nRegards,\nTeam Aamobee`
+    };
+
+    await transporter.sendMail(mailOptions);
+    return 'OTP sent successfully to your email.';
+};
+
+// Verify OTP & Save Contact Message Service
+BlogServices.verifyContactOTP = async (body) => {
+    const { name, email, subject, message, otp } = body;
+
+    if (!name || !email || !subject || !message || !otp) {
+        throw new Error('All fields (name, email, subject, message, otp) are required.');
+    }
+
+    // Check OTP validity
+    const otpRecord = await OtpModel.findOne({ email, otp });
+    if (!otpRecord || otpRecord.expiresAt < Date.now()) {
+        throw new Error('Invalid or expired OTP');
+    }
+
+    // Save contact message after OTP verification
+    const newMessage = new ContactMessage({
+        name,
+        email,
+        subject,
+        message,
+    });
+    await newMessage.save();
+
+    // Delete OTP after use
+    await OtpModel.deleteMany({ email });
+
+
+
+    return newMessage;
 };
 
 BlogServices.getContactMessagesPaginated = async (page, limit) => {

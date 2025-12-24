@@ -65,6 +65,7 @@ crmUserService.createCrmsUser = async (id, data) => {
   // Save the new CRM user
   const newCRMUser = new CRMUser(data);
   await newCRMUser.save();
+  console.log(`Temporary password for ${newCRMUser.email}: ${temporaryPassword}`);
   await sendCredentialsEmail(newCRMUser.email, temporaryPassword, 'https://aamobee.com/crm/login');
 
   return newCRMUser;
@@ -120,7 +121,7 @@ crmUserService.loginCrmsUsers = async (body) => {
 
 // GET CRMUser
 crmUserService.getAllCrmsUsers = async (id) => {
-  const data = CRMUser.find({ firmId: id }).select("-password").populate("roleId");
+  const data = CRMUser.find({ firmId: id }).select("+password").populate("roleId");
   if (data.length === 0) {
     throw new Error("Error occured during fetching the CRMUser data.");
   }
@@ -245,5 +246,17 @@ crmUserService.UpdatepasswordCrmsUsers = async (id, data) => {
   await crmuser.save();
   return crmuser;
 };
+
+crmUserService.adminResetCrmPassword = async (id, newPassword) => {
+  const crmuser = await CRMUser.findById(id);
+  if (!crmuser) {
+    throw new Error("User not found");
+  }
+  const hashedPassword = await PasswordService.passwordHash(newPassword);
+  crmuser.password = hashedPassword;
+  await crmuser.save();
+  return crmuser;
+};
+
 
 module.exports = crmUserService;

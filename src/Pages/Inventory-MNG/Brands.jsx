@@ -10,6 +10,7 @@ import { BackButton } from '../../components/Common/BackButton';
 
 const Brands = () => {
   const authuser = JSON.parse(localStorage.getItem("authUser")).response;
+  const isDemo = authuser?.isDemo;
   const [brands, setBrands] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -22,8 +23,20 @@ const Brands = () => {
   const role = JSON.parse(localStorage.getItem("authUser")).response.role;
   const [selectedFirmId, setSelectedFirmId] = useState(null);
   const idToUse = role === "client_admin" ? selectedFirmId : firmId;
-
-
+  const blockIfDemo = (actionName) => {
+    if (isDemo) {
+      toast.error(`Demo accounts cannot ${actionName}`);
+      return true;
+    }
+    return false;
+  };
+  const blockIfNoBusiness = () => {
+    if (!selectedFirmId) {
+      toast.info("Please add/select a business first to continue");
+      return true; 
+    }
+    return false; 
+  };
   const toggleModal = () => setIsModalOpen(!isModalOpen);
   const toggleDeleteModal = () => setIsDeleteModalOpen(!isDeleteModalOpen);
 
@@ -119,13 +132,13 @@ const fetchBrands = async () => {
         <Container className="mb-2">
         <div className="d-flex flex-column flex-md-row gap-2 align-items-center">
           <BackButton/>
-          <Col xs={12} md={9} className="d-flex gap-2 justify-content-start ">
+          <Col xs={12} md={9} className="d-flex gap-2 justify-content-start align-items-center ">
               <Input
                 type="text"
                 placeholder="Search by name or country"
                 value={searchQuery}
                 onChange={handleSearchChange}
-                style={{ width: "100%" , height:"26.8px", padding: "10px" }}
+                style={{ width: "100%" , height:"38.8px", padding: "10px" }}
               />
               {(role === "client_admin" && (
           
@@ -149,19 +162,11 @@ const fetchBrands = async () => {
                 }}
                 onClick={refetchBrands}
               ></i>
-              <i
-                className="bx bx-plus"
-                style={{
-                  fontSize: "24px",
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                  backgroundColor: "lightblue",
-                  padding: "5px",
-                  marginLeft: "8px",
-                  borderRadius: "5px",
-                }}
-                onClick={handleBrandAdd}
-              ></i>
+              <Button
+                color="primary"
+                style={{fontSize:"10.5px",marginLeft:"5px",lineHeight:"1", minWidth:'105px'}}
+                onClick={() => { if (blockIfNoBusiness()) return;  handleBrandAdd(); }}
+              >Add Brand</Button>
             </Col>
           </div>
         </Container>        
@@ -199,12 +204,12 @@ const fetchBrands = async () => {
                       <i
                         className='bx bx-edit'
                         style={{ fontSize: '22px', fontWeight: 'bold', cursor: 'pointer' }}
-                        onClick={() => handleBrandEdit(brand)}
+                        onClick={() => { if (blockIfDemo("edit a Brand")) return; handleBrandEdit(brand); }}
                       ></i>
                       <i
                         className='bx bx-trash'
                         style={{ fontSize: '22px', fontWeight: 'bold', cursor: 'pointer', marginLeft: '5px' }}
-                        onClick={() => handleBrandDelete(brand)}
+                        onClick={() => { if (blockIfDemo("delete a Brand")) return; handleBrandDelete(brand); }}
                       ></i>
                     </td>
                   </tr>

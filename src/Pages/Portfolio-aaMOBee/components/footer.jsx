@@ -1,8 +1,9 @@
-import React from 'react';
-import playStore from "../assets/play-store.webp";
-import appleStore from "../assets/apple-store.webp";
+// import React from 'react';
+// import playStore from "../assets/play-store.webp";
+// import appleStore from "../assets/apple-store.webp";
 import { Link } from "react-router-dom";
 // import '../assets/styles.css';
+
 function Footer() {
   return (
     <div className="footer-section" id="footer">
@@ -14,16 +15,14 @@ function Footer() {
         </Link>
       </div>
 
-      <div className="columner">
-        {/* About Section */}
-        <div className="column-footer col-xl-3 col-md-3 col-sm-12">
+      <div className="w-100 m-0 d-flex justify-content-center justify-content-md-evenly flex-wrap" style={{color:"#ffffb5"}}>
+          {/* About Section */}
+        <div className="col-12 col-md-2 d-flex flex-column align-items-center align-items-md-start text-center text-md-start">
           <h6 className="text-white">About</h6>
-          <ul>
+          <ul className="list-unstyled d-flex flex-column gap-1 mt-2">
             <li><a onClick={() => window.scrollToProducts?.()} style={{ cursor: "pointer" }}>Features</a></li>
-            <li><a href="#pricing">Pricing</a></li>
-            <li><a href="#smallbusiness">For Small Businesses</a></li>
-            <li><a href="#accountants">For Accountants & Bookkeepers</a></li>
-            <li><a href="#support">Support</a></li>
+            <li><Link style={{color:"#ffffb5"}} to="choose-plan/signup">Pricing</Link></li>
+            <li><Link style={{color:"#ffffb5"}} to="/support">Support</Link></li>
           </ul>
           <div className="email-us-container">
             <a href="mailto:info@markaziasolutions.com" className="email-text">Email us</a>
@@ -34,18 +33,18 @@ function Footer() {
         </div>
 
         {/* Apps & Extensions */}
-        <div className="column-footer col-xl-3 col-md-3 col-sm-12">
+        <div className="col-12 col-md-2 d-flex flex-column align-items-center align-items-md-start text-center text-md-start">
           <h6 className="text-white">Apps and Extensions</h6>
-          <ul>
-            <li><Link to="/apps/invoicing">Invoicing</Link></li>
-            <li><Link to="/inventory-management-software">Inventory Management</Link></li>
-            <li><Link to="/apps/crm-leads">CRM Leads</Link></li>
-            <li><Link to="/apps/client-management">Client Management</Link></li>
-            <li><Link to="/apps/retail-billing">Retail Billing</Link></li>
-            <li><Link >HRMS              </Link></li>
-            <li><Link >Payroll           </Link></li>
-            <li><Link >BookKeeping       </Link></li>
-            <li><Link >Business Analytics</Link></li>
+          <ul className="list-unstyled d-flex flex-column gap-1 mt-2">
+            <li><Link style={{color:"#ffffb5"}} to="/apps/invoicing">Invoicing</Link></li>
+            <li><Link style={{color:"#ffffb5"}} to="/inventory-management-software">Inventory Management</Link></li>
+            <li><Link style={{color:"#ffffb5"}} to="/apps/crm-leads">CRM Leads</Link></li>
+            <li><Link style={{color:"#ffffb5"}} to="/apps/client-management">Client Management</Link></li>
+            <li><Link style={{color:"#ffffb5"}} to="/apps/retail-billing">Retail Billing</Link></li>
+             {/* <li><Link to="/">HRMS              </Link></li>
+            <li><Link to="/">Payroll           </Link></li>
+            <li><Link to="/">BookKeeping       </Link></li>
+            <li><Link to="/">Business Analytics</Link></li> */}
             {/* <li><Link to="/apps/project-management">Project Management</Link></li> */}
             {/* <li><Link to="/apps/product-management">Product Management</Link></li> */}
             {/* <li><Link to="/apps/expense-tracker">Expense Tracker</Link></li> */}
@@ -56,7 +55,7 @@ function Footer() {
         </div>
 
         {/* By Industry */}
-        <div className="column-footer col-xl-3 col-md-3 col-sm-12">
+        {/* <div className="column-footer col-xl-3 col-md-3 col-sm-12">
           <h6 className="text-white">By Industry</h6>
           <ul>
             <li><a href="#retail">Retail</a></li>
@@ -69,20 +68,21 @@ function Footer() {
             <li><a href="#publishing">Book Publishing</a></li>
             <li><a href="#electrical">Electrical</a></li>
           </ul>
-        </div>
+        </div> */}
 
         {/* Guides */}
-        <div className="column-footer col-xl-3 col-md-3 col-sm-12">
+        <div className="col-12 col-md-2 d-flex flex-column align-items-center align-items-md-start text-center text-md-start">
           <h6 className="text-white">Guides</h6>
-          <ul>
-            <li><a href="#gst-guide">GST Guide</a></li>
+          <ul className="list-unstyled d-flex flex-column gap-1 mt-2">
+            {/* <li><a href="#gst-guide">GST Guide</a></li>
             <li><a href="#inventory-guide">Inventory Guide</a></li>
             <li><a href="#accounting-guide">Accounting Guide</a></li>
             <li><a href="#shortcut-keys">aaMOBee Shortcut Keys</a></li>
             <li><a href="#software-products">aaMOBee Software Products</a></li>
-            <li><a href="#download">aaMOBee Software</a></li>
-            <li><Link to="/privacy-policy">Privacy Policy</Link></li>
-            <li><Link to="/refund-policy">Refund Policy</Link></li>
+            <li><a href="#download">aaMOBee Software</a></li> */}
+            <li><Link style={{color:"#ffffb5"}} to="/privacy-policy">Privacy Policy</Link></li>
+            <li><Link style={{color:"#ffffb5"}} to="/refund-policy">Refund Policy</Link></li>
+            <li><Link style={{color:"#ffffb5"}} to="/faq">FAQs</Link></li>
           </ul>
 
         </div>
@@ -100,7 +100,7 @@ function Footer() {
           <img src={playStore} alt="Play Store" loading="lazy" />
           <img src={appleStore} alt="Apple Store" loading="lazy" />
         </div> */}
-        <span className="copyright-text">© 2024 aaMOBee: ALL RIGHTS RESERVED</span>
+        <span className="copyright-text">© 2025 aaMOBee: ALL RIGHTS RESERVED</span>
         <div className="social-icons">
           <a href="https://www.facebook.com/aamobeeofficial" target="_blank" rel="noopener noreferrer">
             <i className="fab fa-facebook-f"></i>

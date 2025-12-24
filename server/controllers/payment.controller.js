@@ -18,10 +18,18 @@ paymentController.createPayment = async (req, res) => {
 paymentController.createCheckoutSession = async (req, res) => {
   try {
     const response = await PaymentService.createCheckoutSession(req.body);
-    return res.status(200).json(createResult("Session created Succefully", response));
+    return res.status(200).json(createResult("Session created successfully", response, null));
   } catch (error) {
-    console.log("error creating session", error);
-    return res.status(500).json(createResult(null, null, error.message));
+    console.log("❌ Controller caught error:", error.message);
+
+    // map error messages to proper HTTP codes
+    let statusCode = 500;
+    if (error.message.includes("User not found")) statusCode = 404;
+    if (error.message.includes("Invalid Plan ID")) statusCode = 400;
+    if (error.message.includes("Currency not supported")) statusCode = 400;
+    if (error.message.includes("No matching offer")) statusCode = 400;
+
+    return res.status(statusCode).json(createResult(null, null, error.message));
   }
 };
 
@@ -140,5 +148,61 @@ paymentController.createFreePlanPayment = async (req, res) => {
     return res.status(500).json(createResult(null, null, error.message));
   }
 };
+
+
+// Create Razorpay Order (calls PaymentService.createRazorpayOrder)
+paymentController.createRazorpayOrder = async (req, res) => {
+  try {
+    const response = await PaymentService.createRazorpayOrder(req.body);
+    return res.status(200).json({ message: "Razorpay order created", response });
+  } catch (error) {
+    console.error("Error creating Razorpay order:", error);
+    return res.status(500).json({ message: error.message || "Could not create order" });
+  }
+};
+
+// Verify Razorpay Payment (called from frontend after successful checkout)
+paymentController.verifyRazorpayPayment = async (req, res) => {
+  try {
+    const response = await PaymentService.verifyRazorpayPayment(req.body);
+    return res.status(200).json({ message: "Razorpay payment verified", response });
+  } catch (error) {
+    console.error("Error verifying razorpay payment:", error);
+    return res.status(400).json({ message: error.message || "Payment verification failed" });
+  }
+};
+
+// Log client-side failures (optional) — e.g. user closed popup / failed card
+paymentController.recordRazorpayFailure = async (req, res) => {
+  try {
+    const response = await PaymentService.recordRazorpayFailure(req.body);
+    return res.status(200).json({ message: "Failure recorded", response });
+  } catch (error) {
+    console.error("Error recording failure:", error);
+    return res.status(500).json({ message: error.message || "Could not record failure" });
+  }
+};
+
+// Razorpay Webhook endpoint (raw body will be passed in req)
+paymentController.handleRazorpayWebhook = async (req, res) => {
+  try {
+    await PaymentService.handleRazorpayWebhook(req);
+    return res.status(200).json({ message: "Webhook processed" });
+  } catch (error) {
+    console.error("Webhook handling error:", error);
+    return res.status(500).json({ message: error.message || "Webhook handling failed" });
+  }
+};
+
+paymentController.sendExpiryReminders = async (req, res) => {
+  try {
+    const response = await PaymentService.sendExpiryReminders();
+    return res.status(200).json(createResult("Expiry reminders sent", response));
+  } catch (error) {
+    console.error("Error sending expiry reminders:", error);
+    return res.status(500).json(createResult(null, null, error.message));
+  }
+};
+
 
 module.exports = paymentController;

@@ -30,34 +30,42 @@ const handleCustomer = async (customer, firmId, createdBy, session) => {
   }).session(session);
 
   if (existingCustomer) {
+    // Update existing customer if needed
+    existingCustomer.firstName = customer.firstName;
+    existingCustomer.lastName = customer.lastName;
+    existingCustomer.mobile = customer.mobile;
+    existingCustomer.address = customer.address;
+    const updatedCustomer = await existingCustomer.save({ session });
+    
     return {
-      customerName: `${existingCustomer.firstName} ${existingCustomer.lastName}`,
-      customerEmail: existingCustomer.email,
-      customerPhone: existingCustomer.mobile,
-      customerAddress: existingCustomer.address,
-      firmId: existingCustomer.firmId,
-    };
-  } else {
-    const newCustomer = new Customer({
-      firstName: customer.firstName,
-      lastName: customer.lastName,
-      email: customer.email,
-      mobile: customer.mobile,
-      address: customer.address,
-      firmId,
-      createdBy,
-    });
-
-    const savedCustomer = await newCustomer.save({ session });
-
-    return {
-      customerName: `${savedCustomer.firstName} ${savedCustomer.lastName}`,
-      customerEmail: savedCustomer.email,
-      customerPhone: savedCustomer.mobile,
-      customerAddress: savedCustomer.address,
-      firmId: savedCustomer.firmId,
+      customerName: `${updatedCustomer.firstName} ${updatedCustomer.lastName}`,
+      customerEmail: updatedCustomer.email,
+      customerPhone: updatedCustomer.mobile,
+      customerAddress: updatedCustomer.address,
+      firmId: updatedCustomer.firmId,
     };
   }
+
+  // Create new customer if doesn't exist
+  const newCustomer = new Customer({
+    firstName: customer.firstName,
+    lastName: customer.lastName,
+    email: customer.email,
+    mobile: customer.mobile,
+    address: customer.address,
+    firmId,
+    createdBy,
+  });
+
+  const savedCustomer = await newCustomer.save({ session });
+
+  return {
+    customerName: `${savedCustomer.firstName} ${savedCustomer.lastName}`,
+    customerEmail: savedCustomer.email,
+    customerPhone: savedCustomer.mobile,
+    customerAddress: savedCustomer.address,
+    firmId: savedCustomer.firmId,
+  };
 };
 
 // const calculateInvoiceAmount = async (items, session) => {
@@ -100,6 +108,10 @@ const calculateInvoiceAmount = async (items, session) => {
   let totalAmount = 0;
 
   for (let item of items) {
+    if (!item.itemId) {
+      throw new Error('Item ID is required for all items');
+    }
+
     const inventoryItem = await InventoryItem.findById(item.itemId).session(session);
     if (!inventoryItem) {
       throw new Error(`Item with ID ${item.itemId} not found in inventory`);
@@ -113,6 +125,10 @@ const calculateInvoiceAmount = async (items, session) => {
     }
 
     const quantity = Number(item.quantity || 1);
+    if (quantity <= 0) {
+      throw new Error(`Quantity must be greater than 0 for item ${inventoryItem.name || item.itemId}`);
+    }
+
     const baseTotal = unitPrice * quantity;
 
     const totalTaxForItem = await calculateTotalTax(inventoryItem, baseTotal, session);
@@ -130,25 +146,33 @@ const calculateInvoiceAmount = async (items, session) => {
 
 
 const calculateTotalTax = async (inventoryItem, itemTotal, session) => {
+  if (!inventoryItem.tax || !inventoryItem.tax.taxId) {
+    return 0; // No tax applied
+  }
+
   const tax = await Tax.findById(inventoryItem.tax.taxId).session(session);
   if (!tax) {
-    throw new Error(`Tax with ID ${inventoryItem.tax.taxId} not found`);
+    console.warn(`Tax with ID ${inventoryItem.tax.taxId} not found, skipping tax calculation`);
+    return 0;
   }
 
   let totalTaxForItem = 0;
-  inventoryItem.tax.selectedTaxTypes.forEach((selectedComponent) => {
-    const taxComponent = tax.taxRates.find((tc) =>
-      tc._id.equals(selectedComponent)
-    );
-
-    if (!taxComponent) {
-      throw new Error(
-        `Selected tax component ${selectedComponent} not found in tax object`
+  
+  if (inventoryItem.tax.selectedTaxTypes && inventoryItem.tax.selectedTaxTypes.length > 0) {
+    inventoryItem.tax.selectedTaxTypes.forEach((selectedComponent) => {
+      const taxComponent = tax.taxRates.find((tc) =>
+        tc._id.equals(selectedComponent)
       );
-    }
-    const taxAmount = (itemTotal * taxComponent.rate) / 100;
-    totalTaxForItem += taxAmount;
-  });
+
+      if (!taxComponent) {
+        console.warn(`Selected tax component ${selectedComponent} not found in tax object, skipping`);
+        return;
+      }
+      const taxAmount = (itemTotal * taxComponent.rate) / 100;
+      totalTaxForItem += taxAmount;
+    });
+  }
+  
   return totalTaxForItem;
 };
 

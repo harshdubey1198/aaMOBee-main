@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef,useState } from "react";
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 import SimpleBar from "simplebar-react";
@@ -6,6 +6,7 @@ import MetisMenu from "metismenujs";
 import withRouter from "../../components/Common/withRouter";
 import { withTranslation } from "react-i18next";
 import { userRolesSidebarData } from "./SidebarData";
+import DemoTimer from "./DemoTimer";
 
 const Sidebar = (props) => {
   const ref = useRef();
@@ -13,6 +14,10 @@ const Sidebar = (props) => {
 
   const role = JSON.parse(localStorage.getItem('authUser'))?.response?.role;
   const sidebarItems = userRolesSidebarData(role);
+
+  const [expiryDate, setExpiryDate] = useState(
+  JSON.parse(localStorage.getItem("authUser"))?.response?.expiresAt
+);
 
   const activateParentDropdown = useCallback((item) => {
     item.classList.add("active");
@@ -87,14 +92,22 @@ const Sidebar = (props) => {
   }
 
   return (
-    <React.Fragment>
-      <div className="vertical-menu">
-        <SimpleBar className="h-100" ref={ref}>
-          <div id="sidebar-menu">
-            <ul className="metismenu list-unstyled" ref={metisMenuRef}>
-              {sidebarItems.map((item, key) => {
-                 if (item.hidden) return null; 
-                  return (
+  <React.Fragment>
+    <div className="vertical-menu">
+      
+      {/* Demo Timer – Add here, so it’s visible on all sidebar pages */}
+      {role && JSON.parse(localStorage.getItem("authUser"))?.response?.isDemo && (
+        <DemoTimer 
+          expiryDate={JSON.parse(localStorage.getItem("authUser")).response.expiresAt} 
+        />
+      )}
+
+      <SimpleBar className="h-100" ref={ref}>
+        <div id="sidebar-menu">
+          <ul className="metismenu list-unstyled" ref={metisMenuRef}>
+            {sidebarItems.map((item, key) => {
+              if (item.hidden) return null; 
+              return (
                 <React.Fragment key={key}>
                   {item.isMainMenu ? (
                     <li className="menu-title">{props.t(item.label)}</li>
@@ -121,41 +134,45 @@ const Sidebar = (props) => {
                       </Link>
                       {item.subItem && (
                         <ul className="sub-menu">
-                          {item.subItem.filter((subItem) => !subItem.hidden).map((subItem, key) => (
-                            <li key={key}>
-                              <Link
-                                to={subItem.link}
-                                className={
-                                  subItem.subMenu ? "has-arrow waves-effect" : ""
-                                }
-                              >
-                                {props.t(subItem.sublabel)}
-                              </Link>
-                              {subItem.subMenu && (
-                                <ul className="sub-menu">
-                                  {subItem.subMenu.map((subSubItem, key) => (
-                                    <li key={key}>
-                                      <Link to={subSubItem.link || "#"}>
-                                        {props.t(subSubItem.title)}
-                                      </Link>
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                            </li>
-                          ))}
+                          {item.subItem
+                            .filter((subItem) => !subItem.hidden)
+                            .map((subItem, key) => (
+                              <li key={key}>
+                                <Link
+                                  to={subItem.link}
+                                  className={
+                                    subItem.subMenu ? "has-arrow waves-effect" : ""
+                                  }
+                                >
+                                  {props.t(subItem.sublabel)}
+                                </Link>
+                                {subItem.subMenu && (
+                                  <ul className="sub-menu">
+                                    {subItem.subMenu.map((subSubItem, key) => (
+                                      <li key={key}>
+                                        <Link to={subSubItem.link || "#"}>
+                                          {props.t(subSubItem.title)}
+                                        </Link>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </li>
+                            ))}
                         </ul>
                       )}
                     </li>
                   )}
                 </React.Fragment>
-              )})}
-            </ul>
-          </div>
-        </SimpleBar>
-      </div>
-    </React.Fragment>
-  );
+              );
+            })}
+          </ul>
+        </div>
+      </SimpleBar>
+    </div>
+  </React.Fragment>
+);
+
 };
 
 Sidebar.propTypes = {
