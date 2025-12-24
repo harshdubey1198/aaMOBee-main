@@ -44,7 +44,7 @@ const AuthProtected = (props) => {
         console.log("Demo User Expired - Logged Out Automatically");
         window.location.href = "/login";
       }
-    }, 60 * 60 * 1000); // every 1 hour
+    }, 60 * 60 * 1000); // every 1 sec
 
     return () => clearInterval(checkInterval);
   } else {
