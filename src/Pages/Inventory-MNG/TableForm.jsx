@@ -81,6 +81,25 @@ const InventoryItemForm = ({isModal}) => {
   const [triggerBrand, setTriggerBrand] = useState(0)
   const [triggerSuggestions, setTriggerSuggestions] = useState(0)
   const [triggerVendor, setTriggerVendor] = useState(0)
+  const [firmDetails, setFirmDetails] = useState(null);
+  const authUserData = JSON.parse(localStorage.getItem("authUser"));
+  const authUser = authUserData?.response;
+  const blockIfDemo = (actionName) => {
+    if (authUser?.isDemo) {
+      setLoading(false);
+      toast.error(`Demo accounts cannot create a new ${actionName}`);
+      return true; 
+    }
+    return false; 
+  };
+  const blockIfNoBusiness = () => {
+    if (!selectedFirmId) {
+      toast.info("Please add/select a business first to continue");
+      return true; 
+    }
+    return false; 
+  };
+
   const handleBrandsFetched = (fetchedBrands) => {
     setBrands(fetchedBrands);
   };
@@ -173,27 +192,31 @@ const fetchItemSuggestions = async (firmId) => {
   //     setSelectedFirmId(firmId);
   //   }
   // }, [firmId, role, selectedFirmId]);
-  useEffect(() => {
-    const fetchFirmDetails = async () => {
-      if (!idToUse) return;
-      try {
-        const response = await axiosInstance.get(`${process.env.REACT_APP_URL}/auth/getFirm/${idToUse}`);
-        const currency = response[0]?.currency || null;
-        setFirmCurrency(currency);
-        console.log("Firm Currency:", currency);
+useEffect(() => {
+  const fetchFirmDetails = async () => {
+    // if (!idToUse || role === "client_admin") return; // skip API if client_admin
+    try {
+      const response = await axiosInstance.get(
+        `${process.env.REACT_APP_URL}/auth/getFirm/${idToUse}`
+      );
+      const firm = response[0];
+      setFirmDetails(firm);
 
-        setFormValues(prev => ({
-          ...prev,
-          itemCurrency: prev.itemCurrency || currency
-        }));
-      } catch (error) {
-        console.error("Failed to fetch firm details:", error.message);
-        toast.error("Failed to load firm details");
-      }
-    };
+      const currency = firm?.currency || null;
+      setFirmCurrency(currency);
 
-    fetchFirmDetails();
-  }, [idToUse]);
+      setFormValues((prev) => ({
+        ...prev,
+        itemCurrency: prev.itemCurrency || currency,
+      }));
+    } catch (error) {
+      console.error("Failed to fetch firm details:", error.message);
+      // toast.error("Failed to load firm details");
+    }
+  };
+
+  fetchFirmDetails();
+}, [idToUse]);
 
   const fetchVendors = async () => {
     try {
@@ -264,9 +287,7 @@ const fetchItemSuggestions = async (firmId) => {
       variant.variationType &&
       variant.optionLabel &&
       variant.price &&
-      variant.stock &&
-      variant.sku &&
-      variant.barcode
+      variant.stock
     ) {
       if (editIndex !== null) {
         const updatedVariants = [...variants];
@@ -345,18 +366,24 @@ const fetchItemSuggestions = async (firmId) => {
     }
   };
   const defaultFirm = JSON.parse(localStorage.getItem("defaultFirm"));
-  const selfManufacturer = {
-    _id: defaultFirm?.firmId,
-    name: `Self (${defaultFirm?.companyTitle || "Our Firm"})`
-  };
-  const selfVendor = {
-    _id: defaultFirm?.firmId,
-    name: `Self (${defaultFirm?.companyTitle || "Our Firm"})`
-  };
-  const selfBrand = {
-    _id: defaultFirm?.firmId,
-    name: `Self (${defaultFirm?.companyTitle || "Our Firm"})`
-  };
+
+    const baseFirm = role === "client_admin" ? defaultFirm : firmDetails;
+
+    const selfManufacturer = {
+      _id: baseFirm?._id || baseFirm?.firmId, // adjust depending on API/localStorage shape
+      name: `Self (${baseFirm?.companyTitle || "Our Firm"})`,
+    };
+
+    const selfVendor = {
+      _id: baseFirm?._id || baseFirm?.firmId,
+      name: `Self (${baseFirm?.companyTitle || "Our Firm"})`,
+    };
+
+    const selfBrand = {
+      _id: baseFirm?._id || baseFirm?.firmId,
+      name: `Self (${baseFirm?.companyTitle || "Our Firm"})`,
+    };
+
 
   useEffect(() => {
     const updates = {};
@@ -401,6 +428,7 @@ const fetchItemSuggestions = async (firmId) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    if (blockIfDemo("Item")) return;
     if (isOtherSelected && customService.trim()) {
       setFormValues(prev => ({
         ...prev,
@@ -419,8 +447,14 @@ const fetchItemSuggestions = async (firmId) => {
         name: isOtherSelected ? customService.trim() : formValues.name,
         vendor: formValues.vendorId, 
         firmId: idToUse,
-        variants
-      };
+        variants,
+        quantity:
+            formValues.qtyType === "service"
+              ? (formValues.quantity && Number(formValues.quantity) >= 1
+                  ? Number(formValues.quantity)
+                  : 100000) // default if empty/invalid
+              : formValues.quantity
+        };
 
       // const response = await axiosInstance.post(`${process.env.REACT_APP_URL}/inventory/create-item/${createdBy}`, payload);
       const response = await createItem(payload, createdBy);
@@ -566,7 +600,10 @@ const fetchItemSuggestions = async (firmId) => {
                                 marginLeft: '5px',
                                 borderRadius: '5px',
                               }}
-                              onClick={() => setCategoryModalOpen(true)}
+                              onClick={() => {
+                                 if (blockIfNoBusiness()) return;
+                                setCategoryModalOpen(true);
+                              }}
                             ></i>
                           </div>
 
@@ -666,63 +703,73 @@ const fetchItemSuggestions = async (firmId) => {
 
                     </Row>
                     <Row>
-                      <Col md={6}>
-                        <FormGroup>
-                          <Label htmlFor="name">Item Name</Label>
-                          <Select
-                            id="name"
-                            name="name"
-                            value={
-                              isOtherSelected
-                                ? { label: "Other", value: "other" }
-                                : suggestedItems.find(option => option.label === formValues.name) || null
-                            }
-                            options={[...suggestedItems, { label: "Other", value: "other" }]}
-                            placeholder="Enter Item Name"
-                            isClearable
-                            isSearchable
-                            onChange={(selectedOption) => {
-                              if (selectedOption?.value === "other") {
-                                setIsOtherSelected(true);
-                                setFormValues(prev => ({ ...prev, name: "" }));
-                              } else {
-                                setIsOtherSelected(false);
-                                setFormValues(prev => ({
-                                  ...prev,
-                                  name: selectedOption ? selectedOption.label : ""
-                                }));
-                              }
-                            }}
-                          />
+<Col md={6}>
+  <FormGroup>
+    <Label htmlFor="name">Item Name</Label>
+<Select
+  id="name"
+  name="name"
+  value={
+    suggestedItems.find(option => option.label === formValues.name) || null
+  }
+  options={[
+    ...suggestedItems,
+    { label: "+ Add Other Service", value: "other" } // always show this
+  ]}
+  placeholder="Select or search item"
+  isClearable
+  isSearchable
+  noOptionsMessage={() => null} // remove "No options"
+  filterOption={(option, inputValue) => {
+    // Always keep "Add Other Service"
+    if (option.value === "other") return true;
+    // Default filter for the rest
+    return option.label.toLowerCase().includes(inputValue.toLowerCase());
+  }}
+  onChange={(selectedOption) => {
+    if (selectedOption?.value === "other") {
+      setIsOtherSelected(true);
+      setFormValues(prev => ({ ...prev, name: "" }));
+    } else {
+      setIsOtherSelected(false);
+      setFormValues(prev => ({
+        ...prev,
+        name: selectedOption ? selectedOption.label : ""
+      }));
+    }
+  }}
+/>
 
-                          {isOtherSelected && (
-                            <div className="d-flex align-items-center mt-2">
-                              <Input
-                                type="text"
-                                placeholder="Enter custom service name"
-                                value={customService}
-                                onChange={(e) => setCustomService(e.target.value)}
-                                className="form-control"
-                                style={{ flex: 1 }}
-                              />
-                              <i
-                                className="bx bx-plus"
-                                style={{
-                                  fontSize: "24px",
-                                  fontWeight: "bold",
-                                  cursor: "pointer",
-                                  backgroundColor: "lightblue",
-                                  padding: "5px",
-                                  marginLeft: "8px",
-                                  borderRadius: "5px"
-                                }}
-                                title="Create new service"
-                                onClick={handleCreateCustomService}
-                              ></i>
-                            </div>
-                          )}
-                        </FormGroup>
-                      </Col>
+    {isOtherSelected && (
+      <div className="d-flex align-items-center mt-2">
+        <Input
+          type="text"
+          placeholder="Enter custom service name"
+          value={customService}
+          onChange={(e) => setCustomService(e.target.value)}
+          className="form-control"
+          style={{ flex: 1 }}
+        />
+        <i
+          className="bx bx-plus"
+          style={{
+            fontSize: "24px",
+            fontWeight: "bold",
+            cursor: "pointer",
+            backgroundColor: "lightblue",
+            padding: "5px",
+            marginLeft: "8px",
+            borderRadius: "5px"
+          }}
+          title="Create new service"
+          onClick={handleCreateCustomService}
+        ></i>
+      </div>
+    )}
+  </FormGroup>
+</Col>
+
+
                       <Col md={6}>
                         <FormGroup>
                           <Label htmlFor="description">Item Description</Label>
@@ -782,7 +829,10 @@ const fetchItemSuggestions = async (firmId) => {
                                 marginLeft: '5px',
                                 borderRadius: '5px',
                               }}
-                              onClick={toggleBrandModal}
+                               onClick={() => {
+                                 if (blockIfNoBusiness()) return;
+                                toggleBrandModal();
+                              }}
                             ></i>
                           </div>
 
@@ -861,7 +911,10 @@ const fetchItemSuggestions = async (firmId) => {
                                 marginLeft: '5px',
                                 borderRadius: '5px',
                               }}
-                              onClick={toggleManufacturerModal}
+                              onClick={() => {
+                                   if (blockIfNoBusiness()) return;
+                                  toggleManufacturerModal();
+                                }}
                             ></i>
                           </div>
 
@@ -939,7 +992,10 @@ const fetchItemSuggestions = async (firmId) => {
                                 marginLeft: '5px',
                                 borderRadius: '5px',
                               }}
-                              onClick={toggleVendorModal}
+                               onClick={() => {
+                                 if (blockIfNoBusiness()) return;
+                                toggleVendorModal();
+                                  }}
                             ></i>
                           </div>
 
@@ -1029,30 +1085,55 @@ const fetchItemSuggestions = async (firmId) => {
                       </Col>
 
                     </Row>
-                    <Row>
-                      <Col md={6}>
+                  <Row>
+                    <Col md={6}>
+                      <FormGroup>
+                        <Label htmlFor="qtyType">Quantity Type</Label>
+                        <select
+                          id="qtyType"
+                          name="qtyType"
+                          value={formValues.qtyType}
+                          onChange={handleChange}
+                          className="form-control"
+                        >
+                          <option value="">Select Quantity Type</option>
+                          <option value="kg">Kilograms</option>
+                          <option value="grams">Grams</option>
+                          <option value="pcs">Pieces</option>
+                          <option value="litre">Litre</option>
+                          <option value="meters">Meters</option>
+                          <option value="centimeters">Centimeters</option>
+                          <option value="feet">Feet</option>
+                          <option value="service">Service</option>
+                        </select>
+                      </FormGroup>
+                      </Col>
+                      {variants.length === 0 && (
+                        <Col md={6}>
                         <FormGroup>
                           <Label htmlFor="quantity">Quantity</Label>
-                          <Input type="number" id="quantity" name="quantity" placeholder="Enter quantity" value={formValues.quantity} onChange={handleChange} />
+                          <Input
+                            type="number"
+                            id="quantity"
+                            name="quantity"
+                            placeholder={
+                              formValues.qtyType === "service"
+                                ? "Default 100000 (you can change)"
+                                : "Enter quantity"
+                            }
+                            min={1}
+                            value={
+                              formValues.qtyType === "service"
+                                ? formValues.quantity || 100000 // default 100000 but allow changes
+                                : formValues.quantity
+                            }
+                            onChange={handleChange}
+                            required={formValues.qtyType !== "service"}
+                          />
                         </FormGroup>
-                      </Col>
-                      <Col md={6}>
-                        <FormGroup>
-                          <Label htmlFor="qtyType">Quantity Type</Label>
-                          <select id="qtyType" name="qtyType" value={formValues.qtyType} onChange={handleChange} className="form-control">
-                            <option value="">Select Quantity Type</option>
-                            <option value="kg">Kilograms</option>
-                            <option value="grams">Grams</option>
-                            <option value="pcs">Pieces</option>
-                            <option value="litre">Litre</option>
-                            <option value="meters">Meters</option>
-                            <option value="centimeters">Centimeters</option>
-                            <option value="feet">Feet</option>
-                            <option value="service">Service</option>
-                          </select>
-                        </FormGroup>
-                      </Col>
+                      </Col>)}
                     </Row>
+
                     <Row>
                      <Col md={6}>
                         <FormGroup>
@@ -1088,7 +1169,10 @@ const fetchItemSuggestions = async (firmId) => {
                                 marginLeft: '5px',
                                 borderRadius: '5px',
                               }}
-                              onClick={toggleTaxModal}
+                               onClick={() => {
+                                     if (blockIfNoBusiness()) return;
+                                    toggleTaxModal();
+                                  }}
                             ></i>
                           </div>
                         </FormGroup>
@@ -1157,11 +1241,12 @@ const fetchItemSuggestions = async (firmId) => {
                       )}
                     </Row>
 
-                    <VariantModal isOpen={variantModalOpen} toggleModal={() => setVariantModalOpen(!variantModalOpen)} variant={variant} handleVariantChange={handleVariantChange} addVariant={addOrUpdateVariant} />
+                    <VariantModal isOpen={variantModalOpen} qtyType={formValues.qtyType} toggleModal={() => setVariantModalOpen(!variantModalOpen)} variant={variant} handleVariantChange={handleVariantChange} addVariant={addOrUpdateVariant} />
                     <Row className={isModal ? "" : "mt-3"}>
                       <Col md={12}>
                         <Button className="mx-2" color="primary" onClick={() => {
                           setVariantModalOpen(true);
+                          toast.warning("If you add variant then your stock will be your quantity !");     
                         }}>Add Variant</Button>
                         {/* <Button className="mx-2" color="primary" onClick={toggleBatchModal}>Add Batch</Button> */}
                         <Button className="mx-2" type="submit" color="success" disabled={loading}>{loading ? "Saving..." : "Submit"}</Button>
@@ -1178,8 +1263,8 @@ const fetchItemSuggestions = async (firmId) => {
                           <tr>
                             <th>Type</th>
                             <th>Option</th>
-                            <th>Price</th>
-                            <th>Stock</th>
+                            <th>Price Variation</th>
+                            <th>Stock/Quantity</th>
                             <th>SKU</th>
                             <th>Barcode</th>
                             <th>Actions</th>

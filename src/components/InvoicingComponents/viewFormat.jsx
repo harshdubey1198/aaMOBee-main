@@ -67,7 +67,7 @@ const getCurrencyDetails = (currencyCode) => {
 const ViewFormat = forwardRef(
   ({ invoiceData }, ref) => {
     const selectInvoice = invoiceData?.firmId || {};
-console.log("selectInvoice", invoiceData?.firmId?.currency); // SAFER
+console.log("selectInvoice", invoiceData?.notes); // SAFER
 const currency = getCurrencyDetails(selectInvoice?.currency || "INR"); // SAFER
 console.log("currency", currency);
 
@@ -329,25 +329,25 @@ console.log("currency", currency);
             <h5>Bank Details</h5>
             <p className="my-1">
               <strong>Bank Name:</strong>{" "}
-              {invoiceData?.bankName ||
+              {invoiceData?.firmId?.bankDetails[0].bankName ||
                 selectInvoice.bankName ||
                 "Your Bank Name"}
             </p>
             <p className="my-1">
               <strong>Account Number:</strong>{" "}
-              {invoiceData?.accountNumber ||
+              {invoiceData?.firmId?.bankDetails[0]?.accountNumber ||
                 selectInvoice.accountNumber ||
                 "Your Account Number"}
             </p>
             <p className="my-1">
               <strong>IFSC Code:</strong>{" "}
-              {invoiceData?.ifscCode ||
+              {invoiceData?.firmId?.bankDetails[0]?.ifscCode ||
                 selectInvoice.ifscCode ||
                 "Your IFSC Code"}
             </p>
             <p className="my-1">
               <strong>Branch:</strong>{" "}
-              {invoiceData?.branchName ||
+              {invoiceData?.firmId?.bankDetails[0]?.branchName ||
                 selectInvoice.branchName ||
                 "Your Branch"}
             </p>
@@ -381,6 +381,7 @@ console.log("currency", currency);
                     <h5>Total in Words: {convertNumberToWords(amountDue)}</h5> */}
           </div>
         </div>
+          <p className="text-center">Note : {invoiceData?.notes}</p>
 
         {/* <div className="row mt-5 text-center">
                 <div className="col-md-12">

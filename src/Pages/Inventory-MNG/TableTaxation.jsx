@@ -19,13 +19,28 @@ function TaxationTable() {
     const [selectedFirmId, setSelectedFirmId] = useState(null);
     const idToUse = role === "client_admin" ? selectedFirmId : firmId;
   const [trigger, setTrigger] = useState(0);
+    const blockIfNoBusiness = () => {
+      if (!selectedFirmId) {
+        toast.info("Please add/select a business first to continue");
+        return true; 
+      }
+      return false; 
+    };
   const toggleModal = () => setModalOpen(!modalOpen);
   const config = {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   };
-  
+  const authUser = authuser?.response;
+
+  const blockIfDemo = (actionName) => {
+    if (authUser?.isDemo) {
+      toast.error(`Demo accounts cannot ${actionName}`);
+      return true;
+    }
+    return false;
+  };
   const fetchTaxes = async () => {
     try {
       const response = await axios.get(
@@ -92,7 +107,7 @@ function TaxationTable() {
 
         
               <i className='bx bx-refresh cursor-pointer'  style={{fontSize: "24.5px",fontWeight: "bold",color: "black",transition: "color 0.3s ease"}} onClick={refetchTaxes} onMouseEnter={(e) => e.target.style.color = "green"}  onMouseLeave={(e) => e.target.style.color = "black"}></i>
-              <Button color="primary" className="p-2" style={{maxHeight:"27.13px",fontSize:"10.5px" , lineHeight:"1"}} onClick={() => { setSelectedTax(null); toggleModal(); }}>
+              <Button color="primary" className="p-2" style={{maxHeight:"27.13px",fontSize:"10.5px" , lineHeight:"1"}} onClick={() => {  if (blockIfNoBusiness()) return; setSelectedTax(null); toggleModal(); }}>
                   Add New Tax
                 </Button>
               {(role === "client_admin" && (
@@ -128,12 +143,12 @@ function TaxationTable() {
                       <td>
                         <i
                           className="bx bx-edit mx-1"
-                          onClick={() => handleEditClick(tax)}
+                          onClick={() => { if (blockIfDemo("edit a Tax")) return; handleEditClick(tax); }}
                           style={{ fontSize: "22px", fontWeight: "bold", cursor: "pointer" }}
                         ></i>
                         <i
                           className="bx bx-trash mx-1"
-                          onClick={() => handleDeleteClick(tax._id)}
+                          onClick={() => { if (blockIfDemo("delete a Tax")) return; handleDeleteClick(tax._id); }}
                           style={{ fontSize: "22px", fontWeight: "bold", cursor: "pointer" }}
                         ></i>
                       </td>

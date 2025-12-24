@@ -1,21 +1,27 @@
-import React, { useEffect, useState } from 'react';
-import Breadcrumbs from '../../components/Common/Breadcrumb';
-import { Col, Card, CardBody } from 'reactstrap';
-import axios from 'axios';
-import { toast } from 'react-toastify';
-import {format, differenceInDays} from "date-fns"
+import React, { useEffect, useState } from "react";
+import Breadcrumbs from "../../components/Common/Breadcrumb";
+import { Col, Card, CardBody } from "reactstrap";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { format, differenceInDays, isValid } from "date-fns";
+
 const ClientsPayments = () => {
-  const [payments, setPayments] = useState([]); 
-  const [hoveredFirmId, setHoveredFirmId] = useState(null); 
+  const [payments, setPayments] = useState([]);
+  const [hoveredFirmId, setHoveredFirmId] = useState(null);
+
   const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
-    return format(date, "dd MMM yy");
+    return isValid(date) ? format(date, "dd MMM yy") : "Invalid Date";
   };
+
   const calculateDaysLeft = (expirationDateString) => {
+    if (!expirationDateString) return "N/A";
     const today = new Date();
     const expirationDate = new Date(expirationDateString);
-    return differenceInDays(expirationDate, today);
+    return isValid(expirationDate) ? differenceInDays(expirationDate, today) : "N/A";
   };
+
   // Get the token from localStorage
   const authuser = JSON.parse(localStorage.getItem("authUser"));
   const token = authuser?.token;
@@ -23,22 +29,22 @@ const ClientsPayments = () => {
   useEffect(() => {
     const fetchPayments = async () => {
       try {
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        };
-
+        const config = { headers: { Authorization: `Bearer ${token}` } };
         const response = await axios.get(`${process.env.REACT_APP_URL}/payment/get-payment`, config);
-        console.log(response.data.data , "response")
-        setPayments(response.data.data); 
+
+        if (Array.isArray(response.data.data)) {
+          setPayments(response.data.data);
+        } else {
+          setPayments([]);
+          toast.error("No payment data found");
+        }
       } catch (error) {
         console.log(error);
-        toast.error('Error fetching payments');
+        toast.error("Error fetching payments");
       }
     };
 
-    fetchPayments();
+    if (token) fetchPayments();
   }, [token]);
 
   return (
@@ -66,27 +72,40 @@ const ClientsPayments = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {payments.map((payment) => (
-                      <tr
-                        key={payment._id}
-                        onMouseEnter={() => setHoveredFirmId(payment._id)}
-                        onMouseLeave={() => setHoveredFirmId(null)}
-                      >
-                        <td>{payment.userId.firstName}</td>
-                        <td>{payment.userId.email}</td>
-                        <td>{payment.planId.title}</td>
-                        <td style={{ padding: "10px" }}>
-                              <div style={{ fontWeight: "bold" }}>
-                                {calculateDaysLeft(payment.expirationDate)} days left
-                              </div>
-                              <div style={{ fontSize: "12px", color: "gray" }}>
-                                / {payment.planId.days} days
-                              </div>
-                            </td>
-                        <td>{formatDate(payment.paymentDate)}<br/>{formatDate(payment.expirationDate)}</td>
-                        <td>{payment.status}</td>
+                    {payments.length > 0 ? (
+                      payments.map((payment) => (
+                        <tr
+                          key={payment._id}
+                          onMouseEnter={() => setHoveredFirmId(payment._id)}
+                          onMouseLeave={() => setHoveredFirmId(null)}
+                        >
+                          <td>{payment?.userId?.firstName || "N/A"}</td>
+                          <td>{payment?.userId?.email || "N/A"}</td>
+                          <td>{payment?.planId?.title || "N/A"}</td>
+                          <td style={{ padding: "10px" }}>
+                            <div style={{ fontWeight: "bold" }}>
+                              {calculateDaysLeft(payment.expirationDate) !== "N/A"
+                                ? `${calculateDaysLeft(payment.expirationDate)} days left`
+                                : "N/A"}
+                            </div>
+                            <div style={{ fontSize: "12px", color: "gray" }}>
+                              / {payment?.planId?.days || "N/A"} days
+                            </div>
+                          </td>
+                          <td>
+                            {formatDate(payment.paymentDate)}<br />
+                            {formatDate(payment.expirationDate)}
+                          </td>
+                          <td>{payment.status || "N/A"}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: "center" }}>
+                          No payments found
+                        </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>

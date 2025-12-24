@@ -6,10 +6,11 @@ import VariantModal from "./VariantModal";
 import axiosInstance from "../../utils/axiosInstance";
 import ItemDetailModal from "../../Modal/ItemDetailModal";
 import { useNavigate } from "react-router-dom";
-import { getInventoryItems } from "../../apiServices/service";
+import { getInventoryItems, updateInventoryItemById } from "../../apiServices/service";
 import { RiseLoader, ScaleLoader } from "react-spinners";
 import FirmSwitcher from "../Firms/FirmSwitcher";
 import { BackButton } from "../../components/Common/BackButton";
+import ConfirmationModal from "../../Modal/ConfirmationModal";
 function InventoryTable() {
   const [inventoryData, setInventoryData] = useState([]);
   const [firmCurrency, setFirmCurrency] = useState(null);
@@ -20,6 +21,8 @@ function InventoryTable() {
   const [variantModalOpen, setVariantModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [confirmModal, setConfirmModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
   const [selectedFirmId, setSelectedFirmId] = useState(null);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [customItemsPerPage, setCustomItemsPerPage] = useState("");
@@ -33,6 +36,15 @@ function InventoryTable() {
   const token = JSON.parse(localStorage.getItem("authUser")).token;
   const userId = JSON.parse(localStorage.getItem("authUser")).response.adminId;
   const authuser = JSON.parse(localStorage.getItem("authUser")).response;
+  const isDemo = authuser?.isDemo;
+
+  const blockIfDemo = (actionName) => {
+    if (isDemo) {
+      toast.error(`Demo accounts cannot ${actionName}`);
+      return true;
+    }
+    return false;
+};
   const firmId = authuser?.adminId;
   useEffect(() => {
     if (!selectedFirmId) {
@@ -129,18 +141,20 @@ function InventoryTable() {
   };
 
   const handleAddItemPage = () => {
+    if (!selectedFirmId) {
+      toast.info("Please add/select a business first to continue adding items");
+      return;
+    }
     navigate("/add-new-product");
   };
-
 
   const addOrUpdateVariant = async () => {
     if (
       variant.variationType &&
       variant.optionLabel &&
       variant.price &&
-      variant.stock &&
-      variant.sku &&
-      variant.barcode
+      variant.stock
+
     ) {
       try {
         let response;
@@ -219,21 +233,20 @@ function InventoryTable() {
     }
   };
 
-  const updateItem = async (updatedFields) => {
-    try {
-      const response = await axiosInstance.put(
-        `${process.env.REACT_APP_URL}/inventory/update-item/${selectedItem._id}`,
-        { ...updatedFields, type: selectedItem.type }
-      );
-      setSelectedItem((prev) => ({ ...prev, ...updatedFields, type: selectedItem.type }));
-      toast.success(response.message);
-      setModalOpen(!modalOpen);
-      setTrigger((prev) => prev + 1);
-    } catch (error) {
-      console.error("Error updating item:", error);
-    }
-  };
-
+const updateItem = async (updatedFields) => {
+  try {
+    const data = await updateInventoryItemById(
+      selectedItem._id,
+      { ...updatedFields, type: selectedItem.type }
+    );
+    setSelectedItem(prev => ({ ...prev, ...updatedFields, type: selectedItem.type }));
+    toast.success(data.message);
+    setModalOpen(!modalOpen);
+    setTrigger(prev => prev + 1);
+  } catch (error) {
+    console.error("Error updating item:", error);
+  }
+};
   const handleEditVariant = (variant, index) => {
     console.log("Editing Variant:", variant);
     console.log("Variant Index:", index);
@@ -629,17 +642,18 @@ setFilteredInventoryData(filtered);
 
                     return (
                       <tr key={index} className={rowClass}>
-                        <td className={rowClass} onClick={() => handleViewDetails(item)}>{item.name}</td>
-                        <td className={rowClass} onClick={() => handleViewDetails(item)}>{item.description}</td>
-                        <td className={rowClass} onClick={() => handleViewDetails(item)}>{item.quantity} {item.qtyType}</td>
-                        <td className={rowClass} onClick={() => handleViewDetails(item)}>{item.brand?.name}</td>
-                        <td className={rowClass} onClick={() => handleViewDetails(item)}>{getCurrencyDetails(firmCurrency)} {item.costPrice?.toFixed(2)}</td>
-                        <td className={rowClass} onClick={() => handleViewDetails(item)}>{getCurrencyDetails(firmCurrency)} {item.sellingPrice?.toFixed(2)}</td>
-                        <td>
+                        <td className={rowClass} onClick={() => { if (blockIfDemo("edit inventory")) return; handleViewDetails(item); }}>{item.name}</td>
+                        <td className={rowClass} onClick={() => { if (blockIfDemo("edit inventory")) return; handleViewDetails(item); }}>{item.description}</td>
+                        <td className={rowClass} onClick={() => { if (blockIfDemo("edit inventory")) return; handleViewDetails(item); }}>{item.quantity} {item.qtyType}</td>
+                        <td className={rowClass} onClick={() => { if (blockIfDemo("edit inventory")) return; handleViewDetails(item); }}>{item.brand?.name}</td>
+                        <td className={rowClass} onClick={() => { if (blockIfDemo("edit inventory")) return; handleViewDetails(item); }}>{getCurrencyDetails(firmCurrency)} {item.costPrice?.toFixed(2)}</td>
+                        <td className={rowClass} onClick={() => { if (blockIfDemo("edit inventory")) return; handleViewDetails(item); }}>{getCurrencyDetails(firmCurrency)} {item.sellingPrice?.toFixed(2)}</td>
+                        <td> 
                           {role === "accountant" ? null : (
-                            <i className="bx bx-edit" style={{ fontSize: "22px", cursor: "pointer", marginLeft: "5px" }} onClick={() => handleViewDetails(item)}></i>
+                            <i className="bx bx-edit" style={{ fontSize: "22px", cursor: "pointer", marginLeft: "5px" }} onClick={() => { if (blockIfDemo("edit inventory")) return; handleViewDetails(item); }}></i>
                           )}
-                          <i className="bx bx-trash" style={{ fontSize: "22px", cursor: "pointer", marginLeft: "5px" }} onClick={() => handleDeleteInventory(item)}></i>
+                          <i className="bx bx-trash" style={{ fontSize: "22px", cursor: "pointer", marginLeft: "5px" }} onClick={() => { if (blockIfDemo("delete inventory")) return; setItemToDelete(item); setConfirmModal(true); }}></i>
+                          
                         </td>
                       </tr>
                     );
@@ -655,6 +669,18 @@ setFilteredInventoryData(filtered);
         )
         }
 
+          <ConfirmationModal
+            isOpen={confirmModal}
+            toggle={() => setConfirmModal(false)}
+            selectedUser={itemToDelete}
+            action="delete"
+            onConfirm={() => {
+              if (itemToDelete) {
+                handleDeleteInventory(itemToDelete);
+              }
+              setConfirmModal(false);
+            }}
+          />
 
         <div className="pagination-controls d-flex gap-2 mt-2">
           {pageNumbers.map(number => (
@@ -683,6 +709,7 @@ setFilteredInventoryData(filtered);
           isOpen={variantModalOpen}
           toggleModal={() => setVariantModalOpen(!variantModalOpen)}
           variant={variant}
+          qtyType={selectedItem?.qtyType} 
           handleVariantChange={handleVariantChange}
           addVariant={addOrUpdateVariant}
         />

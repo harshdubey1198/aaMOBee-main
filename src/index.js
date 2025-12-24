@@ -7,6 +7,7 @@ import { Provider } from "react-redux";
 import "./i18n";
 import { initializeRole } from './utils/roleUtils';
 import {configureStore} from "./store/store";
+import { DemoUserTrackingProvider } from './context/DemoUserTrackingContext';
 
 initializeRole();
 
@@ -15,7 +16,9 @@ root.render(
   <Provider store={configureStore({})}>
     <React.Fragment>
       <BrowserRouter>
+        <DemoUserTrackingProvider>
         <App />
+      </DemoUserTrackingProvider>
       </BrowserRouter>
     </React.Fragment>
   </Provider>

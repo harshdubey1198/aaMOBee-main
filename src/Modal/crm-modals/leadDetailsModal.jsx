@@ -1,11 +1,20 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import { Button, Form, FormGroup, Input, Label, Modal, ModalBody, ModalFooter, ModalHeader, Row, Col, } from "reactstrap";
 
 function LeadDetailsModal({ isOpen, toggle, lead, loading, onUpdate }) {
   const [formData, setFormData] = useState(lead || {});
   const [mode, setMode] = useState("view");
   const [additionalFields, setAdditionalFields] = useState([]);
-
+  const authuser = JSON.parse(localStorage.getItem("authUser")).response;
+  const blockIfDemo = (actionName) => {
+        if (authuser?.isDemo) {
+          // setLoading(false);
+          toast.error(`Demo accounts cannot create a new ${actionName}`);
+          return true; 
+        }
+        return false; 
+      };
   useEffect(() => {
     setFormData((prevData) => ({
       ...prevData,
@@ -348,7 +357,7 @@ function LeadDetailsModal({ isOpen, toggle, lead, loading, onUpdate }) {
       </ModalBody>
       <ModalFooter>
         {mode === "edit" && (
-          <Button color="primary" onClick={handleSubmit} disabled={loading}>
+          <Button color="primary" onClick={() => {if (blockIfDemo("Leads")) return;handleSubmit()}} disabled={loading}>
             Save
           </Button>
         )}

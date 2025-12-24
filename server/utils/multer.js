@@ -56,6 +56,16 @@ const fileFilter = (req, file, cb) => {
         cb(new Error('Only .csv, .xls, and .xlsx formats are allowed for file uploads!'));
       }
       break;
+    case 'faqMedia':
+      const allowedExt = ['.jpeg', '.jpg', '.png', '.mp4', '.mov', '.avi', '.mkv'];
+      const ext = path.extname(file.originalname).toLowerCase();
+      if (allowedExt.includes(ext)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only image or video files are allowed for faqMedia!'));
+      }
+      break;
+
     default:
       cb(new Error('Invalid field name for file upload.'));
   }
@@ -64,16 +74,17 @@ const fileFilter = (req, file, cb) => {
 
 // Multer configuration
 const upload = multer({
-    storage, 
-    fileFilter, 
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB file size limit
+  storage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB file size limit
 }).fields([
-    { name: 'avatar', maxCount: 1 }, // Single file upload for avatar
-    { name: 'file', maxCount: 1 }, 
-    { name: 'blogImage', maxCount: 1 },
-    { name: 'feedbackImage', maxCount: 5}
+  { name: 'avatar', maxCount: 1 }, // Single file upload for avatar
+  { name: 'file', maxCount: 1 },
+  { name: 'blogImage', maxCount: 1 },
+  { name: 'feedbackImage', maxCount: 5 },
+  { name: 'faqMedia', maxCount: 10 }
 ]);
 
 module.exports = {
-    upload
+  upload
 };

@@ -7,7 +7,17 @@ const CategoryModal = ({ isOpen, toggle, formValues, setFormValues, editMode, se
   const [loading, setLoading] = useState(false);
   const createdBy = JSON.parse(localStorage.getItem("authUser")).response._id;
     // console.log("hi modal category : ",selectedFirmId)
-  const handleChange = (e) => {
+   const authuser = JSON.parse(localStorage.getItem("authUser")).response;
+
+    const blockIfDemo = (actionName) => {
+      if (authuser?.isDemo) {
+        setLoading(false);
+        toast.error(`Demo accounts cannot create a new ${actionName}`);
+        return true; 
+      }
+      return false; 
+    };
+    const handleChange = (e) => {
     const { name, value } = e.target;
     setFormValues((prevState) => ({
       ...prevState,
@@ -16,6 +26,7 @@ const CategoryModal = ({ isOpen, toggle, formValues, setFormValues, editMode, se
   };
 
   const handleSubmit = async (e) => {
+    if (blockIfDemo("product category")) return;
     e.preventDefault();
     setLoading(true);
 

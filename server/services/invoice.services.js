@@ -5,8 +5,79 @@ const InventoryItem = require("../schemas/inventoryItem.schema");
 const Tax = require("../schemas/tax.schema");
 const { handleCustomer, calculateInvoiceAmount, generateInvoiceNumber, updateInventoryStock, releaseReservedStock } = require("../utils/invoiceutility");
 const { default: mongoose } = require("mongoose");
+const fs = require('fs');
+const path = require('path');
+const csv = require('csvtojson');
+const XLSX = require('xlsx');
+const moment = require('moment');
 
 const invoiceServices = {};
+
+invoiceServices.importInvoices = async (filePath, createdBy, originalName, firmId) => {
+  try {
+    const ext = path.extname(originalName).toLowerCase();
+
+    let rows = [];
+    if (ext === ".csv") {
+      rows = await csv().fromFile(filePath);
+    } else if (ext === ".xlsx" || ext === ".xls") {
+      const workbook = XLSX.readFile(filePath);
+      const sheetName = workbook.SheetNames[0];
+      rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+    } else {
+      throw new Error("Unsupported file format. Please upload CSV or Excel.");
+    }
+
+    if (!rows.length) {
+      throw new Error("No invoice data found in file");
+    }
+
+    const invoices = rows.map((row) => {
+      return new Invoice({
+        invoiceNumber: row.invoice_id || row.invoiceNumber || `IMP-${Date.now()}`,
+        customerName: row.customer_name || row.customerName || "",
+        customerEmail: row.customer_email || row.customerEmail || "",
+        customerPhone: row.customer_phone || row.customerPhone || "",
+        invoiceCurrency: row.currency || "INR",
+        invoiceDate: row.invoice_date ? moment(row.invoice_date, ["YYYY-MM-DD","DD-MM-YYYY","MM/DD/YYYY"]).toDate() : new Date(),
+        dueDate: row.due_date ? moment(row.due_date, ["YYYY-MM-DD","DD-MM-YYYY","MM/DD/YYYY"]).toDate() : null,
+        totalAmount: parseFloat(row.total) || 0,
+        amountPaid: parseFloat(row.amountPaid) || 0,
+        amountDue: Math.max(((parseFloat(row.total) || 0) - (parseFloat(row.amountPaid) || 0)), 0),
+        status: (() => {
+          const total = parseFloat(row.total) || 0;
+          const paid = parseFloat(row.amountPaid) || 0;
+          if (paid >= total) return "paid";
+          if (paid > 0 && paid < total) return "partially paid";
+          return "unpaid";
+        })(),
+        createdBy,
+        firmId, 
+        isImported: true,
+        sourceSystem: row.system || "External",
+        rawData: row,
+        invoiceLayout: "layout1",
+        items: [
+          {
+            description: row.items ? "Imported Items" : "No Items",
+            quantity: 1,
+            sellingPrice: parseFloat(row.total) || 0,
+            total: parseFloat(row.total) || 0,
+            externalItemData: row.items ? JSON.parse(row.items) : row,
+          },
+        ],
+      });
+    });
+
+    const savedInvoices = await Invoice.insertMany(invoices);
+
+    fs.unlinkSync(filePath);
+    return savedInvoices;
+  } catch (error) {
+    console.error("Import Error:", error);
+    throw error;
+  }
+};
 
 invoiceServices.createInvoice = async (invoiceData) => {
   const session = await mongoose.startSession();
@@ -24,7 +95,8 @@ invoiceServices.createInvoice = async (invoiceData) => {
       invoiceType,
       invoiceSubType,
       notes,
-       invoiceLayout
+       invoiceLayout,
+       termsAndConditions,
     } = invoiceData;
     
     const firmUser = await User.findById(firmId);
@@ -61,7 +133,8 @@ invoiceServices.createInvoice = async (invoiceData) => {
       totalAmount,
       createdBy,
       notes,
-      invoiceLayout
+      invoiceLayout,
+      termsAndConditions,
     });
 
     if (invoiceType === "Proforma") {
@@ -104,6 +177,15 @@ invoiceServices.updateInvoice = async (invoiceId, invoiceData) => {
       invoiceLayout
     } = invoiceData;
 
+    // Validate required fields
+    if (!customer || !items || !firmId) {
+      throw new Error('Missing required fields: customer, items, or firmId');
+    }
+
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new Error('Invoice must have at least one item');
+    }
+
     const firmUser = await User.findById(firmId);
     if (!firmUser) {
       throw new Error('Firm user not found');
@@ -117,16 +199,13 @@ invoiceServices.updateInvoice = async (invoiceId, invoiceData) => {
     // Calculate total amount
     const totalAmount = await calculateInvoiceAmount(items, session);
 
-    const amountDue = Math.max((totalAmount - amountPaid).toFixed(2), 0);
+    const amountDue = Math.max((totalAmount - (amountPaid || 0)).toFixed(2), 0);
 
     // Find the invoice to update
     const existingInvoice = await Invoice.findById(invoiceId).session(session);
     if (!existingInvoice) {
       throw new Error('Invoice not found');
     }
-
-    // Optional: Rollback previous inventory update if needed
-    // await rollbackInventoryStock(existingInvoice.items, session);
 
     // Update inventory again for new items
     if (invoiceType === "Proforma") {
@@ -143,7 +222,7 @@ invoiceServices.updateInvoice = async (invoiceId, invoiceData) => {
       customerAddress: customerData.customerAddress,
       invoiceType,
       invoiceSubType,
-      amountPaid,
+      amountPaid: amountPaid || 0,
       amountDue,
       items,
       invoiceDate,
@@ -163,6 +242,7 @@ invoiceServices.updateInvoice = async (invoiceId, invoiceData) => {
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
+    console.error('Update invoice error:', error);
     throw error;
   }
 };
@@ -198,6 +278,7 @@ invoiceServices.rejectInvoice = async (invoiceId) => {
 
 invoiceServices.getInvoices = async (adminId) => {
   const invoices = await Invoice.find({ firmId: adminId, deleted_at: null })
+    .sort({ createdAt: -1 }) 
     .populate({ 
       path: "items.itemId", 
       populate: [
@@ -352,3 +433,4 @@ invoiceServices.countInvoices = async (firmId) => {
 };
 
 module.exports = invoiceServices;
+

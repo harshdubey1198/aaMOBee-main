@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Button } from "reactstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./redirectors.css";
-import invocingImage from "../../../assets/images/invoicing.webp";
 
 function Redirectors() {
   const [isMobileView, setIsMobileView] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     document.body.className = "bg-pattern";
@@ -19,9 +19,27 @@ function Redirectors() {
 
     return () => {
       window.removeEventListener("resize", handleResize);
-      document.body.className = ""; 
+      document.body.className = "";
     };
   }, []);
+
+  // Demo login logic
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const email = searchParams.get("email");
+    const token = searchParams.get("token");
+
+    if (email && token) {
+      // Save demo credentials
+      localStorage.setItem(
+        "demousercredentials",
+        JSON.stringify({ email, token })
+      );
+
+      // Optional: auto-login redirect
+      navigate("/dashboard");
+    }
+  }, [location.search, navigate]);
 
   const handleLogin = () => {
     navigate("/login");

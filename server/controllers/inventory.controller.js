@@ -163,5 +163,30 @@ inventoryController.getCountConditionFirm = async (req, res) => {
     return res.status(400).json(createResult(null, null, error.message));
   }
 };
+inventoryController.getItemSalesData = async (req, res) => {
+  try {
+    const data = await inventoryServices.getItemSalesData(
+      req.params.itemId,
+      req.query // startDate, endDate optional
+    );
+
+    return res
+      .status(200)
+      .json(createResult("Item sales data fetched successfully", data));
+  } catch (error) {
+    return res.status(500).json(createResult(null, null, error.message));
+  }
+};
+inventoryController.getAllItemsSalesReport = async (req, res) => {
+  try {
+    const data = await inventoryServices.getAllItemsSalesReport(req.query);
+    return res.status(200).json({
+      message: "All items sales report fetched",
+      data
+    });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+};
 
 module.exports = inventoryController;

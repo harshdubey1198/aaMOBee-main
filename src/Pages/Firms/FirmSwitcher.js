@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchFirmsRequest, setCurrentFirm } from "../../store/firms/actions";
+import { Link } from "react-router-dom";
 
 const FirmSwitcher = ({ selectedFirmId,onSelectFirm }) => {
   const dispatch = useDispatch();
@@ -16,14 +17,20 @@ const FirmSwitcher = ({ selectedFirmId,onSelectFirm }) => {
 useEffect(() => {
   if (firms.length === 0) return;
 
+  // from localStorage
   const localFirmId = JSON.parse(localStorage.getItem("defaultFirm"))?.firmId;
-  const firmIdToUse = selectedFirmId || localFirmId || firms[0]._id;
-  // console.log("Firm ID to use:", firmIdToUse);
+  // console.log("firms in the switcher api : " , firms)
+  // check if valid
+  const firmFromStorage = firms.find(f => f._id === localFirmId);
+  
+  // decide firm to use
+  const firmIdToUse = selectedFirmId || (firmFromStorage?._id) || firms[0]._id;
   const selectedFirm = firms.find(f => f._id === firmIdToUse) || firms[0];
-  // console.log("Selected Firm from useEffect:", selectedFirm);
-  if (selectedFirm && selectedFirm._id ) {
+
+  if (selectedFirm && selectedFirm._id) {
     dispatch(setCurrentFirm(selectedFirm._id));
-  // console.log("Selected Firm:", selectedFirm);
+
+    // always refresh localStorage with the correct firm
     localStorage.setItem(
       "defaultFirm",
       JSON.stringify({
@@ -77,7 +84,18 @@ useEffect(() => {
 
   if (loading) return <p>Loading firms...</p>;
   if (error) return <p>Error loading firms</p>;
-
+  if (firms.length === 0) {
+    return (
+      <Link
+        to="/add-business"
+        className="btn btn-primary p-2"
+        title="Add your business to continue"
+        style={{ maxHeight: "27.13px",minWidth:"100px", fontSize: "10.5px", lineHeight: "1" }}
+      >
+        Add Business
+      </Link>
+    );
+  }
   return (
     <div style={{ position: "relative", display: "inline-block" }}>
       <select

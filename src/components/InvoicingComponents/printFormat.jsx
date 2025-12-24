@@ -6,13 +6,13 @@ const currencyOptions = [
     { code: "SAR", symbol: "﷼", name: "Saudi Riyal" },
     { code: "MYR", symbol: "RM", name: "Malaysian Ringgit" },
     { code: "USD", symbol: "$", name: "US Dollar" },
-  ];
-  
-  const getCurrencyDetails = (currencyCode) => {
+];
+
+const getCurrencyDetails = (currencyCode) => {
     const currency = currencyOptions.find((option) => option.code === currencyCode);
     return currency ? currency.code : currencyCode;
-  };
-  
+};
+
 // const sliceDescription = (description) => {
 //     if (description && description.length > 50) {
 //         return description.slice(0, 50) + '...';
@@ -21,27 +21,43 @@ const currencyOptions = [
 // };
 
 const PrintFormat = forwardRef(({ invoiceData, companyData }, ref) => {
-    const selectInvoice = invoiceData?.firmId || {};  
+    const selectInvoice = invoiceData?.firmId || {};
     // console.log(companyData);
-    const currency = getCurrencyDetails(companyData.currency || "INR");  
-    
-    const items = invoiceData?.items || []; 
+    const currency = getCurrencyDetails(companyData.currency || "INR");
+
+    const items = invoiceData?.items || [];
+    // console.log("🔍 PrintFormat - Items data:", items);
+    // console.log("🔍 PrintFormat - First item:", items[0]);
     const companyAddress = companyData?.address || [];
 
+    // subtotal = sum of base prices (qty * unit price)
     const subtotal = items.reduce((acc, item) => {
-        const itemPrice = item.varSelPrice || item.price; 
-        return acc + (item.quantity * itemPrice); 
+        const price = Number(item.varSelPrice ?? item.price) || 0;
+        const qty = Number(item.quantity) || 0;
+        return acc + qty * price;
     }, 0);
 
+    // totalTaxAmount = tax on the base (before discount)
     const totalTaxAmount = items.reduce((acc, item) => {
-        const itemPrice = item.varSelPrice || item.price; 
-        const itemTotalValue = item.quantity * itemPrice;
-        const taxRate = (item.taxComponents || []).reduce((sum, tax) => sum + tax.rate, 0);
-        return acc + (itemTotalValue * (taxRate / 100)); 
+        const price = Number(item.varSelPrice ?? item.price) || 0;
+        const qty = Number(item.quantity) || 0;
+        const base = qty * price;
+        const taxRate = (item.taxComponents || []).reduce(
+            (sum, tax) => sum + Number(tax.rate ?? tax.taxRate ?? 0),
+            0
+        );
+        return acc + base * (taxRate / 100);
     }, 0);
-    const totalDiscount = items.reduce((acc, item) => acc + (item.discount || 0), 0);
+
+    // totalDiscount = sum of discounts (deducted after tax)
+    const totalDiscount = items.reduce(
+        (acc, item) => acc + (Number(item.discount) || 0),
+        0
+    );
+
     const grandTotal = subtotal + totalTaxAmount - totalDiscount;
-    const amountPaid = Number(invoiceData?.amountPaid) || 0;    
+
+    const amountPaid = Number(invoiceData?.amountPaid) || 0;
     const customerName = invoiceData?.firstName && invoiceData?.lastName
         ? `${invoiceData.firstName} ${invoiceData.lastName}`
         : invoiceData?.customerName || 'Please select a customer';
@@ -55,10 +71,10 @@ const PrintFormat = forwardRef(({ invoiceData, companyData }, ref) => {
             <div className="row m-text-center p-4 pb-0 m-0">
                 <div className="col-lg-6 col-md-6 col-sm-12 mb-4">
                     {(invoiceData?.companyLogo || selectInvoice.avatar) && (
-                        <img 
-                            src={selectInvoice.avatar || invoiceData?.companyLogo}  
-                            alt="Company Logo" 
-                            style={{ height: "100px", maxWidth: "200px", marginBottom: "10px", marginTop: "-36px" }} 
+                        <img
+                            src={selectInvoice.avatar || invoiceData?.companyLogo}
+                            alt="Company Logo"
+                            style={{ height: "100px", maxWidth: "200px", marginBottom: "10px", marginTop: "-36px" }}
                         />
                     )}
                     {companyAddress?.map((address, index) => (
@@ -74,12 +90,12 @@ const PrintFormat = forwardRef(({ invoiceData, companyData }, ref) => {
                         }
                          {invoiceData?.gstin || selectInvoice.gstin}</p> */}
 
-                         {(companyData?.registeredTaxationDetail?.find(item => item.toShow)?.fieldValue ) && (
-                                <p className="my-1">
-                                    <b>{companyData?.registeredTaxationDetail?.find(item => item.toShow)?.fieldName}:</b>{" "}
-                                    {companyData?.registeredTaxationDetail?.find(item => item.toShow)?.fieldValue}
-                                </p>
-                            )}
+                    {(companyData?.registeredTaxationDetail?.find(item => item.toShow)?.fieldValue) && (
+                        <p className="my-1">
+                            <b>{companyData?.registeredTaxationDetail?.find(item => item.toShow)?.fieldName}:</b>{" "}
+                            {companyData?.registeredTaxationDetail?.find(item => item.toShow)?.fieldValue}
+                        </p>
+                    )}
                 </div>
                 <div className="col-lg-6 col-md-6 col-sm-12 m-text-center text-end">
                     <p><strong>Invoice Number:</strong> INV-24-MAG</p>
@@ -101,8 +117,8 @@ const PrintFormat = forwardRef(({ invoiceData, companyData }, ref) => {
                         ]
                             .filter(item => item)
                             .join(', ')}
-                        </p>
-                        <p className="my-1">
+                    </p>
+                    <p className="my-1">
                         {[
                             invoiceData?.customerAddress?.city?.trim(),
                             invoiceData?.customerAddress?.state?.trim(),
@@ -111,7 +127,7 @@ const PrintFormat = forwardRef(({ invoiceData, companyData }, ref) => {
                         ]
                             .filter(item => item)
                             .join(', ')}
-                        </p>
+                    </p>
                     <p className="my-1">Phone : {invoiceData?.customerPhone} | Email : {invoiceData?.customerEmail}</p>
                 </div>
             </div>
@@ -120,49 +136,80 @@ const PrintFormat = forwardRef(({ invoiceData, companyData }, ref) => {
                 <table className="table table-bordered">
                     <thead className='table-light'>
                         <tr>
-                            <th>Sr. no</th>
-                            <th>Item Name</th>
-                            <th>Variant</th>
+                            <th>#</th>
+                            <th>Item</th>
+                            {/* <th>Variant</th> */}
                             <th>Description</th>
-                            <th>Taxes</th>
+                            {/* <th>Taxes</th> */}
                             <th>HSN/SAC</th>
-                            <th>Quantity</th>
+                            <th>Qty</th>
                             <th>Price</th>
                             <th>Discount</th>
                             <th>Amount</th>
                         </tr>
                     </thead>
-                  <tbody>
+                    <tbody>
                         {items.map((item, index) => {
-                            const itemPrice = item.varSelPrice || item.price;
-                            const itemTotalValue = item.quantity * itemPrice;
-                            const taxRate = (item.taxComponents || []).reduce((sum, tax) => sum + tax.rate, 0);
-                            const itemTaxAmount = itemTotalValue * (taxRate / 100);
-                            const itemDiscount = item.discount || 0;
-                            const finalAmount = itemTotalValue + itemTaxAmount - itemDiscount;
+                            const unitPrice = Number(item.varSelPrice ?? item.price) || 0;
+                            const qty = Number(item.quantity) || 0;
+                            const base = qty * unitPrice;
+
+                            const taxRate = (item.taxComponents || []).reduce(
+                                (sum, tax) => sum + Number(tax.rate ?? tax.taxRate ?? 0),
+                                0
+                            );
+                            const taxAmount = base * (taxRate / 100);
+
+                            // discount is applied AFTER tax
+                            const itemDiscount = Number(item.discount) || 0;
+                            const finalAmount = base + taxAmount - itemDiscount;
+
 
 
                             return (
                                 <tr key={index}>
                                     <td>{index + 1}</td>
-                                    <td>{item?.name || 'N/A'}</td>
-                                    <td>{item?.selectedVariant?.[0]?.optionLabel || '-'}</td>
-                                    <td dangerouslySetInnerHTML={{ __html: item?.description }}></td>
                                     <td>
-                                        {item?.taxComponents && item?.taxComponents.length > 0 ? (
-                                            <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
-                                                {item?.taxComponents.map((tax, taxIndex) => (
-                                                    <li key={taxIndex}>
-                                                        <span>{tax?.taxType + " : " || 'N/A'}</span>
-                                                        <span>{tax?.rate || 'N/A'}%</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        ) : 'N/A'}
+                                        {item?.name || item?.itemId?.name || "N/A"}
+                                        {item?.selectedVariant?.[0]?.optionLabel
+                                            ? <><br />({item.selectedVariant[0].optionLabel})</>
+                                            : null}
                                     </td>
-                                    <td>{item?.ProductHsn}</td>
-                                    <td>{item?.quantity}</td>
-                                    <td>{itemPrice?.toFixed(2)}</td>
+                                    {/* <td>{item?.selectedVariant?.[0]?.optionLabel || '-'}</td> */}
+                                    <td dangerouslySetInnerHTML={{ __html: item?.description || item?.itemId?.description }}></td>
+                                    {/* <td>
+                                         {item?.taxComponents && item?.taxComponents.length > 0 ? (
+                                             <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
+                                                 {item?.taxComponents.map((tax, taxIndex) => (
+                                                     <li key={taxIndex}>
+                                                         <span>{tax?.taxType + " : " || 'N/A'}</span>
+                                                         <span>{tax?.rate || 'N/A'}%</span>
+                                                     </li>
+                                                 ))}
+                                             </ul>
+                                         ) : 'N/A'}
+                                     </td> */}
+                                    <td>{item?.ProductHsn || item?.itemId?.ProductHsn || '-'}</td>
+                                    <td>{item?.quantity} {item?.qtyType}</td>
+                                    <td>
+                                        {unitPrice.toFixed(2)}{" "}
+                                        <br />
+                                        {item?.taxComponents && item.taxComponents.length > 0 ? (
+                                            <>
+                                                (
+                                                {item.taxComponents.map((tax, taxIndex) => (
+                                                    <span key={taxIndex}>
+                                                        {tax?.taxType || "N/A"}: {Number(tax?.rate ?? tax?.taxRate ?? 0)}%
+                                                        {taxIndex < item.taxComponents.length - 1 ? ", " : ""}
+                                                    </span>
+                                                ))}
+                                                )
+                                            </>
+                                        ) : (
+                                            " (N/A)"
+                                        )}
+                                    </td>
+
                                     <td>{itemDiscount?.toFixed(2)}</td>
                                     <td>{finalAmount?.toFixed(2)}</td>
                                 </tr>
@@ -177,15 +224,15 @@ const PrintFormat = forwardRef(({ invoiceData, companyData }, ref) => {
                 <div className="col-lg-6 col-md-6 col-sm-12 m-text-center ">
                     <h5>Bank Details</h5>
                     <p className="my-1"><strong>Bank Name: </strong> {invoiceData?.bankName || selectInvoice?.bankName || 'Your Bank Name'}</p>
-                    <p className="my-1"><strong>Account Number: </strong> {invoiceData?.accountNumber ||selectInvoice?.accountNumber || 'Your Account Number'}</p>
+                    <p className="my-1"><strong>Account Number: </strong> {invoiceData?.accountNumber || selectInvoice?.accountNumber || 'Your Account Number'}</p>
                     <p className="my-1">
                         <strong> Branch Name: </strong>
                         {invoiceData?.branchName}
                     </p>
                     {(invoiceData?.ifscCode || selectInvoice?.ifscCode) && (
-                    <p className="my-1">
-                        <strong>IFSC Code:</strong> {invoiceData?.ifscCode || selectInvoice?.ifscCode}
-                    </p>
+                        <p className="my-1">
+                            <strong>IFSC Code:</strong> {invoiceData?.ifscCode || selectInvoice?.ifscCode}
+                        </p>
                     )}
                 </div>
                 <div className="col-lg-6 col-md-6 col-sm-12 m-text-center text-end">
@@ -197,6 +244,9 @@ const PrintFormat = forwardRef(({ invoiceData, companyData }, ref) => {
                     <p className="my-1"><strong>Amount Paid:</strong> {currency} {amountPaid?.toFixed(2)}</p>
                     <p className="my-1"><strong>Balance:</strong> {currency} {(grandTotal - amountPaid).toFixed(2)}</p>
                 </div>
+                <h4>
+
+                </h4>
             </div>
         </div>
     );

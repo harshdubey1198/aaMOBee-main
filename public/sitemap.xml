@@ -1,133 +1,132 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://aamobee.com/</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>1.00</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/portfolio</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.90</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/blogs</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.90</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/inventory-management-software</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/apps/invoicing</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/apps/crm-leads</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.80</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/apps/client-management</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.80</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/apps/retail-billing</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.75</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/apps/product-management</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.75</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/apps/project-management</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.75</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/apps/hrms</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.70</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/apps/payroll-management</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.70</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/apps/leave-management</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.70</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/apps/business-analytics-tool</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.75</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/apps/bookkeeping</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.75</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/apps/lms</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.70</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/apps/affiliate-business-system</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.70</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/apps/cms</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.70</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/apps/erp</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.70</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/apps/expense-tracker</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.70</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/apps/daily-sales-tracker</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.70</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/support</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.65</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/choose-plan/signup</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.80</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/contact-us</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/privacy-policy</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.60</priority>
-  </url>
-  <url>
-    <loc>https://aamobee.com/refund-policy</loc>
-    <lastmod>2025-06-19</lastmod>
-    <priority>0.60</priority>
-  </url>
+<url>
+<loc>https://aamobee.com/</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>1.00</priority>
+</url>
+<url>
+<loc>https://aamobee.com/portfolio</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.90</priority>
+</url>
+<url>
+<loc>https://aamobee.com/blogs</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.90</priority>
+</url>
+<url>
+<loc>https://aamobee.com/inventory-management-software</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.85</priority>
+</url>
+<url>
+<loc>https://aamobee.com/apps/invoicing</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.85</priority>
+</url>
+<url>
+<loc>https://aamobee.com/apps/crm-leads</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.80</priority>
+</url>
+<url>
+<loc>https://aamobee.com/apps/client-management</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.80</priority>
+</url>
+<url>
+<loc>https://aamobee.com/apps/retail-billing</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.75</priority>
+</url>
+<url>
+<loc>https://aamobee.com/apps/product-management</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.75</priority>
+</url>
+<url>
+<loc>https://aamobee.com/apps/project-management</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.75</priority>
+</url>
+<url>
+<loc>https://aamobee.com/apps/hrms</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.70</priority>
+</url>
+<url>
+<loc>https://aamobee.com/apps/payroll-management</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.70</priority>
+</url>
+<url>
+<loc>https://aamobee.com/apps/leave-management</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.70</priority>
+</url>
+<url>
+<loc>https://aamobee.com/apps/business-analytics-tool</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.75</priority>
+</url>
+<url>
+<loc>https://aamobee.com/apps/bookkeeping</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.75</priority>
+</url>
+<url>
+<loc>https://aamobee.com/apps/lms</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.70</priority>
+</url>
+<url>
+<loc>https://aamobee.com/apps/affiliate-business-system</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.70</priority>
+</url>
+<url>
+<loc>https://aamobee.com/apps/cms</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.70</priority>
+</url>
+<url>
+<loc>https://aamobee.com/apps/erp</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.70</priority>
+</url>
+<url>
+<loc>https://aamobee.com/apps/expense-tracker</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.70</priority>
+</url>
+<url>
+<loc>https://aamobee.com/apps/daily-sales-tracker</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.70</priority>
+</url>
+<url>
+<loc>https://aamobee.com/support</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.65</priority>
+</url>
+<url>
+<loc>https://aamobee.com/choose-plan/signup</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.80</priority>
+</url>
+<url>
+<loc>https://aamobee.com/contact-us</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.85</priority>
+</url>
+<url>
+<loc>https://aamobee.com/privacy-policy</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.60</priority>
+</url>
+<url>
+<loc>https://aamobee.com/refund-policy</loc>
+<lastmod>2025-08-25</lastmod>
+<priority>0.60</priority>
+</url>
 </urlset>

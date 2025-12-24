@@ -6,18 +6,22 @@ import axiosInstance from "../../utils/axiosInstance";
 import FirmSwitcher from "../../Pages/Firms/FirmSwitcher";
 import AllLocations from '../../CommonData/Data/countries+states+cities.json';
 import Select from "react-select";
-const InvoiceInputs = ({ invoiceData, handleInputChange, companyData, setInvoiceData, selectedFirmId, setSelectedFirmId }) => {
+const InvoiceInputs = ({ invoiceData, handleInputChange, IsEditable, companyData, setInvoiceData, selectedFirmId, setSelectedFirmId, emailOnCreate, setEmailOnCreate }) => {
   const [tooltipOpen, setTooltipOpen] = useState(false);
   const toggleTooltip = () => setTooltipOpen(!tooltipOpen);
   const authuser = JSON.parse(localStorage.getItem("authUser"));
   // const firmId = authuser?.response?.adminId;
+  // console.log("IsEditable : ",IsEditable);
+  // console.log("customer details : ",invoiceData?.firstName);
+  // console.log("customer details : ",invoiceData?.lastName);
+  // console.log("customer details : ",invoiceData?.customerPhone);
   const role = authuser?.response?.role;
   const suggestionsRef = useRef(null);
   const [searchResults, setSearchResults] = useState([]);
   const [searchKey, setSearchKey] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isCompany, setIsCompany] = useState(false);
-  console.log("isCompany value:", isCompany)
+  // console.log("isCompany value:", isCompany)
 
   // const debouncedSearchTerm = useDebounce(searchKey, 500);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -163,8 +167,6 @@ const InvoiceInputs = ({ invoiceData, handleInputChange, companyData, setInvoice
     searchCustomer(value);
   };
 
-  
-
   const handleSuggestionClick = (customer) => {
     handleInputChange({ target: { name: "firstName", value: customer.firstName } });
     handleInputChange({ target: { name: "lastName", value: customer.lastName } });
@@ -198,7 +200,7 @@ const InvoiceInputs = ({ invoiceData, handleInputChange, companyData, setInvoice
       </span>
     ));
   };
-  
+
   // const handleAmountPaidChange = (event) => {
   //   const amountPaid = parseFloat(event.target.value) || 0;
   //   const totalInclusiveTaxes = invoiceData.items.reduce((acc, item) => acc + (item.total || 0), 0);
@@ -260,6 +262,29 @@ const InvoiceInputs = ({ invoiceData, handleInputChange, companyData, setInvoice
           >
             Please fill all the details before submission
           </Tooltip>
+        </Col>
+
+        {/* Email to customer toggle */}
+        <Col lg={2} md={6} sm={12} className="d-flex align-items-center justify-content-center mt-2 mt-md-0">
+          <FormGroup check className="d-flex align-items-center gap-2 mb-0">
+            <Input
+              id="emailToCustomer"
+              type="checkbox"
+              checked={emailOnCreate}
+              onClick={() => {
+                const newValue = !emailOnCreate;
+                setEmailOnCreate(newValue);
+                localStorage.setItem("emailOnCreate", newValue ? "true" : "false");
+              }}
+            />
+            <Label
+              check
+              className={`fw-semibold mb-0 ${!emailOnCreate ? "text-muted" : ""}`}
+              style={{ whiteSpace: "nowrap" }}
+            >
+              Email to customer
+            </Label>
+          </FormGroup>
         </Col>
 
         {role === "client_admin" && (
@@ -360,10 +385,6 @@ const InvoiceInputs = ({ invoiceData, handleInputChange, companyData, setInvoice
           </FormGroup>
         </Col>
       </Row>
-
-
-
-
 
       <Row>
         {/* 👤 Customer Basic Info */}
@@ -607,8 +628,18 @@ const InvoiceInputs = ({ invoiceData, handleInputChange, companyData, setInvoice
               required
             />
           </FormGroup>
+          <FormGroup>
+            <Label for="notes">Notes</Label>
+            <Input
+              type="textarea"
+              name="notes"
+              id="notes"
+              value={invoiceData.notes || ""}
+              onChange={handleInputChange}
+              placeholder="Enter any notes for this invoice"
+            />
+          </FormGroup>
 
-          
         </Col>
       </Row>
 

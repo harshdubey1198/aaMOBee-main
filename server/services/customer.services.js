@@ -36,7 +36,7 @@ customerServices.getAllCustomers = async (firmId) => {
   if (!firmId) {
     throw new Error("firmId is required");
   }
-  const customers = await Customer.find({firmId: firmId, deleted_at:null})
+  const customers = await Customer.find({firmId: firmId, deleted_at:null}).sort({ createdAt: -1 })
   .populate({
     path: "firmId",
     select: "companyTitle email avatar",

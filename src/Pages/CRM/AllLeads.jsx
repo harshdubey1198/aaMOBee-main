@@ -29,6 +29,23 @@ function AllLeads() {
         sortBy: "name",
         order: "asc",
     });
+    const authuser = JSON.parse(localStorage.getItem("authUser"))?.response;
+    const isDemo = authuser?.isDemo;
+
+    const blockIfDemo = (actionName) => {
+    if (isDemo) {
+        toast.error(`Demo accounts cannot ${actionName}`);
+        return true;
+    }
+    return false;
+    };
+    const blockIfNoBusiness = () => {
+        if (!selectedFirmId) {
+            toast.info("Please add/select a business first to continue");
+            return true;
+        }
+        return false;
+    };
     const role = JSON.parse(localStorage.getItem('authUser'))?.response?.role;
     const firmId = JSON.parse(localStorage.getItem('authUser'))?.response?.adminId || JSON.parse(localStorage.getItem('authUser'))?.response?.firmId;
     const [selectedFirmId, setSelectedFirmId] = useState(null);
@@ -303,32 +320,78 @@ function AllLeads() {
         <React.Fragment>
             <div className="page-content">
                 <Breadcrumbs title="CRM" breadcrumbItem="All Leads" />
-                <div className="button-panel">
-                    {(role === "client_admin" && (
-                        <FirmSwitcher
-                            selectedFirmId={selectedFirmId}
-                            onSelectFirm={setSelectedFirmId}
-                           />
-                     ))}
-                    {(role === "firm_admin" || role === "ASM" || role === "client_admin") && (
-                        <>
-                            <Button color="primary" style={{maxHeight:"27.13px",fontSize:"12.5px" , lineHeight:"1"}} onClick={() => navigate("/crm/create-lead")}> Add Lead </Button>
-                            <Button color="primary" style={{maxHeight:"27.13px",fontSize:"12.5px" , lineHeight:"1"}} onClick={toggleImportModal}> Import Leads </Button>
-                            <Button color="primary" style={{maxHeight:"27.13px",fontSize:"12.5px" , lineHeight:"1"}} onClick={handleExportLeads}> Export Leads </Button>
-                        </>
-                      )}
-                    {(role === "firm_admin") && (
-                        <Button color="primary" style={{maxHeight:"27.13px",fontSize:"12.5px" , lineHeight:"1"}} onClick={() => handleDeleteLeads(null)}> Delete Selected Leads </Button>
-                       )}
-                    {/* {(role === "ASM" || role === "SM" || role === "firm_admin" || role === "client_admin"  ) && ( */}
-                    {(role === "ASM" || role === "SM" || role === "firm_admin" ) && (
-                        <Button color="primary" style={{maxHeight:"27.13px",fontSize:"12.5px" , lineHeight:"1"}} onClick={toggleAssignModal}> Assign Leads </Button>
-                      )}
+               <div className="button-panel">
+                {(role === "client_admin" && (
+                    <FirmSwitcher
+                    selectedFirmId={selectedFirmId}
+                    onSelectFirm={setSelectedFirmId}
+                    />
+                ))}
 
-                {/* { role ==="ASM" && (
-                    <Button color="primary" onClick={toggleAssignModal}> Assign Leads </Button> 
-                )} */}
+                {(role === "firm_admin" || role === "ASM" || role === "client_admin") && (
+                    <>
+                    <Button 
+                        color="primary" 
+                        style={{ maxHeight: "27.13px", fontSize: "12.5px", lineHeight: "1" }}
+                        onClick={() => {
+                        // if ( blockIfNoBusiness() || blockIfDemo("add a Lead")) return;
+                        navigate("/crm/create-lead");
+                        }}
+                    >
+                        Add Lead
+                    </Button>
+
+                    <Button 
+                        color="primary" 
+                        style={{ maxHeight: "27.13px", fontSize: "12.5px", lineHeight: "1" }}
+                        onClick={() => {
+                        if ( blockIfNoBusiness() || blockIfDemo("import Leads")) return;
+                        toggleImportModal();
+                        }}
+                    >
+                        Import Leads
+                    </Button>
+
+                    <Button 
+                        color="primary" 
+                        style={{ maxHeight: "27.13px", fontSize: "12.5px", lineHeight: "1" }}
+                        onClick={() => {
+                        if ( blockIfNoBusiness() || blockIfDemo("export Leads")) return;
+                        handleExportLeads();
+                        }}
+                    >
+                        Export Leads
+                    </Button>
+                    </>
+                )}
+
+                {(role === "firm_admin") && (
+                    <Button 
+                    color="primary" 
+                    style={{ maxHeight: "27.13px", fontSize: "12.5px", lineHeight: "1" }}
+                    onClick={() => { 
+                        if ( blockIfNoBusiness() || blockIfDemo("delete Leads")) return; 
+                        handleDeleteLeads(null); 
+                    }}
+                    >
+                    Delete Selected Leads
+                    </Button>
+                )}
+
+                {(role === "ASM" || role === "SM" || role === "firm_admin") && (
+                    <Button 
+                    color="primary" 
+                    style={{ maxHeight: "27.13px", fontSize: "12.5px", lineHeight: "1" }}
+                    onClick={() => { 
+                        if (  blockIfNoBusiness() || blockIfDemo("assign Leads")) return; 
+                        toggleAssignModal(); 
+                    }}
+                    >
+                    Assign Leads
+                    </Button>
+                )}
                 </div>
+
                 <div className="search-bar mb-3">
                     <input
                         type="text"
@@ -424,9 +487,9 @@ function AllLeads() {
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th>Phone</th>
-                                <th>Platform</th>
+                                {/* <th>Platform</th>
                                 <th>Organic</th>
-                                <th>Ad. Data</th>
+                                <th>Ad. Data</th> */}
                                 <th>Created/Updated</th>
                                 <th>Status</th>
                                 <th>Action</th>
@@ -454,9 +517,9 @@ function AllLeads() {
                                         <td>{lead.firstName + " " + lead.lastName}</td>
                                         <td>{lead.email}</td>
                                         <td>{lead.phoneNumber}</td>
-                                        <td>{lead.platform}</td>
+                                        {/* <td>{lead.platform}</td>
                                         <td>{lead.isOrganic ? "yes" : "no"}</td>
-                                        <td>{lead.adId}<br />{lead.adName}</td>
+                                        <td>{lead.adId}<br />{lead.adName}</td> */}
                                         <td>
                                             {new Date(lead.createdAt).toLocaleString("en-IN", {
                                                 timeZone: "Asia/Kolkata",
@@ -492,15 +555,18 @@ function AllLeads() {
                                                 style={{ fontSize: "22px", fontWeight: "bold", cursor: "pointer" }}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    toggleModal(lead._id, "edit")}}
+                                                    // if (blockIfDemo("edit a Lead")) return;
+                                                    toggleModal(lead._id, "edit");
+                                                }}
                                             ></i>
                                             <i
                                                 className="bx bx-trash"
                                                 style={{ fontSize: "22px", fontWeight: "bold", cursor: "pointer" }}
                                                 onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDeleteLeads(lead._id)}
-                                            }
+                                                        e.stopPropagation();
+                                                        if (blockIfDemo("delete a Lead")) return;
+                                                        handleDeleteLeads(lead._id);
+                                                    }}
                                             ></i>
                                         </td>
                                     </tr>

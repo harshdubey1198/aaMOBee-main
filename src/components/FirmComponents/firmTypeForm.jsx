@@ -5,7 +5,7 @@ function FirmTypeForm({ firmDetails, setFirmDetails }) {
   const authuser = JSON.parse(localStorage.getItem("authUser"));
   const role = authuser?.response?.role;
   // console.log(role);
-  console.log(firmDetails);
+  // console.log(firmDetails);
 
   const firmTypes = [
     { value: "sole_proprietorship", label: "Sole Proprietorship" },
@@ -18,13 +18,13 @@ function FirmTypeForm({ firmDetails, setFirmDetails }) {
   ];
 
   const fieldsMap = {
-    sole_proprietorship: ["pan", "gstin", "udyam", "shopAndEstablishmentLicense", "currentBankAccount"],
-    partnership: ["pan", "partnershipDeed", "gstin", "tan", "udyam", "shopAndEstablishmentLicense"],
-    llp: ["pan", "certificateOfIncorporation", "llpAgreement", "gstin", "tan", "digitalSignatureCertificate", "din", "udyam"],
-    llc: ["pan", "certificateOfIncorporation", "llpAgreement", "gstin", "tan", "digitalSignatureCertificate", "din", "udyam"],
-    pvt_ltd: ["pan", "certificateOfIncorporation", "moaAndAoa", "gstin", "tan", "dsc", "din", "esiAndPfRegistration", "udyam"],
-    public_ltd: ["pan", "certificateOfIncorporation", "moaAndAoa", "gstin", "tan", "dsc", "din", "esiAndPfRegistration", "cin", "sebiRegistration"],
-    opc: ["pan", "certificateOfIncorporation", "moaAndAoa", "gstin", "tan", "dsc", "din", "udyam"],
+    sole_proprietorship: ["pan", "udyam", "shopAndEstablishmentLicense", "currentBankAccount"],
+    partnership: ["pan", "partnershipDeed", "tan", "udyam", "shopAndEstablishmentLicense"],
+    llp: ["pan", "certificateOfIncorporation", "llpAgreement", "tan", "digitalSignatureCertificate", "din", "udyam"],
+    llc: ["pan", "certificateOfIncorporation", "llpAgreement", "tan", "digitalSignatureCertificate", "din", "udyam"],
+    pvt_ltd: ["pan", "certificateOfIncorporation", "moaAndAoa", "tan", "dsc", "din", "esiAndPfRegistration", "udyam"],
+    public_ltd: ["pan", "certificateOfIncorporation", "moaAndAoa", "tan", "dsc", "din", "esiAndPfRegistration", "cin", "sebiRegistration"],
+    opc: ["pan", "certificateOfIncorporation", "moaAndAoa", "tan", "dsc", "din", "udyam"],
   };
 
   useEffect(() => {
@@ -50,17 +50,7 @@ function FirmTypeForm({ firmDetails, setFirmDetails }) {
   return (
     <div>
       <div className="form-group">
-      <div
-          className='p-2 my-2 col-lg-3 col-md-3 col-sm-12 rounded'  
-          style={{
-            width:"100%",
-            height:"auto",
-            fontWeight:"bolder",
-            background : "var(--bs-header-dark-bg)",
-            color:"white"
-              }}> 
-              Firm Type details section
-          </div>
+        <h3 className="section-title">Firm Type Details</h3>
             {/* {(role === "client_admin" || role === "super_admin") && ( */}
                 <>
                   <label>Business Type</label>

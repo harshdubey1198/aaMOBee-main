@@ -48,11 +48,11 @@ const PaymentHistoryModal = ({ isOpen, toggle, paymentHistory }) => {
                         >
                         <td>{index + 1}</td>
                         <td>{payment.planId?.title}</td>
-                        <td>{currencySymbols[payment.currency] || payment.currency}{payment.amount}</td>
+                        <td>{payment.currency.toUpperCase()} {payment.amount}</td>
                         <td>{new Date(payment.paymentDate).toLocaleDateString("en-GB")}</td>
                         <td>{new Date(payment.expirationDate).toLocaleDateString("en-GB")}</td>
                         {isExpired && (
-                            <td style={{ color: "red", fontSize: "20px", fontWeight: "bold" }}>*</td>
+                            <td style={{ color: "red", fontSize: "20px", fontWeight: "bold", textAlign:"center" }}>*</td>
                         )}
                         {isActive && (
                             <td style={{ color: "green", fontSize: "20px", fontWeight: "bold", textAlign:"center" }}>*</td>

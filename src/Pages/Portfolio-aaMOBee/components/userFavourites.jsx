@@ -1,4 +1,4 @@
-import React from 'react'
+// import React from 'react'
 import ufOne from "../assets/uf-img-1.webp";
 import ufTwo from "../assets/uf-img-2.webp";
 import ufThree from "../assets/uf-img-3.webp";

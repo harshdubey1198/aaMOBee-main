@@ -103,4 +103,23 @@ crmUserController.UpdatepasswordCrmsUsers = async (req, res) => {
   }
 }
 
+crmUserController.adminResetCrmPassword = async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    const response = await crmUserService.adminResetCrmPassword(
+      req.params.id,
+      newPassword
+    );
+    return res
+      .status(200)
+      .json(createResult("Password reset successfully by admin", response));
+  } catch (error) {
+    console.log("error admin resetting password", error);
+    return res
+      .status(400)
+      .json(createResult(null, null, error.message));
+  }
+};
+
+
 module.exports = crmUserController

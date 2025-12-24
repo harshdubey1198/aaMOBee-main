@@ -68,6 +68,7 @@ File: Main Css File
 @import "custom/pages/coming-soon";
 @import "custom/pages/timeline";
 @import "custom/pages/extras-pages";
+@import "custom/pages/firm-branding";
 
 input[type=number] {
     -moz-appearance: textfield;
@@ -145,4 +146,190 @@ input[type=number]::-webkit-inner-spin-button {
   // transform: none !important;
   // position: relative !important;
   right: 0 !important;
+}
+
+// Team Access UI Improvements
+.user-table-container {
+  padding: 1.5rem;
+}
+
+.user-table-container .table {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.user-table-container .table thead th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.user-table-container .table th,
+.user-table-container .table td {
+  vertical-align: middle;
+}
+
+.user-table-container .table td {
+  padding: 0.75rem;
+}
+
+.user-table-container .badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.35em 0.65em;
+}
+
+.user-table-container .btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+// Modal improvements
+.modal-content {
+  border: none;
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.03);
+}
+
+.modal-header {
+  border-radius: 0.375rem 0.375rem 0 0 !important;
+}
+
+.form-label {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: #0d4251;
+  box-shadow: 0 0 0 0.2rem rgba(13, 66, 81, 0.25);
+}
+
+// Enhanced business card styles
+.business-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 20px;
+  overflow: hidden;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+  }
+}
+
+// Enhanced button styles
+// .btn-primary {
+//   background: linear-gradient(135deg, #1E4E5B 0%, #2ECC71 100%);
+//   border: none;
+//   font-weight: 600;
+  
+//   &:hover {
+//     background: linear-gradient(135deg, #16424b 0%, #27ae60 100%);
+//     transform: translateY(-2px);
+//     box-shadow: 0 8px 25px rgba(30, 78, 91, 0.3);
+//   }
+// }
+
+// Enhanced card styles
+.card {
+  border-radius: 20px;
+  border: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  
+  .card-header {
+    border-radius: 20px 20px 0 0 !important;
+  }
+}
+
+// Enhanced badge styles
+.badge {
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-weight: 600;
+}
+
+// Enhanced form styles
+.form-control, .form-select {
+  border-radius: 12px;
+  border: 2px solid #e9ecef;
+  padding: 12px 16px;
+  
+  &:focus {
+    border-color: #1E4E5B;
+    box-shadow: 0 0 0 0.2rem rgba(30, 78, 91, 0.25);
+  }
+}
+
+// Enhanced section title styles
+.section-title {
+  font-weight: 700;
+  color: #1E4E5B;
+  position: relative;
+  padding-bottom: 15px;
+  
+  &:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: #2ECC71;
+    border-radius: 3px;
+  }
+}
+
+// Page content improvements
+.page-content {
+  padding: 2rem;
+}
+
+// Enhanced dropdown styles
+.dropdown-menu {
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+// Enhanced pagination styles
+.pagination {
+  .page-link {
+    border-radius: 12px;
+    border: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  
+  .page-item.active .page-link {
+    background: linear-gradient(135deg, #1E4E5B 0%, #2ECC71 100%);
+    border: none;
+  }
+}
+
+// Enhanced alert styles
+.alert {
+  border-radius: 16px;
+  border: none;
+}
+
+// Enhanced input group styles
+.input-group {
+  border-radius: 12px;
+  border: 2px solid #e9ecef;
+  overflow: hidden;
+  
+  .form-control {
+    border: none;
+    border-radius: 0;
+  }
+  
+  .input-group-text {
+    border: none;
+    background: #f8f9fa;
+  }
 }

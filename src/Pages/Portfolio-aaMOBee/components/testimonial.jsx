@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import invertedNoBgLines from '../assets/three-lines-inverted-nobg.webp';
 import starIcon from '../assets/stars-icon.webp';
-import clientOne from '../assets/Jasjit Chopra.webp';
+import clientOne from '../assets/casiope.png';
 import clientTwo from '../assets/Rishabh Jain.webp';
 
 const testimonials = [
   {
     id: 1,
-    name: 'Jagjit Chopra',
-    position: 'CEO, Penthara Technologies',
+    name: 'Manon Chamand',
+    position: 'Administrative Director, CASIOPE',
     review: '‟aaMOBee has been a game-changer for my business. The multi-firm utilities and innovative features have helped me streamline operations and achieve unprecedented growth. From seamless invoicing to efficient inventory management, the platform has provided everything I needed and more to take my business to the next level.”',
     stars: 5,
     image: clientOne,
@@ -29,7 +29,7 @@ function Testimonial() {
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveIndex((prevIndex) => (prevIndex + 1) % testimonials.length);
-    }, 2000); 
+    }, 5000); 
 
     return () => clearInterval(interval);
   }, []);
@@ -66,7 +66,7 @@ function Testimonial() {
               <p className="review-text">{testimonial.review}</p>
               <div className="reviewer-div">
                 <div className="reviewer-img-container">
-                  <img src={testimonial.image} 
+                  <img src={testimonial.image}
                   //  loading="lazy" 
                   alt="reviewer" className="reviewer" />
                 </div>

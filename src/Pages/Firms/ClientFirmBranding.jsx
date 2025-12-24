@@ -15,6 +15,7 @@ import BankDetailsForm from "../../components/FirmBranding/BankDetailsForm.js";
 import TaxationDetailsForm from "../../components/FirmBranding/TaxationDetailsForm";
 import LayoutSelector from "../../components/FirmBranding/LayoutSelector";
 import FirmBasicInfoForm from '../../components/FirmBranding/FirmBasicInfoForm';
+import { useLocation } from "react-router-dom";
 import { BackButton } from '../../components/Common/BackButton.js';
 
 function ClientFirmBranding() {
@@ -26,6 +27,8 @@ function ClientFirmBranding() {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [previewType, setPreviewType] = useState(null); // "invoice" or "bill"
   const [layouts, setLayouts] = useState({ invoice: 'layout1', bill: 'layout1' });
+  const location = useLocation();
+
 
   const handleInvoicePreview = (layoutId) => {
     const dummyInvoiceData = generateDummyInvoice(fetchedFirmDetails);
@@ -77,11 +80,16 @@ function ClientFirmBranding() {
     setAuthUser(user);
   }, []);
 
-  useEffect(() => {
-    const savedFirm = JSON.parse(localStorage.getItem("defaultFirm"));
-    setSelectedFirmId(savedFirm?.firmId || null);
-    console.log("Selected Firm ID:", savedFirm?.firmId);
-  }, []);
+ useEffect(() => {
+  const savedFirm = JSON.parse(localStorage.getItem("defaultFirm"));
+  const firmIdFromRouter = location.state?.firmId;
+
+  if (firmIdFromRouter) {
+    setSelectedFirmId(firmIdFromRouter);
+  } else if (savedFirm?.firmId) {
+    setSelectedFirmId(savedFirm.firmId);
+  }
+}, [location.state]);
 
   useEffect(() => {
     const fetchFirm = async () => {
@@ -182,23 +190,33 @@ function ClientFirmBranding() {
   };
 
   const handleRegisteredTaxationChange = (index, field, value) => {
-    const updated = [...fetchedFirmDetails.registeredTaxationDetail];
+  let updated;
+  
+  if (field === "all") {
+    // Directly replace the whole array (for Show/Hide buttons)
+    updated = value;
+  } else {
+    // Update a single field for normal input changes
+    updated = [...fetchedFirmDetails.registeredTaxationDetail];
     updated[index] = {
       ...updated[index],
       [field]: field === "toShow" ? Boolean(value) : value,
     };
-    setFetchedFirmDetails(prev => ({
-      ...prev,
-      registeredTaxationDetail: updated
-    }));
-  };
+  }
+
+  setFetchedFirmDetails(prev => ({
+    ...prev,
+    registeredTaxationDetail: updated
+  }));
+};
+
 
   const addNewTaxationField = () => {
     setFetchedFirmDetails(prev => ({
       ...prev,
       registeredTaxationDetail: [
         ...prev.registeredTaxationDetail,
-        { fieldName: "", fieldValue: "", toShow: false }
+        { fieldName: "", fieldValue: "", toShow: true }
       ]
     }));
   };
@@ -285,150 +303,171 @@ function ClientFirmBranding() {
   };
 
   return (
-    <div className="page-content">
-      <div className="container">
-        <Col lg={12} className="mx-auto mt-2">
-          <Card>
-                  {/* <BackButton />   */}
-            <CardBody>
-              <div className="row d-flex justify-content-between align-items-center mb-2">
-                 <div className="col-lg-6 col-md-6 col-sm-12 d-flex align-items-center gap-3">
-                  <BackButton />
-                  <h4 className="mb-0">Business Branding</h4>
-                </div>
-                <div className="col-lg-6 col-md-6 col-sm-12 mb-3 text-end m-text-center">
-                  {authUser?.response?.role === "client_admin" && (
-                    <FirmSwitcher
-                      selectedFirmId={selectedFirmId}
-                      onSelectFirm={setSelectedFirmId}
-                    />
-                  )}
-                </div>
+    <div className="page-content firm-branding-page" style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
+      <div className="container py-4">
+        <Col lg={12} className="mx-auto">
+          <div className="page-header mb-4">
+            <div className="header-content">
+              <div className="d-flex align-items-center gap-3 mb-3">
+                <BackButton />
+                <h1 className="page-title mb-0">Business Branding</h1>
               </div>
-
+              <div className="mb-3">
+                {authUser?.response?.role === "client_admin" && (
+                  <FirmSwitcher
+                    selectedFirmId={selectedFirmId}
+                    onSelectFirm={setSelectedFirmId}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+          <Card className="firm-card shadow-sm">
+            <CardBody>
               {selectedFirmId ? (
                 <Form onSubmit={handleSubmit}>
-                  <div className='d-flex justify-content-center'>
-                    <Col lg={3} md={3} sm={12} className="mb-3 d-flex justify-content-center align-items-center">
-                      <div
-                        className="avatar-upload-wrapper position-relative"
-                        style={{ width: '150px', height: '150px' }} >
-                        {fetchedFirmDetails.avatar ? (
-                          <img
-                            src={
-                              typeof fetchedFirmDetails.avatar === "string"
-                                ? fetchedFirmDetails.avatar
-                                : URL.createObjectURL(fetchedFirmDetails.avatar)
-                            }
-                            alt="Firm Avatar"
-                            className="img-fluid"
-                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px', cursor: 'pointer' }} />
-                        ) : (
-                          <div
-                            style={{ width: '100%', height: '100%', border: '2px dashed #ccc', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#888', fontSize: '14px' }} >
-                            Upload Logo
-                          </div>
-                        )}
-                        <button
-                          type="button"
-                          className="edit-avatar-btn position-absolute"
-                          onClick={() => document.getElementById('avatarUploadInput').click()}
-                          style={{ bottom: '10px', right: '10px', backgroundColor: '#ffffffcc', border: 'none', borderRadius: '50%', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                          aria-label="Edit Logo">
-                          <i className="mdi mdi-pencil"></i>
-                        </button>
+                  <div className="avatar-section">
+                    <div className="avatar-wrapper">
+                      {fetchedFirmDetails.avatar ? (
+                        <img
+                          src={
+                            typeof fetchedFirmDetails.avatar === "string"
+                              ? fetchedFirmDetails.avatar
+                              : URL.createObjectURL(fetchedFirmDetails.avatar)
+                          }
+                          alt="Firm Avatar"
+                          className="firm-avatar" />
+                      ) : (
+                        <div className="avatar-placeholder">
+                          <i className="bx bx-buildings mb-2"></i>
+                          <span>Upload Logo</span>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        className="edit-avatar-btn"
+                        onClick={() => document.getElementById('avatarUploadInput').click()}
+                        aria-label="Edit Logo">
+                        <i className="bx bx-pencil"></i>
+                      </button>
 
-                        <input type="file" accept="image/*" id="avatarUploadInput"
-                          style={{ display: 'none' }}
-                          onChange={(e) => {
-                            const file = e.target.files[0];
-                            if (file) {
-                              setFetchedFirmDetails(prev => ({
-                                ...prev,
-                                avatar: file
-                              }));
-                            }
-                          }}
-                        />
-                      </div>
-                    </Col>
+                      <input type="file" accept="image/*" id="avatarUploadInput"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            setFetchedFirmDetails(prev => ({
+                              ...prev,
+                              avatar: file
+                            }));
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
 
-                  <Row>
+                  <div className="form-section">
+                    <h2 className="section-title">Basic Information</h2>
                     <FirmBasicInfoForm
                       formData={fetchedFirmDetails}
                       handleInputChange={handleInputChange}
                       handleFieldChange={handleFieldChange} />
-
+                  </div>
+                  
+                  <div className="section-divider"></div>
+                  
+                  <div className="form-section">
+                    <h2 className="section-title">Taxation Details</h2>
                     <TaxationDetailsForm
                       taxationDetails={fetchedFirmDetails.registeredTaxationDetail}
                       onAdd={addNewTaxationField}
                       onRemove={removeCurrentTaxationField}
                       onChange={handleRegisteredTaxationChange} />
-
-                    <Col lg={12} >
-                      <div
-                        className='p-2 my-2 col-lg-3 col-md-3 col-sm-12 rounded'
-                        style={{ width: "100%", height: "auto", fontWeight: "bolder", background: "var(--bs-header-dark-bg)", color: "white" }}>
-                        Banking Details
-                      </div>
-                    </Col>
-
+                  </div>
+                  
+                  <div className="section-divider"></div>
+                  
+                  <div className="form-section bank-details-section">
+                    <h2 className="section-title">Banking Details</h2>
                     <BankDetailsForm
                       bankDetails={fetchedFirmDetails.bankDetails}
                       onChange={updateBankField}
                       onRemove={removeBankDetail} />
-
+                  
                     <div className="d-flex justify-content-end mb-3">
                       <Button
                         onClick={addBankDetail}
                         className="btn btn-tertiary"
-                        style={{ backgroundColor: "#05464B", border: "none", color: "#fff", padding: "8px 20px", fontSize: "14px", borderRadius: "8px", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", }} >
+                        style={{
+                          borderRadius: '12px',
+                          fontWeight: '600',
+                          padding: '10px 20px',
+                          transition: 'all 0.3s ease',
+                          boxShadow: '0 4px 15px rgba(5, 70, 75, 0.3)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.transform = 'translateY(-2px)';
+                          e.target.style.boxShadow = '0 8px 25px rgba(5, 70, 75, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.transform = 'translateY(0)';
+                          e.target.style.boxShadow = '0 4px 15px rgba(5, 70, 75, 0.3)';
+                        }}
+                      >
                         + Add Bank
                       </Button>
                     </div>
-                  </Row>
+                  </div>
 
-                  {fetchedFirmDetails.address.length > 0 ? (
-                    fetchedFirmDetails.address.map((address, index) => (
+                  <div className="section-divider"></div>
+
+                  <div className="form-section">
+                    {/* <h2 className="section-title">Address Details</h2> */}
+                    {fetchedFirmDetails.address.length > 0 ? (
+                      fetchedFirmDetails.address.map((address, index) => (
+                        <FirmAddressForm
+                          key={index}
+                          address={address}
+                          index={index}
+                          handleAddressChange={handleAddressChange} />))
+                    ) : (
                       <FirmAddressForm
-                        key={index}
-                        address={address}
-                        index={index}
-                        handleAddressChange={handleAddressChange} />))
-                  ) : (
-                    <FirmAddressForm
-                      index={0}
-                      handleAddressChange={handleAddressChange} />)}
+                        index={0}
+                        handleAddressChange={handleAddressChange} />)}
+                  </div>
 
-                  <FirmTypeForm firmDetails={fetchedFirmDetails} setFirmDetails={setFetchedFirmDetails} />
+                  <div className="section-divider"></div>
 
-                  {/* <Col lg={12}>
-                    <div className='p-2 my-2 rounded' style={{ width: "100%", fontWeight: "bolder", background: "var(--bs-header-dark-bg)", color: "white" }}>
-                      Invoice & Billing Design
-                    </div>
-                  </Col> */}
+                  <div className="form-section">
+                    {/* <h2 className="section-title">Firm Type Details</h2> */}
+                    <FirmTypeForm firmDetails={fetchedFirmDetails} setFirmDetails={setFetchedFirmDetails} />
+                  </div>
 
-                  {/* <Row className="mb-4">
-                    <LayoutSelector
-                      type="invoice"
-                      layoutOptions={layoutOptions.invoice}
-                      selectedLayout={layouts.invoice}
-                      onChangeLayout={handleLayoutChange}
-                      onPreviewLayout={handleInvoicePreview} />
+                  <div className="action-buttons">
+                    <Button 
+                      color="primary" 
+                      type="submit"
+                      style={{
+                        borderRadius: '12px',
+                        fontWeight: '600',
+                        padding: '12px 30px',
+                        transition: 'all 0.3s ease',
+                        boxShadow: '0 4px 15px rgba(30, 78, 91, 0.3)',
+                        border: 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.transform = 'translateY(-3px)';
+                        e.target.style.boxShadow = '0 8px 25px rgba(30, 78, 91, 0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'translateY(0)';
+                        e.target.style.boxShadow = '0 4px 15px rgba(30, 78, 91, 0.3)';
+                      }}
+                    >
+                      Save Changes
+                    </Button>
+                  </div>
 
-                    <LayoutSelector
-                      type="bill"
-                      layoutOptions={layoutOptions.bill}
-                      selectedLayout={layouts.bill}
-                      onChangeLayout={handleLayoutChange}
-                      onPreviewLayout={(layoutId) => {
-                        setSelectedBill(dummyBill);
-                        setPreviewLayoutType(layoutId);
-                        setPreviewType("bill");
-                        setIsModalOpen(true);
-                      }} />
-                  </Row> */}
                   {isModalOpen && previewType === "bill" && selectedBill && (
                     <BillPreviewModal
                       isOpen={isModalOpen}
@@ -445,10 +484,20 @@ function ClientFirmBranding() {
                       companyData={fetchedFirmDetails}
                       onClose={handleCloseModal}
                       layoutId={previewLayoutType} />)}
-                  <Button color="primary" type="submit" onClick={(e) => handleSubmit(e)}>Save Changes</Button>
                 </Form>
               ) : (
-                <Alert color="info">Please select a firm to edit its settings.</Alert>
+                <Alert 
+                  color="info" 
+                  className="text-center py-4"
+                  style={{
+                    borderRadius: '12px',
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%)'
+                  }}
+                >
+                  <i className="bx bx-info-circle me-2" style={{ fontSize: '24px' }}></i>
+                  Please select a firm to edit its settings.
+                </Alert>
               )}
             </CardBody>
           </Card>
@@ -457,4 +506,5 @@ function ClientFirmBranding() {
     </div>
   );
 }
+
 export default ClientFirmBranding;

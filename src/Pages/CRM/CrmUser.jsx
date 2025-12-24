@@ -4,6 +4,7 @@ import Breadcrumbs from "../../components/Common/Breadcrumb";
 import { getRoles, createCrmUser, getCrmUsers, updateCrmUser, } from "../../apiServices/service";
 import { toast } from "react-toastify";
 import FirmSwitcher from "../Firms/FirmSwitcher";
+import ResetPasswordModal from "../../Modal/ResetPasswordModal";
 
 function CrmUser() {
   const [roles, setRoles] = useState([]);
@@ -13,10 +14,19 @@ function CrmUser() {
   const [trigger, setTrigger] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const authUser = JSON.parse(localStorage.getItem("authUser"));
+  const isDemo = authUser?.response?.isDemo;
   const role = JSON.parse(localStorage.getItem("authUser"))?.response?.role;
-  const [ selectedFirmId, setSelectedFirmId ] = useState(null);
-  const firmId = JSON.parse(localStorage.getItem("authUser"))?.response?.adminId; 
+  const [selectedFirmId, setSelectedFirmId] = useState(null);
+  const firmId = JSON.parse(localStorage.getItem("authUser"))?.response?.adminId;
   const idToUse = role === "client_admin" ? selectedFirmId : firmId;
+   const blockIfNoBusiness = () => {
+    if (!selectedFirmId) {
+      toast.info("Please add/select a business first to continue");
+      return true;
+    }
+    return false;
+  };
   const [newUser, setNewUser] = useState({
     firstName: "",
     lastName: "",
@@ -25,7 +35,32 @@ function CrmUser() {
     roleId: "",
     isActive: true,
   });
+  const [resetModal, setResetModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  const authuser = JSON.parse(localStorage.getItem("authUser"));
+  const token = authuser?.token;
+
+  const config = {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  };
+  
+  const handleResetPasswordClick = (user) => {
+    setSelectedUser(user);
+    setResetModal(true);
+  };
+
   console.log("newUser", newUser);
+ const blockIfDemo = (actionName) => {
+    if (isDemo) {
+      toast.error(`Demo accounts cannot ${actionName}`);
+      return true;
+    }
+    return false;
+  };
   
   const fetchRoles = async () => {
     try {
@@ -59,14 +94,20 @@ function CrmUser() {
       roleName.includes(searchTerm.toLowerCase())
     );
   });
-
+  
   const createCrmUsers = async (user) => {
     // console.log("firmId", firmId);  
+   if (!selectedFirmId) {
+      toast.info("Please add/select a business first to continue");
+      return true;
+    }
+    if (blockIfDemo("create a CRM user")) return;
+    
     try {
       const result = await createCrmUser({
         ...user,
-        makersRole: role, 
-        firmId: idToUse , 
+        makersRole: role,
+        firmId: idToUse,
       });
       // alert(result.message || 'User saved successfully');
       toast.success(result.message || "User saved successfully");
@@ -84,7 +125,7 @@ function CrmUser() {
         isActive: true,
         firmId: idToUse,
       });
-      
+
       localStorage.setItem("crmUsers", JSON.stringify(updatedUsers));
     } catch (error) {
       alert(error.message || "Failed to save user");
@@ -92,8 +133,8 @@ function CrmUser() {
   };
 
   const NumberOfTotalUsers = users.length;
-  
-   
+
+
   useEffect(() => {
     fetchRoles();
     fetchCrmUsers();
@@ -101,7 +142,7 @@ function CrmUser() {
   useEffect(() => {
     fetchCrmUsers();
   }, [trigger, selectedFirmId]);
-  
+
 
   const handleAddUser = () => {
     createCrmUsers(newUser);
@@ -139,12 +180,14 @@ function CrmUser() {
   };
 
   const handleDeleteUser = (_id) => {
+    if (blockIfDemo("delete a CRM user")) return;
     const updatedUsers = users.filter((user) => user._id !== _id);
     setUsers(updatedUsers);
     localStorage.setItem("crmUsers", JSON.stringify(updatedUsers));
   };
 
   const handleUpdateUser = async () => {
+    if (blockIfDemo("update a CRM user")) return;
     try {
       const result = await updateCrmUser(newUser._id, newUser);
       toast.success(result.message || "User updated successfully");
@@ -164,7 +207,7 @@ function CrmUser() {
   }
   useEffect(() => {
     fetchCrmUsers();
-  },[trigger]);
+  }, [trigger]);
 
   const totalUsers = filteredUsers.length;
   const totalPages = Math.ceil(totalUsers / itemsPerPage);
@@ -196,16 +239,16 @@ function CrmUser() {
             <p className="mm-active mb-0">
               This is the CRM user page. Here you can manage CRM users.
             </p>
-           <div className="d-flex">
-            {role === "client_admin" ? (
-                  <FirmSwitcher selectedFirmId={selectedFirmId} onSelectFirm={setSelectedFirmId} />
-                        ) : null
-                        }
-              <span className="badge bg-primary rounded d-flex align-items-center " style={{marginLeft:"8px",fontSize:"13px",padding:"6px"}}>
-              Total Users :  {NumberOfTotalUsers}
+            <div className="d-flex">
+              {role === "client_admin" ? (
+                <FirmSwitcher selectedFirmId={selectedFirmId} onSelectFirm={setSelectedFirmId} />
+              ) : null
+              }
+              <span className="badge bg-primary rounded d-flex align-items-center " style={{ marginLeft: "8px", fontSize: "13px", padding: "6px" }}>
+                Total Users :  {NumberOfTotalUsers}
               </span>
               <i className="bx bx-refresh bx-lg" style={{ fontSize: "24px", fontWeight: "bold", cursor: "pointer", backgroundColor:"lightblue" , padding:"2px",marginLeft:"5px" , borderRadius:"5px" }} onClick={refetchUsers}></i>
-              <i className="bx bx-plus bx-lg" style={{ fontSize: "24px", fontWeight: "bold", cursor: "pointer", backgroundColor:"lightblue" , padding:"2px",marginLeft:"5px" , borderRadius:"5px" }} onClick={toggleModal}></i>              
+              <i className="bx bx-plus bx-lg" style={{ fontSize: "24px", fontWeight: "bold", cursor: "pointer", backgroundColor:"lightblue" , padding:"2px",marginLeft:"5px" , borderRadius:"5px" }} onClick={() => {  toggleModal(); }}></i>              
             </div>
           </div>
           <div className="table-responsive">
@@ -221,6 +264,7 @@ function CrmUser() {
                   {/* <th>Role</th> */}
                   <th>Status</th>
                   <th>Actions</th>
+                  <th>Passwords</th>
                 </tr>
               </thead>
               <tbody>
@@ -245,6 +289,23 @@ function CrmUser() {
                         onClick={() => handleEditUser(user)}
                       ></i>
                     </td>
+                    <td>
+                      <button
+                        onClick={() => handleResetPasswordClick(user)}
+                        className="btn btn-sm btn-outline-primary d-flex align-items-center gap-2"
+                        style={{
+                          borderRadius: "12px",
+                          fontWeight: "600",
+                          padding: "6px 12px",
+                          transition: "all 0.3s ease",
+                          boxShadow: "0 4px 10px rgba(0, 123, 255, 0.2)",
+                        }}
+                      >
+                        <i className="ri-key-2-fill" style={{ fontSize: "18px" }}></i>
+                        Reset
+                      </button>
+                    </td>
+
                   </tr>
                 ))}
                 {filteredUsers.length === 0 && (
@@ -349,8 +410,17 @@ function CrmUser() {
           </Modal>
         </div>
       </div>
+      <ResetPasswordModal
+        isOpen={resetModal}
+        toggle={() => setResetModal(false)}
+        user={selectedUser}
+        config={config}
+        fetchUsers={fetchCrmUsers}
+        type="crm"
+      />
     </React.Fragment>
   );
+
 }
 
 export default CrmUser;

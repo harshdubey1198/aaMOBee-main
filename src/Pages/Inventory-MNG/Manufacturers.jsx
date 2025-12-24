@@ -9,7 +9,7 @@ import FirmSwitcher from '../Firms/FirmSwitcher';
 import { BackButton } from '../../components/Common/BackButton';
 
 const Manufacturers = () => {
-  // const authuser = JSON.parse(localStorage.getItem("authUser")).response;
+  const authuser = JSON.parse(localStorage.getItem("authUser")).response;
   const firmId = JSON.parse(localStorage.getItem('authUser'))?.response?.adminId || JSON.parse(localStorage.getItem('authUser'))?.response?.firmId;
   const role = JSON.parse(localStorage.getItem("authUser")).response.role;
   const [selectedFirmId, setSelectedFirmId] = useState(null);
@@ -22,7 +22,21 @@ const Manufacturers = () => {
   const [manufacturerToAdd, setManufacturerToAdd] = useState(null);
   const [searchQuery, setSearchQuery] = useState(''); 
   const [triggerManufacturer, setTriggerManufacturer] = useState(false); 
-
+ const isDemo = authuser?.isDemo;
+ const blockIfDemo = (actionName) => {
+   if (isDemo) {
+     toast.error(`Demo accounts cannot ${actionName}`);
+     return true;
+   }
+   return false;
+ };
+  const blockIfNoBusiness = () => {
+    if (!selectedFirmId) {
+      toast.info("Please add/select a business first to continue");
+      return true; 
+    }
+    return false; 
+  };
   const toggleModal = () => {
     setIsModalOpen(!isModalOpen);
   };
@@ -112,7 +126,7 @@ const Manufacturers = () => {
                 placeholder="Search by title, lead, email"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ width: "100%", height:"26.8px", padding: "10px" }}
+                style={{ width: "100%", height:"39px", padding: "10px" }}
                 className="my-0"
               />
               {(role === "client_admin" && (
@@ -137,19 +151,7 @@ const Manufacturers = () => {
                 onClick={() => setTriggerManufacturer((prev) => !prev)}
               ></i>
 
-              <i
-                className="bx bx-plus"
-                style={{
-                  fontSize: "24px",
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                  backgroundColor: "lightblue",
-                  padding: "5px",
-                  marginLeft: "8px",
-                  borderRadius: "5px",
-                }}
-                onClick={handleManufacturerToAdd}
-              ></i>
+             <Button color="primary" onClick={() => { if (blockIfNoBusiness()) return;  handleManufacturerToAdd(); }} style={{fontSize:"10.5px",lineHeight:"1",marginLeft:"5px", minWidth:'105px'}}>Add Manufacturer</Button>
             </Col>
           </Row>
         </Container>
@@ -177,12 +179,12 @@ const Manufacturers = () => {
                         <i
                           className='bx bx-edit'
                           style={{ fontSize: '22px', fontWeight: 'bold', cursor: 'pointer' }}
-                          onClick={() => handleManufacturerEdit(manufacturer)}
+                          onClick={() => { if (blockIfDemo("edit a Manufacturer")) return; handleManufacturerEdit(manufacturer); }}
                         ></i>
                         <i
                           className='bx bx-trash'
                           style={{ fontSize: '22px', fontWeight: 'bold', cursor: 'pointer', marginLeft: '5px' }}
-                          onClick={() => handleManufacturerDelete(manufacturer)}
+                          onClick={() => { if (blockIfDemo("delete a Manufacturer")) return; handleManufacturerDelete(manufacturer); }}
                         ></i>
                       </td>
                     </tr>
