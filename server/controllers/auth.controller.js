@@ -20,6 +20,16 @@ authController.register = async (req, res) => {
   }
 };
 
+authController.createDemoUser = async (req, res) => {
+  try {
+    const demoUser = await authService.createDemoUser(req.body);
+    return res.status(200).json({ message: "Demo user created successfully", demoUser });
+  } catch (error) {
+    console.log("error creating demo user", error);
+    return res.status(500).json({ message: error });
+  }
+};
+
 // VERIFY OTP
 authController.verifyOtp = async (req, res) => {
   try {
@@ -127,21 +137,34 @@ authController.registration = async (req, res) => {
 
       // Extract the form data from req.body
       const registrationData = { ...req.body };
+
+      // ✅ Map businessType into firmDetails.firmType
+      if (registrationData.businessType) {
+        registrationData.firmDetails = {
+          firmType: registrationData.businessType
+        };
+        delete registrationData.businessType; // cleanup
+      }
+
       // If a file is uploaded, handle Cloudinary upload
       if (req.files && req.files.avatar) {
-        const imageUrl = await uploadToCloudinary(req.files.avatar[0].buffer); // Handle Cloudinary upload
-        registrationData.avatar = imageUrl; // Attach the Cloudinary URL to the registration data
+        const imageUrl = await uploadToCloudinary(req.files.avatar[0].buffer);
+        registrationData.avatar = imageUrl;
       }
 
       // Call the service to handle registration
       const response = await authService.registration(req.params.id, registrationData);
-      return res.status(200).json(createResult("Registration Successfully", response));
+
+      return res
+        .status(200)
+        .json(createResult("Registration Successfully", response));
     } catch (error) {
       console.log("Error Creating User", error);
       return res.status(400).json(createResult(null, null, error.message));
     }
   });
 };
+
 
 // update password
 authController.updatePassword = async (req, res) => {
@@ -158,6 +181,7 @@ authController.updatePassword = async (req, res) => {
 authController.userInactive = async (req, res) => {
   try {
     const response = await authService.userInactive(req.params.id, req.body);
+    console.log("Response from service:", response);
     return res.status(200).json(createResult("User status updated Successfully", response, false));
   } catch (error) {
     console.log("Error Inactiving User", error);
@@ -243,7 +267,7 @@ authController.updateAccount = async (req, res) => {
         const imageUrl = await uploadToCloudinary(req.files.avatar[0].buffer); // Handle Cloudinary upload
         updateData.avatar = imageUrl; // Attach the Cloudinary URL to the update data
       }
- 
+
       // Call the service to update the user's account
       const response = await authService.updateAccount(req.params.id, updateData);
       res.status(200).json(response);
@@ -320,7 +344,7 @@ authController.updateUserPermissions = async (req, res) => {
 
 
 authController.deleteFirmAndAssociatedUsers = async (req, res) => {
-  
+
   try {
     const { firmId } = req.params;
     const result = await authService.deleteFirmCascade(firmId);
@@ -334,5 +358,71 @@ authController.deleteFirmAndAssociatedUsers = async (req, res) => {
   }
 };
 
+authController.changePassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
 
+    const response = await authService.changePassword(id, newPassword);
+
+    return res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+      data: response
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+
+
+authController.getDemoUser = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.body; 
+    const demoUserData = await authService.getDemoUser(page, limit);
+    return res.status(200).json(createResult("Demo user data fetched successfully", demoUserData, false));
+  } catch (error) {
+    console.log("Error fetching demo user data:", error);
+    return res.status(400).json(createResult(error.message, null, true));
+  }
+};
+authController.getAllDemoUserLogs = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const result = await authService.getAllDemoUserLogs(Number(page), Number(limit));
+    return res.status(200).json(createResult("All demo user logs fetched successfully", result, false));
+  } catch (error) {
+    console.error("Error fetching all demo user logs:", error);
+    return res.status(400).json(createResult(error.message, null, true));
+  }
+};
+
+authController.getDemoUserLogsById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await authService.getDemoUserLogsById(id);
+    if (!result)
+      return res.status(404).json(createResult("No logs found for this demo user", null, true));
+    return res.status(200).json(createResult("Demo user logs fetched successfully", result, false));
+  } catch (error) {
+    console.error("Error fetching demo user logs by ID:", error);
+    return res.status(400).json(createResult(error.message, null, true));
+  }
+};
+authController.updateDemoUserExpiry = async (req, res) => {
+  try {
+    const updatedUser = await authService.updateDemoUserExpiryService(req.body);
+    return res.status(200).json(
+      createResult("User expiry updated successfully", {
+        expiresAt: updatedUser.expiresAt,
+      })
+    );
+  } catch (error) {
+    return res.status(400).json(createResult(error.message, null, true));
+  }
+};
 module.exports = authController;

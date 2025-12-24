@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Card, CardBody, Col, Input } from "reactstrap";
+import { Button, Card, CardBody, Col, Input, Badge, Row, Alert } from "reactstrap";
 import Breadcrumbs from "../../components/Common/Breadcrumb";
 import axios from "axios";
 import UserTable from "../../components/FirmComponents/userTable";
@@ -15,11 +15,19 @@ function UserManage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [firms, setFirms] = useState([]);
   const [defaultFirm, setDefaultFirm] = useState(null);
+  console.log("firms",selectedFirmId);
   const authuser = JSON.parse(localStorage.getItem("authUser"));
   const [trigger, setTrigger] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    pendingUsers: 0,
+    recentActivity: 0
+  });
   const [formValues, setFormValues] = useState({
-    adminId:"",
+    adminId: "",
     firstName: "",
     lastName: "",
     email: "",
@@ -27,10 +35,9 @@ function UserManage() {
     password: "",
     confirmPassword: "",
     emergencyContact: "",
-    // address: [],
     birthday: "",
     role: "",
-    gender:"NA"
+    gender: "NA"
   });
 
   const clientAdminRoles = ["firm_admin", "accountant", "employee"];
@@ -67,38 +74,65 @@ function UserManage() {
       ? clientAdminRoles
       : firmAdminRoles;
 
-  return ( 
+  return (
     <React.Fragment>
       <div className="page-content">
-          <BackButton />  {/* Reusable Back button component */}
+          <BackButton />  
         <Breadcrumbs title="aaMOBee" breadcrumbItem="Team Access" />
         
-        <div className="d-flex mb-1" style={{justifyContent:"flex-end" , gap:"15px"}}>
-          <Input
-              type="text"
-              placeholder="Search Users..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ width: "250px", maxHeight: "32px", fontSize: "14px" }}
-            />
-          <i className="bx bx-refresh bx-lg" style={{ fontSize: "24px", fontWeight: "bold", cursor: "pointer", backgroundColor:"lightblue" , padding:"2px",marginLeft:"5px" , borderRadius:"5px" }} onClick={() => setTrigger((prev) => prev + 1)}></i>
-          <i className="bx bx-plus bx-lg" style={{ fontSize: "24px", fontWeight: "bold", cursor: "pointer", backgroundColor:"lightblue" , padding:"2px",marginLeft:"5px" , borderRadius:"5px" }} onClick={toggleModal}></i>
-          {authuser?.response.role === "client_admin" && (
-            <FirmSwitcher
-            selectedFirmId={selectedFirmId}
-            onSelectFirm={setSelectedFirmId} 
-            />
-          )}
+        <div className="d-flex flex-wrap align-items-center justify-content-between mb-3">
+          <div className="d-flex align-items-center mb-2 mb-md-0">
+            <Input
+                type="text"
+                placeholder="Search Users..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="me-2"
+                style={{ width: "250px", maxHeight: "38px" }}
+              />
+            <Button
+              color="primary"
+              className="btn btn-primary d-flex align-items-center"
+              onClick={() => setTrigger((prev) => prev + 1)}
+            >
+              <i className="bx bx-refresh me-1"></i> Refresh
+            </Button>
+          </div>
+          <div className="d-flex align-items-center">
+           <Button
+              color="success"
+              className="btn btn-primary d-flex align-items-center me-2"
+              onClick={() => {
+                console.log("firms", selectedFirmId);
+                if (!selectedFirmId) {
+                  toast.info("Please add a business first to continue making team");
+                  return;
+                }
+                toggleModal();
+              }}
+            >
+              <i className="bx bx-plus me-1"></i> Add User
+            </Button>
+
+
+
+            {authuser?.response.role === "client_admin" && (
+              <FirmSwitcher
+              selectedFirmId={selectedFirmId}
+              onSelectFirm={setSelectedFirmId}
+              />
+            )}
+          </div>
         </div>
-        <Col lg={12}>
-          <Card>
-            <CardBody className="p-0 m-0">
-              
-                <UserTable selectedFirmId={selectedFirmId} trigger={trigger} searchQuery={searchQuery} />
-             
-            </CardBody>
-          </Card>
-        </Col>
+        <Row>
+          <Col lg={12}>
+            <Card className="firm-card">
+              <CardBody className="p-0">
+                  <UserTable selectedFirmId={selectedFirmId} trigger={trigger} searchQuery={searchQuery} />
+              </CardBody>
+            </Card>
+          </Col>
+        </Row>
       </div>
       {authuser?.response.role === "client_admin" && (
         <ClientUserCreateForm

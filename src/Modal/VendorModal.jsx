@@ -10,8 +10,18 @@ const VendorModal = ({
   handleVendorSubmit,
   editMode,
 }) => {
+    const authuser = JSON.parse(localStorage.getItem("authUser")).response;
+  const blockIfDemo = (actionName) => {
+        if (authuser?.isDemo) {
+          // setLoading(false);
+          toast.error(`Demo accounts cannot create a new ${actionName}`);
+          return true; 
+        }
+        return false; 
+      };
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (blockIfDemo("Vendors")) return;
 
     if (!validateEmail(vendorData.email)) {
       // alert("Please enter a valid email address.");

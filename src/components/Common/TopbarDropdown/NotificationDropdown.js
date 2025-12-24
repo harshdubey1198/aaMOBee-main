@@ -55,20 +55,20 @@ const NotificationDropdown = (props) => {
         date: new Date().toISOString(),
       };
 
- setNotifications((prev) => {
-    const alreadyExists = prev.some(
-      (n) => n.relatedId === data.invoiceId && n.type === "due_payment"
-    );
+      setNotifications((prev) => {
+        const alreadyExists = prev.some(
+          (n) => n.relatedId === data.invoiceId && n.type === "due_payment"
+        );
 
-    if (alreadyExists) {
-      console.log(`Skipping duplicate notification for invoice ${data.invoiceId}`);
-      return prev;
-    }
+        if (alreadyExists) {
+          console.log(`Skipping duplicate notification for invoice ${data.invoiceId}`);
+          return prev;
+        }
 
-    return [newNotification, ...prev];
+        return [newNotification, ...prev];
       });
-      });
- 
+    });
+
     return () => {
       socket.off("previousNotifications");
       socket.off("newNotification");
@@ -95,13 +95,32 @@ const NotificationDropdown = (props) => {
       tag="li"
     >
       <DropdownToggle
-        className="btn header-item noti-icon"
+        className="btn header-item noti-icon position-relative"
         tag="button"
         id="page-header-notifications-dropdown"
       >
-        <i className="ri-notification-3-line" />
-        {notifications.some((notif) => !notif.isRead) && <span className="noti-dot"></span>}
+        <i className="ri-notification-3-line fs-4" />
+
+        {/* Notification Count */}
+        {notifications.some((notif) => !notif.isRead) && (
+          <span
+            className="badge bg-danger rounded-pill position-absolute"
+            style={{
+              top: "8px",
+              right: "6px",
+              fontSize: "0.7rem",
+              minWidth: "20px",
+              padding: "3px 5px",
+              fontWeight: "700",
+              lineHeight: "1",
+            }}
+          >
+            {notifications.filter((n) => !n.isRead).length}
+          </span>
+        )}
       </DropdownToggle>
+
+
 
       <DropdownMenu className="dropdown-menu-lg dropdown-menu-end p-0">
         <div className="p-3">

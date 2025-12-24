@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Form, FormGroup, Label, Input, } from "reactstrap";
+import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
+// import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Form, FormGroup, Label, Input } from "reactstrap";
 import threeDImage from "../assets/3d-image.webp";
 import establishedIcon from "../assets/established-icon.webp";
 import growingIcon from "../assets/growing-icon.webp";
@@ -14,20 +14,35 @@ import QueryForm from "./queryForm";
 
 gsap.registerPlugin(ScrollTrigger);
 
+// Helper: defer non-critical work until idle (fallback with setTimeout)
+function runOnIdle(cb) {
+  if ("requestIdleCallback" in window) {
+    // @ts-ignore
+    return requestIdleCallback(cb, { timeout: 2000 });
+  }
+  return setTimeout(cb, 300);
+}
+
 function Bookkeeping() {
   const [modal, setModal] = useState(false);
-  const [ queryModal , setQueryModal] = useState(false);
-
+  const [queryModal, setQueryModal] = useState(false); // preserved, even if not used elsewhere
   const [plans, setPlans] = useState([]);
-  const [email, setEmail] = useState("");
-  const [formData, setFormData] = useState();
-  const toggleModal = () => setModal(!modal);
-  const navigate = useNavigate();
 
-  const toggleQueryModal = () => setQueryModal(!queryModal);
-  const fetchPlans = async () => {
+  const navigate = useNavigate();
+  const headingWrapperRef = useRef(null);
+  const maskLineRef = useRef(null);
+  const navigateTimerRef = useRef(null);
+  const idleHandleRef = useRef(null);
+
+  // Stable toggles (avoid re-renders of children receiving these)
+  const toggleModal = useCallback(() => setModal((m) => !m), []);
+  const toggleQueryModal = useCallback(() => setQueryModal((m) => !m), []);
+
+  // Defer fetching plans to an idle slot so it doesn't block initial render
+  const fetchPlans = useCallback(async () => {
     try {
       const response = await getAllPlans();
+      // response could be array or wrapped; both cases handled
       if (Array.isArray(response)) {
         setPlans(response);
       } else if (response && Array.isArray(response)) {
@@ -38,101 +53,110 @@ function Bookkeeping() {
     } catch (error) {
       console.error("Error fetching plans:", error);
     }
-  };
-
-  useEffect(() => {
-    fetchPlans();
   }, []);
 
   useEffect(() => {
-    gsap.to(".mask-line", {
-      y: 0,
-      opacity: 1,
-      duration: 1,
-      ease: "power4.out",
-      scrollTrigger: {
-        trigger: ".reveal-text",
-        start: "top 80%",
-        toggleActions: "play none none none",
-      },
+    idleHandleRef.current = runOnIdle(fetchPlans);
+    return () => {
+      // cancel the idle task if possible
+      if ("cancelIdleCallback" in window && idleHandleRef.current) {
+        // @ts-ignore
+        cancelIdleCallback(idleHandleRef.current);
+      } else if (idleHandleRef.current) {
+        clearTimeout(idleHandleRef.current);
+      }
+    };
+  }, [fetchPlans]);
+
+  // GSAP: scope to this component only, avoid global selectors
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      if (!maskLineRef.current || !headingWrapperRef.current) return;
+      gsap.set(maskLineRef.current, { y: 20, opacity: 0 });
+      gsap.to(maskLineRef.current, {
+        y: 0,
+        opacity: 1,
+        duration: 1,
+        ease: "power4.out",
+        scrollTrigger: {
+          trigger: headingWrapperRef.current,
+          start: "top 80%",
+          toggleActions: "play none none none",
+        },
+      });
     });
+    return () => {
+      ctx.revert();
+      // kill all triggers created within this context
+      ScrollTrigger.getAll().forEach((t) => t.kill());
+    };
   }, []);
 
-  const handlePlanSelection = (setPlanId, setEmail) => {
+  // Keep existing behavior: store plan/email, open modal, then navigate after 3s
+  const handlePlanSelection = useCallback((setPlanId, setEmail) => {
     localStorage.setItem("planId", setPlanId);
     localStorage.setItem("emailForRegister", setEmail);
 
-    // console.log("Plan selected:", setPlanId);
-    toggleModal();
-    setTimeout(() => {
+    toggleModal(); // open confirmation/modal
+    // navigate after 3s (existing behavior). Clean up on unmount.
+    navigateTimerRef.current = setTimeout(() => {
       navigate("/register");
     }, 3000);
-  };
+  }, [navigate, toggleModal]);
 
-  const handleFormSubmit = async (e) => {
+  useEffect(() => {
+    return () => {
+      if (navigateTimerRef.current) clearTimeout(navigateTimerRef.current);
+    };
+  }, []);
+
+  // Kept for API compatibility; if you wire inputs, pass values here
+  const handleFormSubmit = useCallback((e) => {
     e.preventDefault();
-    const name = document.getElementById("name").value;
-    const email = document.getElementById("email").value;
-    const planId = document.getElementById("planId").value;
-    const message = document.getElementById("message").value;
+    // Expect inputs with ids (if used elsewhere)
+    const nameEl = document.getElementById("name");
+    const emailEl = document.getElementById("email");
+    const planIdEl = document.getElementById("planId");
+    const messageEl = document.getElementById("message");
 
-    // Ensure a plan is selected
+    const planId = planIdEl?.value || "";
+    const email = emailEl?.value || "";
+
     if (!planId) {
       alert("Please select a plan.");
       return;
     }
 
-    const data = {
-      name,
-      email,
-      planId,
-      message,
-    };
-
     handlePlanSelection(planId, email);
-  };
+  }, [handlePlanSelection]);
 
   return (
     <div className="services-container" id="bookkeeping">
-      {/* <span className="service-heading">
+      <span className="service-heading reveal-text" ref={headingWrapperRef}>
         <img
           className="headingimg"
-          //  loading="lazy"
+          loading="lazy"
           src={threeLines}
           alt="Three lines"
         />
-        List of Bookkeeping Services We’re Offer
-        <img
-          src={invertedThreeLines}
-          //  loading="lazy"
-          alt="Inverted three lines"
-          className="headingimg"
-        />
-      </span> */}
-      <span className="service-heading reveal-text">
-        <img
-          className="headingimg"
-          //  loading="lazy"
-          src={threeLines}
-          alt="Three lines"
-        />
-        <span className="mask-line">
+        <span className="mask-line" ref={maskLineRef}>
           List of Bookkeeping Services We Offer
         </span>
         <img
           src={invertedThreeLines}
-          //  loading="lazy"
+          loading="lazy"
           alt="Inverted three lines"
           className="headingimg"
         />
       </span>
 
       <div className="service-outbox">
+        {/* Start-Up */}
         <div className="service-box">
           <div className="sb-h1">
             <img
               src={startUpRocket}
-              //  loading="lazy"
+              loading="lazy"
               alt="Startup rocket"
               className="sb-img"
             />
@@ -145,20 +169,19 @@ function Bookkeeping() {
             <li>Simple dashboard to view stock levels</li>
             <li>Ideal for retail shops, service providers & small traders</li>
             <li>Affordable at just ₹125/month</li>
-            
-            
           </ul>
           <button className="sb-quote btn btn-primary" onClick={toggleModal}>
             Get a Quote
           </button>
         </div>
 
+        {/* Growing */}
         <div className="service-box">
           <div className="sb-h2">
             <span className="sb-heading">Growing</span>
             <img
               src={growingIcon}
-              //  loading="lazy"
+              loading="lazy"
               alt="Growing icon"
               className="sb-img"
             />
@@ -169,19 +192,19 @@ function Bookkeeping() {
             <li>Multi-category item handling & real-time stock balance</li>
             <li>Inventory summaries, item-wise reports, and sales tracking</li>
             <li>Useful for manufacturers, food businesses, and wholesalers</li>
-            
           </ul>
           <button className="sb-quote btn btn-primary" onClick={toggleModal}>
             Get a Quote
           </button>
         </div>
 
+        {/* Established */}
         <div className="service-box">
           <div className="sb-h3">
             <span className="sb-heading">Established</span>
             <img
               src={establishedIcon}
-              //  loading="lazy"
+              loading="lazy"
               alt="Established icon"
               className="sb-img"
             />
@@ -217,15 +240,18 @@ function Bookkeeping() {
         <img
           src={threeDImage}
           alt="3D illustration"
-          //  loading="lazy"
+          loading="lazy"
           className="cloud-img"
         />
       </div>
 
-      <QueryForm isOpen={modal} toggle={toggleModal} style={{zIndex: "1199" , maxWidth:"400px"}} /> 
+      {/* Keep z-index and width as you had */}
+      <QueryForm
+        isOpen={modal}
+        toggle={toggleModal}
+        style={{ zIndex: "1199", maxWidth: "400px" }}
+      />
     </div>
-
-
   );
 }
 

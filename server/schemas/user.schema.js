@@ -1,5 +1,19 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
+const countryEnum = require("../data/commonData/countryEnum")
+const currencyEnum = require("../data/commonData/currencyEnum")
+const SmtpSettingsSchema = new Schema(
+  {
+    host: { type: String },
+    port: { type: Number },
+    secure: { type: Boolean, default: true },
+    user: { type: String },
+    pass: { type: String },
+    fromEmail: { type: String },
+    fromName: { type: String },
+  },
+  { _id: false }
+);
 
 const userSchema = new Schema(
   {
@@ -7,9 +21,11 @@ const userSchema = new Schema(
     lastName: { type: String },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    salesTracker :{type:Boolean,default:false},
     avatar: {
       type: String,
     },
+    isDemo: { type: Boolean, default: false },
     sidebarAccess: [
       {
         label: { type: String },
@@ -37,14 +53,21 @@ const userSchema = new Schema(
         ],
       },
     ],
-
     birthday: { type: Date },
     gender: {
       type: String,
       enum: ["male", "female", "prefer not to say", "NA"],
       default: "prefer not to say",
     },
+    salesTracker:{type:Boolean , default:false},
+    token: { type: String },
+    notifiedDemoExpiry: { type: Boolean, default: false },
+    expiresAt: { type: Date },
     mobile: { type: String },
+    mobileSecondary: {
+      countryCode: { type: String},
+      number: { type: String },
+    },
     companyTelephone: { type: String },
     companyTitle: { type: String },
     companyMobile: { type: String },
@@ -52,19 +75,19 @@ const userSchema = new Schema(
 
     country: {
       type: String,
-      enum: ["india", "uae", "saudi_arabia", "malaysia"],
+      enum: countryEnum,
       default: "india",
     },
 
     currency: {
       type: String,
-      enum: ["INR", "AED", "SAR", "MYR", "USD"],
+      enum: currencyEnum,
       default: "INR",
     },
 
     role: {
       type: String,
-      enum: [
+      enum: [ 
         "super_admin",
         "client_admin",
         "firm_admin",
@@ -86,7 +109,7 @@ const userSchema = new Schema(
     otp: { type: Number },
     otpExpiry: { type: Date },
     isActive: { type: Boolean, default: false },
-    isDeleted: { type: Boolean, default: false },  // ✅ ADD THIS LINE
+    isDeleted: { type: Boolean, default: false }, 
     adminId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     planId: { type: mongoose.Schema.Types.ObjectId, ref: "Plan" },
 
@@ -132,6 +155,7 @@ const userSchema = new Schema(
               "opc",
               "huf",
               "cooperative",
+              "corporation",
               "section_8",
               "joint_venture",
             ],
@@ -246,7 +270,36 @@ const userSchema = new Schema(
       enum: ['layout1', 'layout2', 'layout3'],
       default: 'layout1'
     },
+    firmAccess: [
+      {
+        adminId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true
+        },
+
+        departmentId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Department",
+          default: null
+        },
+
+        designationId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Designation",
+          default: null
+        },
+
+        isActive: {
+          type: Boolean,
+          default: true
+        }
+      }
+    ],
+
+    smtpSettings: { type: SmtpSettingsSchema, default: {} },
   },
+  
 
   { timestamps: true }
 );

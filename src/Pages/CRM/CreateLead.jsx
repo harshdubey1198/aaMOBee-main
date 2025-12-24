@@ -23,10 +23,17 @@ function CreateLead() {
   const [additionalFields, setAdditionalFields] = useState([]);
   const [message, setMessage] = useState("");
   const authuser = JSON.parse(localStorage.getItem("authUser"));
+  const isDemo = authuser?.response?.isDemo;
   const firmId = authuser?.response.adminId;
-    const role = authuser?.response.role;
-    const idToUse = role === "client_admin" ? selectedFirmId : firmId;
-
+  const role = authuser?.response.role;
+  const idToUse = role === "client_admin" ? selectedFirmId : firmId;
+  const blockIfDemo = (actionName) => {
+    if (isDemo) {
+      toast.error(`Demo accounts cannot ${actionName}`);
+      return true;
+    }
+    return false;
+  };
     // console.log("adminId", idToUse);
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -39,6 +46,7 @@ function CreateLead() {
   };
 
   const handleAddField = () => {
+    if (blockIfDemo("add custom fields")) return;
     setAdditionalFields([...additionalFields, { key: "", value: "" }]);
   };
 
@@ -49,12 +57,24 @@ function CreateLead() {
   };
 
   const handleRemoveField = (index) => {
+    if (blockIfDemo("remove custom fields")) return;
     const fields = additionalFields.filter((_, i) => i !== index);
     setAdditionalFields(fields);
   };
-
+  const blockIfNoBusiness = () => {
+    if (!selectedFirmId) {
+      toast.info("Please add/select a business first to continue");
+      return true;
+    }
+    return false;
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (blockIfNoBusiness()) {
+      toast.info("Please add/select a business first to continue");
+      return;
+    };
+    if (blockIfDemo("create a Lead")) return;
     try {
       const additionalData = additionalFields.reduce((acc, field) => {
         if (field.key) acc[field.key] = field.value;

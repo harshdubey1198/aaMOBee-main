@@ -64,6 +64,43 @@ leadService.createLead = async (body) => {
   return newLead;
 };
 
+// leadService.importLeads = async (fileBuffer, firmId, originalFileName) => {
+//   try {
+//     let leads = [];
+
+//     const fileExtension = originalFileName.split('.').pop().toLowerCase();
+
+//     if (fileExtension === "csv") {
+//       // Decode the buffer using native UTF-8
+//       const cleanedBuffer = fileBuffer.toString("utf8").replace(/\0/g, '');
+//       leads = await csvtojson().fromString(cleanedBuffer);
+//     } else if (fileExtension === "xlsx" || fileExtension === "xls") {
+//       const workbook = XLSX.read(fileBuffer, { type: "buffer" });
+//       const sheetName = workbook.SheetNames[0];
+//       const sheet = workbook.Sheets[sheetName];
+//       leads = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+//     } else {
+//       throw new Error("Unsupported file type. Only CSV and Excel (.xls, .xlsx) are allowed.");
+//     }
+
+//     if (!leads || leads.length === 0) {
+//       throw new Error("No data found in the uploaded file.");
+//     }
+
+//     const processedLeads = leads.map((lead) => ({
+//       ...lead,
+//       status: "new",
+//       firmId,
+//     }));
+
+//     const savedLeads = await Lead.insertMany(processedLeads);
+//     return savedLeads;
+//   } catch (error) {
+//     console.error("Error processing leads:", error.message);
+//     throw new Error(error.message || "Failed to process leads");
+//   }
+// };
+
 leadService.importLeads = async (fileBuffer, firmId, originalFileName) => {
   try {
     let leads = [];
@@ -71,33 +108,63 @@ leadService.importLeads = async (fileBuffer, firmId, originalFileName) => {
     const fileExtension = originalFileName.split('.').pop().toLowerCase();
 
     if (fileExtension === "csv") {
-      // Decode the buffer using native UTF-8
       const cleanedBuffer = fileBuffer.toString("utf8").replace(/\0/g, '');
       leads = await csvtojson().fromString(cleanedBuffer);
-    } else if (fileExtension === "xlsx" || fileExtension === "xls") {
+    } else if (["xlsx", "xls"].includes(fileExtension)) {
       const workbook = XLSX.read(fileBuffer, { type: "buffer" });
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       leads = XLSX.utils.sheet_to_json(sheet, { defval: "" });
     } else {
-      throw new Error("Unsupported file type. Only CSV and Excel (.xls, .xlsx) are allowed.");
+      return { error: true, message: "Unsupported file type. Only CSV and Excel (.xls, .xlsx) are allowed." };
     }
 
     if (!leads || leads.length === 0) {
-      throw new Error("No data found in the uploaded file.");
+      return { error: true, message: "No data found in the uploaded file." };
     }
 
-    const processedLeads = leads.map((lead) => ({
-      ...lead,
-      status: "new",
-      firmId,
-    }));
+    // 🔹 Normalize headers and ensure firstName + lastName exist
+    const normalizeKey = (key) =>
+      key.toLowerCase().replace(/\s|_|-/g, "");
 
-    const savedLeads = await Lead.insertMany(processedLeads);
-    return savedLeads;
+    const mappedLeads = leads.map((lead) => {
+      const normalizedLead = {};
+      for (const key in lead) {
+        const normalizedKey = normalizeKey(key);
+
+        if (["firstname", "first"].includes(normalizedKey)) {
+          normalizedLead.firstName = lead[key];
+        } else if (["lastname", "last"].includes(normalizedKey)) {
+          normalizedLead.lastName = lead[key];
+        } else {
+          normalizedLead[key] = lead[key];
+        }
+      }
+
+      return {
+        ...normalizedLead,
+        status: "new",
+        firmId,
+      };
+    });
+
+    // 🔹 Validate required fields
+    const invalidRows = mappedLeads.filter(
+      (l) => !l.firstName || !l.lastName
+    );
+    if (invalidRows.length > 0) {
+      return {
+        error: true,
+        message: `Missing required fields (firstName, lastName) in ${invalidRows.length} row(s)`,
+        invalidRows,
+      };
+    }
+
+    const savedLeads = await Lead.insertMany(mappedLeads);
+    return { error: false, leads: savedLeads };
   } catch (error) {
     console.error("Error processing leads:", error.message);
-    throw new Error(error.message || "Failed to process leads");
+    return { error: true, message: error.message || "Failed to process leads" };
   }
 };
 

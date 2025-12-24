@@ -8,7 +8,16 @@ function TaxationModal({ isOpen, toggle, config,idToUse, userId, tax, onTaxCreat
   const [taxRates, setTaxRates] = useState([
     { taxType: '', rate: "" },
   ]);
+    const authuser = JSON.parse(localStorage.getItem("authUser")).response;
 
+const blockIfDemo = (actionName) => {
+      if (authuser?.isDemo) {
+        // setLoading(false);
+        toast.error(`Demo accounts cannot create a new ${actionName}`);
+        return true; 
+      }
+      return false; 
+    };
   useEffect(() => {
     if (tax) {
       setTaxName(tax.taxName);
@@ -38,6 +47,7 @@ function TaxationModal({ isOpen, toggle, config,idToUse, userId, tax, onTaxCreat
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (blockIfDemo("taxation")) return;
     try {
       const endpoint = tax 
         ? `${process.env.REACT_APP_URL}/tax/update-tax` 

@@ -104,16 +104,16 @@ function AllBills() {
               onSelectFirm={handleFirmSelect}
             />
           )}
-          <Button color="primary" className="p-2" style={{ maxHeight: "27.13px", fontSize: "10.5px", lineHeight: "1" }} onClick={() => { navigate('/create-bill'); }}>
-            Create Bill
-          </Button>
           <Input
             type="text"
             placeholder="Search by name, email, or bill number"
             value={searchTerm}
             onChange={handleSearch}
-            style={{ width: '250px', fontSize: '12px' }}
+            style={{ width: '250px',height:"28px", fontSize: '12px',borderRadius:"0.375rem" }}
           />
+          <Button color="primary" className="p-2" style={{ maxHeight: "28px", fontSize: "10.5px", lineHeight: "1" }} onClick={() => { navigate('/retail-billing'); }}>
+            Create Bill
+          </Button>
         </div>
 
         <div className='table-responsive'>
@@ -135,7 +135,7 @@ function AllBills() {
                     key={bill._id}
                     onClick={() => {
                       setPreviewBill(bill);
-                      setSelectedBillLayout(bill.billLayout || 'layout1'); // Use billLayout from backend
+                      setSelectedBillLayout(bill.billLayout || 'layout1'); 
                     }}
                     style={{ cursor: "pointer" }}
                   >
@@ -177,10 +177,10 @@ function AllBills() {
             companyData={companyData}
             onClose={() => {
               setPreviewBill(null);
-              setSelectedBillLayout(null); // Reset layout
+              setSelectedBillLayout(null); 
             }}
             layoutType="bill"
-            layoutId={selectedBillLayout} // This is dynamic now!
+            layoutId={selectedBillLayout}
           />
         )}
 

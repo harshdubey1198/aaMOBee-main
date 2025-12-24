@@ -9,6 +9,12 @@ const paymentSchema = new Schema({
     currency: { type: String},
     status: { type: String, enum: ['pending', 'completed', 'failed', 'expired'], default: 'pending' },
     expirationDate: { type: Date }, 
+
+    // ✅ Reminder flags
+  reminder7dSent: { type: Boolean, default: false },
+  reminder3dSent: { type: Boolean, default: false },
+  reminder24hSent: { type: Boolean, default: false },
+  reminder1hSent: { type: Boolean, default: false },
 }, {timestamps: true});
 
 const Payment = mongoose.model('Payment', paymentSchema);

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            margin: 0;
+            padding: 0;
+            background: #fff;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background: #0D4251;
+            color: white;
+        }
+
+        .header h2 {
+            color: #c1f3ff;
+            margin: 0;
+        }
+
+        .company-info {
+            text-align: right;
+        }
+
+        .company-info img {
+            height: 60px;
+            object-fit: contain;
+            margin-bottom: 5px;
+        }
+
+        .balance-bar {
+            background: #8FB3BC;
+            color: #333;
+            text-align: right;
+            font-weight: bold;
+            padding: 8px 15px;
+        }
+
+        .section {
+            padding: 15px;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .table th,
+        .table td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            font-size: 12px;
+            text-align: left;
+        }
+
+        .table-light {
+            background: #f8f8f8;
+        }
+
+        .summary {
+            background: #E0EFF2;
+            border-radius: 5px;
+            padding: 12px;
+            margin-top: 20px;
+        }
+
+        .summary p,
+        .summary h5 {
+            margin: 5px 0;
+            text-align: right;
+        }
+
+        .terms {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h2>{{invoice.invoiceType}}</h2>
+            </div>
+            <div class="company-info">
+                {{#if firm.avatar}}
+                <img src="{{firm.avatar}}" alt="Company Logo" />
+                {{/if}}
+                <h4>{{firm.companyTitle}}</h4>
+                <p>{{firm.email}}</p>
+                <p>{{firm.companyMobile}}</p>
+                {{#each firm.address}}
+                <p>{{this.h_no}}, {{this.nearby}}, {{this.city}}, {{this.state}}, {{this.zip_code}}</p>
+                {{/each}}
+                {{#if firm.registeredTaxationDetail}}
+                {{#each firm.registeredTaxationDetail}}
+                {{#if this.toShow}}
+                <p><b>{{this.fieldName}}:</b> {{this.fieldValue}}</p>
+                {{/if}}
+                {{/each}}
+                {{/if}}
+            </div>
+        </div>
+
+        <!-- Balance Bar -->
+        <div class="balance-bar">
+            BALANCE DUE: {{currency}} {{invoice.balance}}
+        </div>
+
+        <!-- Customer + Invoice Info -->
+        <div class="section" style="display:flex; justify-content:space-between;">
+            <div>
+                <h5><strong>{{invoice.customerName}}</strong></h5>
+                <p>{{invoice.customerAddress.h_no}}, {{invoice.customerAddress.nearby}},
+                    {{invoice.customerAddress.district}}</p>
+                <p>{{invoice.customerAddress.city}}, {{invoice.customerAddress.state}},
+                    {{invoice.customerAddress.country}}, {{invoice.customerAddress.zip_code}}</p>
+                <p>Email: {{invoice.customerEmail}}</p>
+                <p>Phone: {{invoice.customerPhone}}</p>
+            </div>
+            <div style="text-align:right;">
+                <p><strong>Invoice#:</strong> {{invoice.invoiceNumber}}</p>
+                <p><strong>Invoice Date:</strong> {{formatDate invoice.invoiceDate}}</p>
+                <p><strong>Due Date:</strong> {{formatDate invoice.dueDate}}</p>
+            </div>
+        </div>
+
+        <!-- Items Table -->
+        <div class="section">
+            <table class="table">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Item</th>
+                        <th>Description</th>
+                        <th>Price</th>
+                        <th>Qty</th>
+                        <th>Discount</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each invoice.items}}
+                    <tr>
+                        <td>{{inc @index}}</td>
+                        <td>
+                            <strong>{{this.name}}</strong>
+                            {{#if this.variant}}<br />({{this.variant}}){{/if}}
+                        </td>
+                        <td>{{{this.description}}}</td>
+                        <td>
+                            {{currency}} {{this.unitPrice}}
+                            <br />
+                            {{#if this.taxComponents}}
+                            (
+                            {{#each this.taxComponents}}
+                            {{this.taxName}}{{#unless this.taxName}}{{this.name}}{{/unless}}: {{this.rate}}%
+                            {{#unless @last}}, {{/unless}}
+                            {{/each}}
+                            )
+                            {{else}}
+                            (N/A)
+                            {{/if}}
+                        </td>
+                        <td>{{this.qty}}</td>
+                        <td>{{../currency}} {{this.discount}}</td>
+                        <td>{{../currency}} {{this.total}}</td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Summary -->
+        <div class="summary">
+            <p>Subtotal: {{currency}} {{invoice.subtotal}}</p>
+            <p>Total Tax: {{currency}} {{invoice.totalTaxAmount}}</p>
+            <p>Total Discount: {{currency}} {{invoice.totalDiscount}}</p>
+            <h5>Grand Total: {{currency}} {{invoice.grandTotal}}</h5>
+            <p>Amount Paid: {{currency}} {{invoice.amountPaid}}</p>
+            <h5>Balance Due: {{currency}} {{invoice.balance}}</h5>
+        </div>
+
+        <!-- Terms -->
+        <div class="terms section">
+            <strong>Terms & Conditions:</strong>
+            <ul>
+                {{#each invoice.termsArray}}
+                <li>{{this}}</li>
+                {{/each}}
+            </ul>
+        </div>
+
+    </div>
+</body>
+
+</html>

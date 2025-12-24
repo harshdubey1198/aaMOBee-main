@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import LogoBig from "../assets/Logo-big.webp";
-import LogoSmall from "../assets/small-logo.webp";
+// import LogoSmall from "../assets/small-logo.webp";
 import Select from "react-select";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
@@ -23,33 +23,116 @@ import LearningImage from "../assets/img/lms.webp";
 import ContentImage from "../assets/img/content.webp";
 import DailySales from "../assets/img/Daily-Sales.webp";
 import ERP from "../assets/img/ERP.webp";
-import Affiliate from "../assets/img/Affiliate-business-system.webp"
-import gsap from "gsap";
+import Affiliate from "../assets/img/Affiliate-business-system.webp";
+// import gsap from "gsap";
 import { FaChevronDown } from "react-icons/fa";
-import MobileProductTray from "./MobileProductTray";
+// import MobileProductTray from "./MobileProductTray";
+
 const apps = [
-  { name: "Inventory", slug: "inventory-management-software", available: true, img: InventoryImage },
-  { name: "Invoicing", slug: "apps/invoicing", available: true, img: InvoiceImage },
+  {
+    name: "Inventory",
+    slug: "inventory-management-software",
+    available: true,
+    img: InventoryImage,
+  },
+  {
+    name: "Invoicing",
+    slug: "apps/invoicing",
+    available: true,
+    img: InvoiceImage,
+  },
   { name: "CRM Leads", slug: "apps/crm-leads", available: true, img: CrmImage },
-  { name: "Client Management", slug: "apps/client-management", available: true, img: ClientImage },
-  { name: "Retail Billing", slug: "apps/retail-billing", available: true, img: RetailImage },
+  {
+    name: "Client Management",
+    slug: "apps/client-management",
+    available: true,
+    img: ClientImage,
+  },
+  {
+    name: "Retail Billing",
+    slug: "apps/retail-billing",
+    available: true,
+    img: RetailImage,
+  },
   { name: "HRMS", slug: "apps/hrms", available: false, img: HrmsImage },
-  { name: "Learning Management System", slug: "apps/lms", available: false, img: LearningImage },
-  { name: "Content Management System", slug: "apps/cms", available: false, img: ContentImage },
-  { name: "Project Management", slug: "apps/project-management", available: false, img: ProjectImage },
-  { name: "Product Management", slug: "apps/product-management", available: false, img: ProductImage },
-  { name: "Payroll Management", slug: "apps/payroll-management", available: false, img: PayrollImage },
-  { name: "Leave Management", slug: "apps/leave-management", available: false, img: LeaveImage },
-  { name: "Business Analytics Tool", slug: "apps/business-analytics-tool", available: false, img: BusinessImage },
-  { name: "BookKeeping", slug: "apps/bookkeeping", available: false, img: BookImage },
-  { name: "Expense Tracker", slug: "apps/expense-tracker", available: false, img: ExpenseImage },
-  { name: "Daily Sales Tracker", slug: "apps/daily-sales-tracker", available: false, img: DailySales },
+  {
+    name: "Learning Management System",
+    slug: "apps/lms",
+    available: false,
+    img: LearningImage,
+  },
+  {
+    name: "Content Management System",
+    slug: "apps/cms",
+    available: false,
+    img: ContentImage,
+  },
+  {
+    name: "Project Management",
+    slug: "apps/project-management",
+    available: false,
+    img: ProjectImage,
+  },
+  {
+    name: "Product Management",
+    slug: "apps/product-management",
+    available: false,
+    img: ProductImage,
+  },
+  {
+    name: "Payroll Management",
+    slug: "apps/payroll-management",
+    available: false,
+    img: PayrollImage,
+  },
+  {
+    name: "Leave Management",
+    slug: "apps/leave-management",
+    available: false,
+    img: LeaveImage,
+  },
+  {
+    name: "Business Analytics Tool",
+    slug: "apps/business-analytics-tool",
+    available: false,
+    img: BusinessImage,
+  },
+  {
+    name: "BookKeeping",
+    slug: "apps/bookkeeping",
+    available: false,
+    img: BookImage,
+  },
+  {
+    name: "Expense Tracker",
+    slug: "apps/expense-tracker",
+    available: false,
+    img: ExpenseImage,
+  },
+  {
+    name: "Daily Sales Tracker",
+    slug: "apps/daily-sales-tracker",
+    available: false,
+    img: DailySales,
+  },
   { name: "ERP", slug: "apps/erp", available: false, img: ERP },
-  { name: "Affiliate Business System", slug: "apps/affiliate-business-system", available: false, img: Affiliate },
+  {
+    name: "Affiliate Business System",
+    slug: "apps/affiliate-business-system",
+    available: false,
+    img: Affiliate,
+  },
 ];
 
-
-function HeaderWithDashboard({ showProducts, setShowProducts, triggeredExternally, scrollToPricing, scrollToFAQ, scrollToTestimonial, productTrayRef }) {
+function HeaderWithDashboard({
+  showProducts,
+  setShowProducts,
+  triggeredExternally,
+  scrollToPricing,
+  scrollToFAQ,
+  scrollToTestimonial,
+  productTrayRef,
+}) {
   // const [showProducts, setShowProducts] = useState(false);
   const [showMobileProducts, setShowMobileProducts] = useState(false);
   const trayRef = useRef();
@@ -118,12 +201,10 @@ function HeaderWithDashboard({ showProducts, setShowProducts, triggeredExternall
   useEffect(() => {
     const handleOutsideClick = (e) => {
       const clickedOutsideNav =
-        mobileMenuRef.current &&
-        !mobileMenuRef.current.contains(e.target);
+        mobileMenuRef.current && !mobileMenuRef.current.contains(e.target);
 
       const clickedToggleButton =
-        mobileToggleRef.current &&
-        mobileToggleRef.current.contains(e.target);
+        mobileToggleRef.current && mobileToggleRef.current.contains(e.target);
 
       if (clickedOutsideNav && !clickedToggleButton) {
         setIsMobileMenuOpen(false);
@@ -166,7 +247,6 @@ function HeaderWithDashboard({ showProducts, setShowProducts, triggeredExternall
               d-flex align-items-center
               nav-link custom-nav"
               onClick={handleProductsClick}
-
             >
               Products
               <FaChevronDown
@@ -178,56 +258,122 @@ function HeaderWithDashboard({ showProducts, setShowProducts, triggeredExternall
               />
             </a>
             {isHome ? (
-              <a className="nav-link custom-nav" onClick={scrollToPricing}>
-                Pricing
-              </a>
-            ) : (
-              <Link className="nav-link custom-nav" to="/choose-plan/signup">
-                Pricing
-              </Link>
-            )
-            }
+  <a
+    className="nav-link custom-nav"
+    onClick={(e) => {
+      e.preventDefault();          // stop any default jump
+      setShowProducts(false);      // 🔥 always close tray
+      scrollToPricing();           // then run scroll
+    }}
+  >
+    Pricing
+  </a>
+) : (
+  <Link
+    className="nav-link custom-nav"
+    to="/choose-plan/signup"
+    onClick={() => {
+      setShowProducts(false);      // 🔥 close tray
+      setIsMobileMenuOpen(false);  // close mobile menu
+    }}
+  >
+    Pricing
+  </Link>
+)}
+
 
             {isHome && (
-              <><a className="nav-link custom-nav" onClick={scrollToTestimonial}>
-                Testimonial
-              </a><a className="nav-link custom-nav" onClick={scrollToFAQ}>
+              <>
+                <a
+                  className="nav-link custom-nav"
+                  onClick={scrollToTestimonial}
+                >
+                  Testimonial
+                </a>
+                <a className="nav-link custom-nav" onClick={scrollToFAQ}>
                   FAQs
-                </a></>
+                </a>
+              </>
             )}
             {!isBlog && (
-              <Link className="nav-link custom-nav" to="/blogs">
+              <Link
+                className="nav-link custom-nav"
+                to="/blogs"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 Blogs
               </Link>
             )}
             {!isSupport && (
-              <Link className="nav-link custom-nav" to="/support">
+              <Link
+                className="nav-link custom-nav"
+                to="/support"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 Support
               </Link>
             )}
 
             {!isContact && (
-              <Link className="nav-link custom-nav" to="/contact-us">
+              <Link
+                className="nav-link custom-nav"
+                to="/contact-us"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 Contact Us
               </Link>
             )}
+            <Link
+              to="/login"
+              className="btn btn-primary btn-sm px-4 rounded-pill shadow-sm"
+              style={{
+                background: "linear-gradient(135deg, #156570 0%, #1a7c88 100%)",
+                border: "none",
+                transition: "all 0.3s ease",
+                color: "#fff",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background =
+                  "linear-gradient(135deg, #1a7c88 0%, #22a6b3 100%)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background =
+                  "linear-gradient(135deg, #156570 0%, #1a7c88 100%)")
+              }
+            >
+              Sign in
+            </Link>
 
-            <Link to="/login-forwarding" className="btn btn-primary btn-sm px-4 rounded-pill" >
-              Login
+            <Link
+              to="/register"
+              className="btn btn-primary btn-sm px-4 rounded-pill shadow-sm ms-2"
+              style={{
+                background: "linear-gradient(135deg, #0c424e 0%, #156570 100%)",
+                border: "none",
+                transition: "all 0.3s ease",
+                color: "#fff",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background =
+                  "linear-gradient(135deg, #156570 0%, #1a7c88 100%)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background =
+                  "linear-gradient(135deg, #0c424e 0%, #156570 100%)")
+              }
+            >
+              Sign up
             </Link>
           </nav>
-
 
           <button
             className="navbar-toggler"
             ref={mobileToggleRef}
             type="button"
-            onClick={() => setIsMobileMenuOpen(prev => !prev)}
+            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
           >
             <span className="navbar-toggler-icon"></span>
           </button>
-
-
         </div>
       </header>
 
@@ -290,8 +436,8 @@ function HeaderWithDashboard({ showProducts, setShowProducts, triggeredExternall
                     backgroundColor: state.isSelected
                       ? "#056cb8"
                       : state.isFocused
-                        ? "#f0f8ff"
-                        : "white",
+                      ? "#f0f8ff"
+                      : "white",
                     color: state.isSelected ? "white" : "#333",
                     opacity: state.data.isDisabled ? 0.5 : 1,
                     cursor: state.data.isDisabled ? "not-allowed" : "pointer",
@@ -344,7 +490,15 @@ function HeaderWithDashboard({ showProducts, setShowProducts, triggeredExternall
             </div>
           </aside>
 
-          <main className="flex-grow-1 p-4 pb-5" style={{ width: "75%", overflowY: "auto", maxHeight: "100%", marginBottom: "80px" }}>
+          <main
+            className="flex-grow-1 p-4 pb-5"
+            style={{
+              width: "75%",
+              overflowY: "auto",
+              maxHeight: "100%",
+              marginBottom: "80px",
+            }}
+          >
             <div className="d-flex justify-content-between align-items-center mb-4">
               <h4 className="fw-bold">Recent Launches</h4>
               <a href="#" className="text-primary fw-semibold">
@@ -388,7 +542,9 @@ function HeaderWithDashboard({ showProducts, setShowProducts, triggeredExternall
                         )}
                       </div>
                       <div>
-                        <h5 className="card-title text-start mb-1">{app.name}</h5>
+                        <h5 className="card-title text-start mb-1">
+                          {app.name}
+                        </h5>
                         <p
                           className="card-text text-muted"
                           style={{ fontSize: "14px", marginBottom: 0 }}
@@ -400,9 +556,7 @@ function HeaderWithDashboard({ showProducts, setShowProducts, triggeredExternall
 
                     {app.available ? (
                       <Link
-                        to={`/${app.slug
-                          .toLowerCase()
-                          .replace(/\s+/g, "-")}`}
+                        to={`/${app.slug.toLowerCase().replace(/\s+/g, "-")}`}
                         style={{
                           fontSize: "13px",
                           color: "#056cb8",
@@ -433,7 +587,9 @@ function HeaderWithDashboard({ showProducts, setShowProducts, triggeredExternall
       )}
 
       <div
-        className={`navbar-collapse bg-white shadow-sm d-lg-none ${isMobileMenuOpen ? 'show' : 'collapse'}`}
+        className={`navbar-collapse bg-white shadow-sm d-lg-none ${
+          isMobileMenuOpen ? "show" : "collapse"
+        }`}
         ref={mobileMenuRef}
         id="navbarNav"
         style={{
@@ -445,18 +601,64 @@ function HeaderWithDashboard({ showProducts, setShowProducts, triggeredExternall
           zIndex: 1050,
           minHeight: "calc(95vh - 80px)",
           transition: "all 0.3s ease-in-out",
-          padding: "20px 0"
+          padding: "20px 0",
         }}
       >
         <ul className="navbar-nav ms-auto gap-2 d-flex flex-column align-items-start px-3">
           <li className="nav-item w-100 text-center">
-            <Link style={{ borderRadius: "5px", border: "2px solid #dae9f4", padding: "8px 12px 8px 20px", cursor: "pointer", textAlign: "left", paddingLeft: "40%" }} className="nav-link" to="/" onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
+            <Link
+              style={{
+                borderRadius: "5px",
+                border: "2px solid #dae9f4",
+                padding: "8px 12px 8px 20px",
+                cursor: "pointer",
+                textAlign: "left",
+                paddingLeft: "40%",
+              }}
+              className="nav-link"
+              to="/"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Home
+            </Link>
           </li>
           <li className="nav-item w-100 text-center">
             {isHome ? (
-              <a className="nav-link" style={{ minWidth: "100%", borderRadius: "5px", border: "2px solid #dae9f4", padding: "8px 12px 8px 20px", cursor: "pointer", textAlign: "left", paddingLeft: "40%" }} onClick={() => { scrollToPricing(); setIsMobileMenuOpen(false); }}>Pricing</a>
+              <a
+                className="nav-link"
+                style={{
+                  minWidth: "100%",
+                  borderRadius: "5px",
+                  border: "2px solid #dae9f4",
+                  padding: "8px 12px 8px 20px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  paddingLeft: "40%",
+                }}
+                onClick={() => {
+                  scrollToPricing();
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                Pricing
+              </a>
             ) : (
-              <Link style={{ minWidth: "100%", borderRadius: "5px", border: "2px solid #dae9f4", padding: "8px 12px 8px 20px", cursor: "pointer", textAlign: "left", paddingLeft: "40%" }} className="nav-link" to="/choose-plan/signup" onClick={() => setIsMobileMenuOpen(false)}>Pricing</Link>
+              <Link
+                style={{
+                  minWidth: "100%",
+                  borderRadius: "5px",
+                  border: "2px solid #dae9f4",
+                  padding: "8px 12px 8px 20px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  paddingLeft: "40%",
+                }}
+                className="nav-link"
+                to="/choose-plan/signup"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Pricing
+              </Link>
             )}
           </li>
           <li className="nav-item w-100 text-center">
@@ -480,7 +682,9 @@ function HeaderWithDashboard({ showProducts, setShowProducts, triggeredExternall
                 style={{
                   marginLeft: "8px",
                   transition: "transform 0.3s ease",
-                  transform: showMobileProducts ? "rotate(180deg)" : "rotate(0deg)",
+                  transform: showMobileProducts
+                    ? "rotate(180deg)"
+                    : "rotate(0deg)",
                 }}
               />
             </button>
@@ -494,86 +698,193 @@ function HeaderWithDashboard({ showProducts, setShowProducts, triggeredExternall
                   overflowY: "auto",
                   border: "1px solid #dee2e6",
                   borderRadius: "6px",
-                  paddingRight: "8px"
+                  paddingRight: "8px",
                 }}
               >
-                {apps.filter(app => app.available).map((app) => (
-                  <li key={app.name} className="mb-2">
-                    <Link
-                      to={`/${app.slug}`}
-                      onClick={() => {
-                        setShowMobileProducts(false);
-                        setIsMobileMenuOpen(false);
-                      }}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        fontSize: "14px",
-                        padding: "8px 12px",
-                        borderRadius: "4px",
-                        backgroundColor: "#f8fcff",
-                        border: "1px solid #dae9f4",
-                        color: "#000",
-                        textDecoration: "none",
-                      }}
-                    >
-                      {app.name}
-                      <img
-                        src={app.img}
-                        alt={app.name}
-                        style={{
-                          width: "auto",
-                          height: "50px",
-                          marginLeft: "12px",
-                          flexShrink: 0,
+                {apps
+                  .filter((app) => app.available)
+                  .map((app) => (
+                    <li key={app.name} className="mb-2">
+                      <Link
+                        to={`/${app.slug}`}
+                        onClick={() => {
+                          setShowMobileProducts(false);
+                          setIsMobileMenuOpen(false);
                         }}
-                      />
-                    </Link>
-                  </li>
-                ))}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          fontSize: "14px",
+                          padding: "8px 12px",
+                          borderRadius: "4px",
+                          backgroundColor: "#f8fcff",
+                          border: "1px solid #dae9f4",
+                          color: "#000",
+                          textDecoration: "none",
+                        }}
+                      >
+                        {app.name}
+                        <img
+                          src={app.img}
+                          alt={app.name}
+                          style={{
+                            width: "auto",
+                            height: "50px",
+                            marginLeft: "12px",
+                            flexShrink: 0,
+                          }}
+                        />
+                      </Link>
+                    </li>
+                  ))}
               </ul>
             )}
           </li>
 
           {isHome && (
             <li className="nav-item w-100 text-center">
-              <a className="nav-link" style={{ minWidth: "100%", borderRadius: "5px", border: "2px solid #dae9f4", padding: "8px 12px 8px 20px", cursor: "pointer", textAlign: "left", paddingLeft: "40%" }} onClick={() => { scrollToTestimonial(); setIsMobileMenuOpen(false); }}>Testimonial</a>
+              <a
+                className="nav-link"
+                style={{
+                  minWidth: "100%",
+                  borderRadius: "5px",
+                  border: "2px solid #dae9f4",
+                  padding: "8px 12px 8px 20px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  paddingLeft: "40%",
+                }}
+                onClick={() => {
+                  scrollToTestimonial();
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                Testimonial
+              </a>
             </li>
           )}
           {isHome && (
             <li className="nav-item w-100 text-center">
-              <a className="nav-link" style={{ minWidth: "100%", borderRadius: "5px", border: "2px solid #dae9f4", padding: "8px 12px 8px 20px", cursor: "pointer", textAlign: "left", paddingLeft: "40%" }} onClick={() => { scrollToFAQ(); setIsMobileMenuOpen(false); }}>FAQs</a>
+              <a
+                className="nav-link"
+                style={{
+                  minWidth: "100%",
+                  borderRadius: "5px",
+                  border: "2px solid #dae9f4",
+                  padding: "8px 12px 8px 20px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  paddingLeft: "40%",
+                }}
+                onClick={() => {
+                  scrollToFAQ();
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                FAQs
+              </a>
             </li>
           )}
           {!isBlog && (
             <li className="nav-item w-100 text-center">
-              <Link style={{ minWidth: "100%", borderRadius: "5px", border: "2px solid #dae9f4", padding: "8px 12px 8px 20px", cursor: "pointer", textAlign: "left", paddingLeft: "40%" }} className="nav-link" to="/blogs" onClick={() => setIsMobileMenuOpen(false)}>Blogs</Link>
+              <Link
+                style={{
+                  minWidth: "100%",
+                  borderRadius: "5px",
+                  border: "2px solid #dae9f4",
+                  padding: "8px 12px 8px 20px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  paddingLeft: "40%",
+                }}
+                className="nav-link"
+                to="/blogs"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Blogs
+              </Link>
             </li>
           )}
 
           {!isSupport && (
             <li className="nav-item w-100 text-center">
-              <Link style={{ minWidth: "100%", borderRadius: "5px", border: "2px solid #dae9f4", padding: "8px 12px 8px 20px", cursor: "pointer", textAlign: "left", paddingLeft: "40%" }} className="nav-link" to="/support" onClick={() => setIsMobileMenuOpen(false)}>Support</Link>
+              <Link
+                style={{
+                  minWidth: "100%",
+                  borderRadius: "5px",
+                  border: "2px solid #dae9f4",
+                  padding: "8px 12px 8px 20px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  paddingLeft: "40%",
+                }}
+                className="nav-link"
+                to="/support"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Support
+              </Link>
             </li>
           )}
 
           {!isContact && (
             <li className="nav-item w-100 text-center">
-              <Link style={{ minWidth: "100%", borderRadius: "5px", border: "2px solid #dae9f4", padding: "8px 12px 8px 20px", cursor: "pointer", textAlign: "left", paddingLeft: "40%" }} className="nav-link" to="/contact-us" onClick={() => setIsMobileMenuOpen(false)}>Contact Us</Link>
+              <Link
+                style={{
+                  minWidth: "100%",
+                  borderRadius: "5px",
+                  border: "2px solid #dae9f4",
+                  padding: "8px 12px 8px 20px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  paddingLeft: "40%",
+                }}
+                className="nav-link"
+                to="/contact-us"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Contact Us
+              </Link>
             </li>
           )}
 
           <li className="nav-item w-100 text-center">
-            <Link style={{ minWidth: "100%", borderRadius: "5px", border: "2px solid #dae9f4", padding: "8px 12px 8px 20px", cursor: "pointer", paddingLeft: "40%" }} className="btn btn-primary btn-sm px-4 rounded-pill" to="/login-forwarding" onClick={() => setIsMobileMenuOpen(false)}>
-              Login
+            <Link
+              style={{
+                minWidth: "100%",
+                borderRadius: "5px",
+                border: "2px solid #dae9f4",
+                padding: "8px 12px 8px 20px",
+                cursor: "pointer",
+                paddingLeft: "40%",
+              }}
+              className="btn btn-primary btn-sm px-4 rounded-pill"
+              to="/login-forwarding"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Sign in
+            </Link>
+          </li>
+          <li className="nav-item w-100 text-center">
+            <Link
+              style={{
+                minWidth: "100%",
+                borderRadius: "5px",
+                border: "2px solid #dae9f4",
+                padding: "8px 12px 8px 20px",
+                cursor: "pointer",
+                paddingLeft: "40%",
+              }}
+              className="btn btn-primary btn-sm px-4 rounded-pill"
+              to="/login-forwarding"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Sign up
             </Link>
           </li>
         </ul>
       </div>
-
-
-
     </>
   );
 }

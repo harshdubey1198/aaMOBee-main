@@ -209,7 +209,7 @@ function InvoicePreview({ idToUse, invoiceData, companyData,layoutType ,onGenera
             <img src={logo} alt="Company Logo" style={{ width: '100px', height: 'auto' }} />
           </div>
         )}
-        <div style={{ textAlign: 'center', fontWeight: 'bold' }}>{companyData?.companyTitle || "Please update firm name in the firm setting"} </div>
+        <div style={{ textAlign: 'center', fontWeight: 'bold' }}>{companyData?.companyTitle || "Please update the Business Name in the Business Branding page"} </div>
         {/* <div style={{ textAlign: 'center' }}>
           {companyData?.address?.map((address, index) => (
             <div key={index}>

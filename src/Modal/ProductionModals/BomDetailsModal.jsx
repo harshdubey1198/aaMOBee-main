@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, ModalHeader, ModalBody, Table, Button } from 'reactstrap';
 
-const BomDetailsModal = ({ isOpen, toggle, selectedBom }) => {
+const BomDetailsModal = ({ isOpen, toggle, selectedBom , firmTitle}) => {
   if (!selectedBom) return null;
 
   return (
@@ -16,7 +16,7 @@ const BomDetailsModal = ({ isOpen, toggle, selectedBom }) => {
             </tr>
             <tr>
               <th>Brand</th>
-              <td>{selectedBom.brand?.name || 'N/A'}</td>
+              <td>{selectedBom.brand?.name || firmTitle || 'N/A'}</td>
             </tr>
             <tr>
               <th>Category</th>
@@ -31,7 +31,7 @@ const BomDetailsModal = ({ isOpen, toggle, selectedBom }) => {
             
             <tr>
               <th>Vendor</th>
-              <td>{selectedBom.vendor?.name || 'N/A'}</td>
+              <td>{selectedBom.vendor?.name || firmTitle || 'N/A'}</td>
             </tr>
             <tr>
               <th>Total Cost Price</th>

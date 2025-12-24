@@ -28,6 +28,17 @@ const ViewCustomer = () => {
         },
     };
 
+    const authuser = JSON.parse(localStorage.getItem("authUser")).response;
+    const isDemo = authuser?.isDemo;
+
+    const blockIfDemo = (actionName) => {
+    if (isDemo) {
+        toast.error(`Demo accounts cannot ${actionName}`);
+        return true;
+    }
+    return false;
+    };
+
     // useEffect(() => {
     //     axios.get(`${process.env.REACT_APP_URL}/customer/get-customers/${firmId}`, config)
     //         .then((response) => setCustomersData(response.data))
@@ -83,6 +94,7 @@ const ViewCustomer = () => {
     };
 
     const handleUpdateCustomer = async () => {
+        if (blockIfDemo("update customer data")) return;
         try {
             const response = await updateCustomer(selectedCustomer._id, customerData);
             setTrigger(prev => prev + 1);
@@ -174,6 +186,7 @@ const ViewCustomer = () => {
                                                 style={{ fontSize: "22px", fontWeight: "bold", cursor: "pointer" }}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
+                                                    // if (blockIfDemo("edit customers")) return;
                                                     handleEditDetails(customer);
                                                 }}
                                             ></i>
@@ -182,6 +195,7 @@ const ViewCustomer = () => {
                                                 style={{ fontSize: "22px", fontWeight: "bold", cursor: "pointer", marginLeft: "10px" }}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
+                                                    if (blockIfDemo("delete customers")) return;
                                                     handleDeleteClick(customer);
                                                 }}
                                             ></i>
@@ -354,7 +368,7 @@ const ViewCustomer = () => {
                         {isEditMode ? (
                             <Button color="primary" onClick={handleUpdateCustomer}>Update</Button>
                         ) : (
-                            <Button color="secondary" onClick={() => setIsEditMode(true)}>Edit</Button>
+                            <Button color="secondary" onClick={() => { if (blockIfDemo("edit customers")) return; setIsEditMode(true); }}>Edit</Button>
                         )}
                         <Button color="danger" onClick={() => setModalOpen(false)}>Close</Button>
                     </ModalFooter>

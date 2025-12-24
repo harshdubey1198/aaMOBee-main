@@ -5,6 +5,7 @@ import FetchBrands from "../Pages/Inventory-MNG/FetchBrands";
 import FetchManufacturers from "../Pages/Inventory-MNG/fetchManufacturers";
 import { getTaxes, getTaxesmain } from "../apiServices/service";
 import Select from "react-select";
+import ItemSalesGraphModal from "./InventoryModals/ItemSalesGraphModal";
 
 const ItemDetailModal = ({ companyTitle,setVariantIndex, setVariant, setVariantModalOpen, setSelectedItem, deleteVariant, updateItem, handleEditVariant, modalOpen, setModalOpen, selectedItem, firmId, selectedFirmId }) => {
   console.log("selectedItem : ",selectedItem);
@@ -13,6 +14,20 @@ const ItemDetailModal = ({ companyTitle,setVariantIndex, setVariant, setVariantM
   // console.log("Brand Details : ", formValues.brand);
   const [vendors, setVendors] = useState([]);
   const [brands, setBrands] = useState([]);
+  const [graphModalOpen, setGraphModalOpen] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState(null);
+
+  // Handle Graph Modal Open
+  const handleViewGraph = (itemId) => {
+    setSelectedItemId(itemId);
+    setGraphModalOpen(true);
+  };
+
+  // Close Graph Modal
+  const toggleGraphModal = () => {
+    setGraphModalOpen(!graphModalOpen);
+  };
+
   const [manufacturers, setManufacturers] = useState([]);
   const [taxes, setTaxes] = useState([]);
   const [selectedTaxComponents, setSelectedTaxComponents] = useState([]);
@@ -160,10 +175,35 @@ const ItemDetailModal = ({ companyTitle,setVariantIndex, setVariant, setVariantM
         firmId={selectedFirmId}
         onManufacturersFetched={handleManufacturersFetched}
       />
-      <ModalHeader toggle={() => setModalOpen(!modalOpen)}>
-        {" "}
-        {selectedItem?.name} Details || Item Type :
-        {/* { " " + selectedItem?.type.replace(/_/g, " ") .replace(/\b\w/g, (char) => char.toUpperCase()) || " " } */}
+      <ItemSalesGraphModal
+        itemId={selectedItemId} 
+        isOpen={graphModalOpen} 
+        toggleModal={toggleGraphModal} 
+      />
+
+      <ModalHeader toggle={() => setModalOpen(!modalOpen)} className="d-flex justify-content-between align-items-center">
+        <div className="d-flex justify-content-between w-100">
+          <div className="d-flex align-items-center gap-3">
+            <h5 className="m-0">{selectedItem?.name} Details</h5>
+            {/* <small>
+              {selectedItem?.type.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())}
+            </small> */}
+          <Button
+            color="primary"
+            onClick={() => handleViewGraph(selectedItem._id)}
+            className="d-flex align-items-center"
+            style={{
+              fontSize: '16px',
+              padding: '5px 10px',
+              borderRadius: '5px',
+            }}
+          >
+            <i className="bx bx-bar-chart-alt" style={{ fontSize: '18px', marginRight: '8px' }} />
+            View Detailed Analysis
+          </Button>
+          </div>
+
+        </div>
       </ModalHeader>
       <ModalBody>
         {selectedItem && (
@@ -272,36 +312,19 @@ const ItemDetailModal = ({ companyTitle,setVariantIndex, setVariant, setVariantM
 
               </Col>
 
+
               <Col md={6}>
                 <label>
-                  <strong>Quantity Type:</strong>
+                  <strong>Quantity Type{selectedItem?.variants?.length ? "" : " & Quantity"}:</strong>
                 </label>
 
-                <div className="d-flex">
-                  <input
-                    type="number"
-                    value={selectedItem?.quantity}
-                    onChange={(e) =>
-                      setSelectedItem({
-                        ...selectedItem,
-                        quantity: e.target.value,
-                      })
-                    }
-                    className="form-control w-25 mr-2"
-                  />
-
+                <div className="d-flex gap-2">
                   <select
                     id="qtyType"
                     name="qtyType"
                     value={selectedItem?.qtyType}
-                    onChange={(e) =>
-                      setSelectedItem({
-                        ...selectedItem,
-                        qtyType: e.target.value,
-                      })
-                    }
-                    className="form-control w-50"
-                    readOnly
+                    onChange={(e) => setSelectedItem({ ...selectedItem, qtyType: e.target.value })}
+                    className={`form-control ${selectedItem?.variants?.length ? "w-100" : "w-50"}`}
                   >
                     <option value="">Select Quantity Type</option>
                     <option value="kg">Kilograms</option>
@@ -311,9 +334,32 @@ const ItemDetailModal = ({ companyTitle,setVariantIndex, setVariant, setVariantM
                     <option value="meters">Meters</option>
                     <option value="centimeters">Centimeters</option>
                     <option value="feet">Feet</option>
+                    <option value="service">Service</option>
                   </select>
+
+                  {(!selectedItem?.variants || selectedItem?.variants.length === 0) && (
+                    <input
+                      type="number"
+                      value={selectedItem?.quantity ?? ""}
+                      min={1}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const val = Number(raw);
+                        if (raw === "" || val >= 1) setSelectedItem({ ...selectedItem, quantity: raw === "" ? "" : val });
+                      }}
+                      className="form-control w-25"
+                      placeholder={selectedItem?.qtyType === "service" ? "Not tracked" : "Quantity"}
+                    />
+                  )}
                 </div>
+
+                {selectedItem?.variants?.length > 0 && (
+                  <div className="form-text mt-1 text-muted">
+                    Quantity is managed per variant — click the <i className="bx bx-pencil"></i> edit icon in the Variants table to set stock.
+                  </div>
+                )}
               </Col>
+
               <Col md={6}>
                 <label>
                   <strong>Manufacturer:</strong>
@@ -495,7 +541,7 @@ const ItemDetailModal = ({ companyTitle,setVariantIndex, setVariant, setVariantM
                       <th>Variation Type</th>
                       <th>Option Label</th>
                       <th>Price ⬆️</th>
-                      <th>Stock</th>
+                      <th>Stock/Quantity</th>
                       <th>Reserved</th>
                       <th>SKU</th>
                       <th>Barcode</th>
@@ -573,7 +619,11 @@ const ItemDetailModal = ({ companyTitle,setVariantIndex, setVariant, setVariantM
                       name: selectedItem.name,
                       description: selectedItem.description,
                       qtyType: selectedItem.qtyType,
-                      quantity: selectedItem.quantity,
+                      quantity:
+                        selectedItem.qtyType === 'service'
+                          ? (selectedItem.quantity === undefined || selectedItem.quantity === null || selectedItem.quantity === '' ? 1000000 : Number(selectedItem.quantity))
+                          : selectedItem.quantity,
+
                       manufacturer: selectedItem.manufacturer,
                       brand: selectedItem.brand,
                       costPrice: selectedItem.costPrice,
@@ -589,6 +639,7 @@ const ItemDetailModal = ({ companyTitle,setVariantIndex, setVariant, setVariantM
                 >
                   Update Item
                 </Button>
+                 
               </div>
             ) : (
               <span>hi</span>
@@ -597,7 +648,9 @@ const ItemDetailModal = ({ companyTitle,setVariantIndex, setVariant, setVariantM
         )}
       </ModalBody>
     </Modal>
-  );
+  
+);
+  
 };
 
 export default ItemDetailModal;

@@ -1,109 +1,116 @@
-import React, { useEffect } from "react";
-import Routes from "./Routes/index";
+import React, { useEffect, Suspense, lazy, useRef } from "react";
 import "./assets/scss/theme.scss";
-import fakeBackend from "./helpers/AuthType/fakeBackend";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import socket from "./utils/socket";
-import gsap from "gsap";
-// import beeImage from "./assets/images/Only-Bee.png"; // ✅ replace with correct path to your image
 import { Helmet } from "react-helmet";
 import seoConfig from "./SeoManager/seoConfig";
 import { useLocation } from "react-router-dom";
-import TutorialSteps from "./components/Common/TutorialSteps";
-fakeBackend();
+
+// dev-only fake backend
+if (process.env.NODE_ENV === "development") {
+  import("./helpers/AuthType/fakeBackend").then((m) => m.default());
+}
+
+
+// Split the router itself
+const AppRoutes = lazy(() => import("./Routes/index"));
+
+// Load Toastify (and its CSS) only when mounted
+const ToastContainerLazy = lazy(async () => {
+  const mod = await import("react-toastify");
+  await import("react-toastify/dist/ReactToastify.css");
+  return { default: mod.ToastContainer };
+});
+
 function SEOManager() {
   const { pathname } = useLocation();
-  const meta = seoConfig[pathname] || {
-    title: "aaMOBee",
-    description: "Inventory and invoicing simplified for all business types.",
-  };
-  const baseUrl = "https://www.aamobee.com"; 
+  const meta =
+    seoConfig[pathname] || {
+      title: "aaMOBee",
+      description: "Inventory and invoicing simplified for all business types.",
+    };
+  const baseUrl = "https://www.aamobee.com";
   const canonicalUrl = `${baseUrl}${pathname}`;
   return (
     <Helmet>
       <title>{meta.title}</title>
       <meta name="description" content={meta.description} />
-       <link rel="canonical" href={canonicalUrl} />
+      <link rel="canonical" href={canonicalUrl} />
     </Helmet>
   );
 }
 
 function App() {
+  // JS doesn’t support generics; remove `<any>`
+  const socketRef = useRef(null);
+
+  // remove localstorage planId once
   useEffect(() => {
-    socket.connect();
-    socket.on("connect", () => {
-      console.log(`User and socket connected: ${socket.id}`);
-    });
+    const planId = localStorage.getItem("planId");
+    if (planId) localStorage.removeItem("planId");
+  }, []);
+
+   const isAuthed =
+      !!localStorage.getItem("authUser") || !!localStorage.getItem("token");
+
+  // Connect socket only for authenticated users, and lazy-load the client
+  useEffect(() => {
+    let mounted = true;
+    // const isAuthed =
+    //   !!localStorage.getItem("authUser") || !!localStorage.getItem("token");
+
+    if (isAuthed) {
+      (async () => {
+        const { default: socket } = await import("./utils/socket");
+        if (!mounted) return;
+        socket.connect();
+        socket.on("connect", () => {
+          console.log(`User and socket connected: ${socket.id}`);
+        });
+        socketRef.current = socket;
+      })();
+    } 
 
     return () => {
-      socket.disconnect();
+      mounted = false;
+      const s = socketRef.current;
+      if (s) {
+        s.disconnect();
+        socketRef.current = null;
+      }
     };
   }, []);
 
-  /* useEffect(() => {
-    const cursorImage = document.createElement("img");
-    cursorImage.src = beeImage;
-    cursorImage.alt = "bee-cursor";
-    cursorImage.className = "custom-cursor-bee";
-  
-    Object.assign(cursorImage.style, {
-      position: "fixed",
-      width: "40px",
-      height: "40px",
-      zIndex: 9999,
-      pointerEvents: "none",
-      transform: "translate(-50%, -50%)",
-      top: "0px",
-      left: "0px",
-    });
-  
-    console.log("🐝 Bee cursor initialized");
-  
-    document.body.appendChild(cursorImage);
-    document.body.style.cursor = "none";
-  
-    const moveCursor = (e) => {
-      gsap.to(cursorImage, {
-        x: e.clientX,
-        y: e.clientY,
-        duration: 0.25,
-        ease: "power2.out",
-      });
-    };
-  
-    document.addEventListener("mousemove", moveCursor);
-  
-    return () => {
-      document.removeEventListener("mousemove", moveCursor);
-      document.body.removeChild(cursorImage);
-      document.body.style.cursor = "default";
-    };
-  }, []);   */
-    // remove localstorage planId
-  useEffect(() => {
-    const planId = localStorage.getItem("planId");
-    if (planId) {
-      localStorage.removeItem("planId");
-    }
-  }
-  , []); 
-  
-
   return (
-    <React.Fragment>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        pauseOnHover
-      />
+    <>
+      <Suspense fallback={null}>
+        <ToastContainerLazy
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          pauseOnHover
+        />
+      </Suspense>
+
+      {isAuthed && (
+        <Suspense fallback={null}>
+          <ToastContainerLazy
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            pauseOnHover
+          />
+        </Suspense>
+      )}
+
       <SEOManager />
-      <Routes />
-      <TutorialSteps />
-    </React.Fragment> 
+
+      <Suspense fallback={<div />}>
+        <AppRoutes />
+      </Suspense>
+    </>
   );
 }
 

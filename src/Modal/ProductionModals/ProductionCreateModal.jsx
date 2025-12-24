@@ -10,6 +10,14 @@ function ProductionCreateModal({ modalOpen, setModalOpen, trigger, firmId }) {
   const [quantity, setQuantity] = useState("");
 
   const authuser = JSON.parse(localStorage.getItem('authUser'))?.response;
+  const blockIfDemo = (actionName) => {
+      if (authuser?.isDemo) {
+        // setLoading(false);
+        toast.error(`Demo accounts cannot create a new ${actionName}`);
+        return true; 
+      }
+      return false; 
+    };
   const createdBy = authuser?._id;
 
   const handleQuantityChange = (e) => {
@@ -39,6 +47,7 @@ function ProductionCreateModal({ modalOpen, setModalOpen, trigger, firmId }) {
       toast.error('Please select a BOM and enter a valid quantity.');
       return;
     }
+    if (blockIfDemo("production")) return;
 
     try {
       const response = await createProductionOrder({

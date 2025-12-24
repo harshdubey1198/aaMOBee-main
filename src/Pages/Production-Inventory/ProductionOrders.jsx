@@ -129,14 +129,28 @@ const handleUpdateQuantity = async (orderId, updatedData) => {
     }
   };
   
+const isDemo = authuser?.response?.isDemo;
 
+const blockIfDemo = (actionName) => {
+  if (isDemo) {
+    toast.error(`Demo accounts cannot ${actionName}`);
+    return true;
+  }
+  return false;
+};  const blockIfNoBusiness = () => {
+    if (!selectedFirmId) {
+      toast.info("Please add/select a business first to continue");
+      return true; 
+    }
+    return false; 
+  };
   const handleUpdateStatus = async (id, data) => {
     try {
       const response = await updateProductionOrderStatus(id, data);
       fetchProductionOrders(); 
       if(response.status===200){
         toast.success(response.data.message);
-        navigate('/inventory-table')
+        navigate('/product-list')
       }
     } catch (error) {
       console.error('Error updating status:', error.message);
@@ -206,7 +220,7 @@ const handleUpdateQuantity = async (orderId, updatedData) => {
                   <Button color="primary" onClick={handleCustomItemsPerPage} style={{padding:"8px" ,lineHeight:"1", fontSize:"10.5px" , height : "26.6px"}}>
                     Set
                   </Button>
-                  <i className='bx bx-plus-circle bx-sm' style={{ cursor: 'pointer' }} onClick={handleCreateModal}></i>
+                  <i className='bx bx-plus-circle bx-sm' style={{ cursor: 'pointer' }} onClick={() => blockIfNoBusiness() || handleCreateModal()}></i>
         </div>  
 
         <div className="table-responsive">
@@ -264,9 +278,12 @@ const handleUpdateQuantity = async (orderId, updatedData) => {
                       <td>
                         {role === 'firm_admin' ? (
                           <select
-                            onChange={(e) => handleStatusChange(order, e.target.value)}
+                            onChange={(e) => {
+                                if (blockIfDemo("update Production Order status")) return;
+                                handleStatusChange(order, e.target.value);
+                              }}
                             className={`form-control form-control-sm w-auto ${
-                              order.status === 'cancelled' ? 'bg-secondary text-white' : ''
+                            order.status === 'cancelled' ? 'bg-secondary text-white' : ''
                             }`}
                             onClick={(e) => e.stopPropagation()}
                             disabled={order.status === 'cancelled'}
@@ -302,7 +319,7 @@ const handleUpdateQuantity = async (orderId, updatedData) => {
                                   <i
                                     className="bx bx-edit bx-sm"
                                     style={{ cursor: 'pointer' }}
-                                    onClick={() => handleOpenModal(order)}
+                                    onClick={() => {   if (blockIfDemo("update Production Order quantity")) return;   handleOpenModal(order); }}
                                   ></i>
                                 ) : null}
 

@@ -1,0 +1,180 @@
+const Designation = require("../schemas/designation.schema");
+const { getPagination } = require("../utils/pagination");
+
+const designationServices = {};
+
+// CREATE
+designationServices.createDesignation = async (body) => {
+    const { firmId, departmentId, title } = body;
+
+    if (!firmId || !departmentId || !title) {
+        throw new Error("firmId, departmentId and title are required");
+    }
+
+    const existing = await Designation.findOne({
+        firmId,
+        departmentId,
+        title
+    });
+
+    if (existing) {
+        throw new Error("Designation already exists for this department");
+    }
+
+    const designation = await Designation.create(body);
+    return designation;
+};
+
+// GET ALL BY DEPARTMENT
+designationServices.getByDepartment = async (departmentId) => {
+    if (!departmentId) throw new Error("departmentId is required");
+
+    const list = await Designation.find({
+        departmentId,
+        status: "active"
+    }).sort({ createdAt: -1 });
+
+    return list;
+};
+
+// GET BY ID
+designationServices.getById = async (id) => {
+    const designation = await Designation.findById(id);
+
+    if (!designation) {
+        throw new Error("Designation not found");
+    }
+
+    return designation;
+};
+
+// UPDATE
+designationServices.updateDesignation = async (id, data) => {
+    const updated = await Designation.findByIdAndUpdate(id, data, { new: true });
+
+    if (!updated) {
+        throw new Error("Update failed. Designation not found");
+    }
+
+    return updated;
+};
+
+// SOFT DELETE
+designationServices.deleteDesignation = async (id) => {
+    const updated = await Designation.findByIdAndUpdate(
+        id,
+        { status: "inactive" },
+        { new: true }
+    );
+
+    if (!updated) {
+        throw new Error("Delete failed. Designation not found");
+    }
+
+    return updated;
+};
+// REACTIVATE DESIGNATION
+designationServices.reactivateDesignation = async (id) => {
+    if (!id) throw new Error("designationId is required");
+
+    const updated = await Designation.findByIdAndUpdate(
+        id,
+        { status: "active" },
+        { new: true }
+    );
+
+    if (!updated) {
+        throw new Error("Designation not found");
+    }
+
+    return updated;
+};
+designationServices.getInactiveDesignations = async (filters, page = 1) => {
+
+    console.log("\n----------- DEBUG DESIGNATION INACTIVE -----------");
+    console.log("📩 Incoming Filters:", filters);
+    console.log("📄 Page:", page);
+
+    const { limit, skip } = getPagination(page);
+
+    console.log("🔢 Limit:", limit);
+    console.log("⏭ Skip:", skip);
+
+    const query = { status: "inactive" };
+
+    if (filters.firmId) {
+        query.firmId = filters.firmId;
+    }
+
+    if (filters.departmentId) {
+        query.departmentId = filters.departmentId;
+    }
+
+    console.log("🔍 Query Being Used:", query);
+
+    // CHECK ALL INACTIVE FIRST
+    const allInactive = await Designation.find({ status: "inactive" });
+    console.log("📦 TOTAL INACTIVE IN DB:", allInactive.length);
+
+    allInactive.forEach(d => {
+        console.log({
+            id: d._id,
+            title: d.title,
+            firmId: d.firmId,
+            departmentId: d.departmentId,
+            status: d.status
+        });
+    });
+
+    // TOTAL COUNT
+    const totalCount = await Designation.countDocuments(query);
+    console.log("✅ MATCHED COUNT:", totalCount);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    // FETCH DATA
+    const designations = await Designation.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+    console.log("📥 RESULT LENGTH:", designations.length);
+
+    designations.forEach(d => {
+        console.log({
+            id: d._id,
+            title: d.title,
+            firmId: d.firmId,
+            departmentId: d.departmentId,
+            status: d.status
+        });
+    });
+
+    const baseUrl = process.env.BASE_URL + `/api/designation/inactive`;
+
+    const urlParams = new URLSearchParams(filters).toString();
+
+    console.log("URL PARAMS:", urlParams);
+    console.log("----------- DEBUG END -----------\n");
+
+    return {
+        totalCount,
+        totalPages,
+        currentPage: Number(page),
+
+        nextPage:
+            page < totalPages
+                ? `${baseUrl}?${urlParams}&page=${Number(page) + 1}`
+                : null,
+
+        previousPage:
+            page > 1
+                ? `${baseUrl}?${urlParams}&page=${Number(page) - 1}`
+                : null,
+
+        data: designations
+    };
+};
+
+
+module.exports = designationServices;

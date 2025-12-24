@@ -35,15 +35,31 @@ const CategoryManager = () => {
   const role = JSON.parse(localStorage.getItem("authUser")).response.role;
   const [selectedFirmId, setSelectedFirmId] = useState(null);
   const idToUse = role === "client_admin" ? selectedFirmId : firmId;
-
+  const blockIfNoBusiness = () => {
+    if (!selectedFirmId) {
+      toast.info("Please add/select a business first to continue");
+      return true; 
+    }
+    return false; 
+  };
   const [trigger , setTrigger] = useState(0);
   const toggleModal = () => setModal(!modal);
+  const authUserData = JSON.parse(localStorage.getItem("authUser"));
+  const authUser = authUserData?.response;
+
+  const blockIfDemo = (actionName) => {
+    if (authUser?.isDemo) {
+      toast.error(`Demo accounts cannot ${actionName}`);
+      return true;
+    }
+    return false;
+  };
 
   const fetchCategories = async () => {
     try {
       const response = await axios.get(`${process.env.REACT_APP_URL}/category/get-categories/${idToUse}`, config);
       setCategories(response.data);
-      toast.success("Categories Rendered Successfully !")
+      // toast.success("Categories Rendered Successfully !")
       setParentCategories(response.data.filter(category => !category.parentId));
     } catch (error) {
       toast.error('Failed to fetch categories.');
@@ -183,16 +199,16 @@ const CategoryManager = () => {
                     {/* <Button color="link" onClick={handleSortToggle}>
                       Sort by Name ({sortOrder === 'asc' ? 'Ascending' : 'Descending'})
                     </Button> */}
-                  <Button color="primary" className="p-2" style={{maxHeight:"27.13px",fontSize:"10.5px" , lineHeight:"1"}}  disabled={role === "client_admin" && !selectedFirmId} onClick={openAddCategoryModal}>
+                  <Button color="primary" className="p-2" style={{maxHeight:"27.13px",fontSize:"10.5px" , lineHeight:"1"}}   onClick={() => {  if (blockIfNoBusiness()) return; openAddCategoryModal(); }}>
                     Add Category
                   </Button>
                   {(role === "client_admin" && (
                     <Col  lg={3} md={6} sm={12} className="m-text-center">
-                          <FirmSwitcher
-                              selectedFirmId={selectedFirmId}
-                              onSelectFirm={setSelectedFirmId}
-                            />
-                        </Col>
+                        <FirmSwitcher
+                            selectedFirmId={selectedFirmId}
+                            onSelectFirm={setSelectedFirmId}
+                          />
+                      </Col>
                     ))}
                   </div>
 
@@ -218,12 +234,18 @@ const CategoryManager = () => {
                               <i
                                 className="bx bx-edit"
                                 style={{ fontSize: "22px", cursor: "pointer" }}
-                                onClick={() => handleEdit(category)}
+                                onClick={() => {
+                                  if (blockIfDemo("edit a Category")) return;
+                                  handleEdit(category);
+                                }}
                               ></i>
                               <i
                                 className="bx bx-trash"
                                 style={{ fontSize: "22px", cursor: "pointer" }}
-                                onClick={() => handleDelete(category._id)}
+                                  onClick={() => {
+                                    if (blockIfDemo("delete a Category")) return;
+                                    handleDelete(category._id);
+                                  }}
                               ></i>
                             </td>
                           </tr>

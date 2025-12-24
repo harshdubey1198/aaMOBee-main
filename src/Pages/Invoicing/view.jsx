@@ -46,6 +46,15 @@ const ViewInvoices = () => {
     const printRef = useRef();
     const authuser = JSON.parse(localStorage.getItem("authUser")).response;
     const firmId = JSON.parse(localStorage.getItem("authUser")).response.adminId;
+    const isDemo = authuser?.isDemo;
+
+    const blockIfDemo = (actionName) => {
+    if (isDemo) {
+        toast.error(`Demo accounts cannot ${actionName}`);
+        return true;
+    }
+    return false;
+    };
     const statusOptions = ["Pending", "Approved", "Rejected"];
 
     const [previewInvoice, setPreviewInvoice] = useState(null);
@@ -175,6 +184,7 @@ const ViewInvoices = () => {
         }
     };
     const handleRejectProforma = async (invoiceId) => {
+        if (blockIfDemo("reject an invoice")) return;
         if (!invoiceId) return;
         try {
             const response = await rejectInvoiceById(invoiceId)
@@ -189,6 +199,7 @@ const ViewInvoices = () => {
     };
 
     const handleApproveStatus = async (invoice, status) => {
+        if (blockIfDemo("approve or reject an invoice")) return;
         try {
             await axiosInstance.put(
                 `${process.env.REACT_APP_URL}/invoice/update-invoice-approval`,
@@ -205,6 +216,7 @@ const ViewInvoices = () => {
     };
 
     const handleDueStatus = async (invoiceId, newDueAmount) => {
+        if (blockIfDemo("update due status")) return;
         try {
             await axiosInstance.put(
                 `${process.env.REACT_APP_URL}/invoice/update-due-status/${invoiceId}`,
@@ -591,14 +603,12 @@ const ViewInvoices = () => {
                                                                             handleFetchAndPrint(invoice._id);
                                                                         }}
                                                                     ></i>
-                                                                </td>
-
-                                                                    {/* ✅ Add Edit Icon */}
-                                                                    {/* <Link
-                                                                    to={`/edit-invoice/${invoice._id}`} // ✅ or whatever route you want
-                                                                    onClick={(e) => e.stopPropagation()} // ✅ prevent parent row click (e.g., modal trigger)
-                                                                    >
-                                                                        <i
+                                                                    {!isDemo ? (
+                                                                        <Link
+                                                                            to={`/edit-invoice/${invoice._id}`}
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                        >
+                                                                            <i
                                                                             className="bx bx-edit-alt"
                                                                             style={{
                                                                                 fontSize: "22px",
@@ -607,9 +617,22 @@ const ViewInvoices = () => {
                                                                                 marginLeft: "10px",
                                                                             }}
                                                                             title="Edit Invoice"
+                                                                            ></i>
+                                                                        </Link>
+                                                                        ) : (
+                                                                        <i
+                                                                            className="bx bx-edit-alt"
+                                                                            style={{
+                                                                            fontSize: "22px",
+                                                                            fontWeight: "bold",
+                                                                            cursor: "not-allowed",
+                                                                            marginLeft: "10px",
+                                                                            color: "gray",
+                                                                            }}
+                                                                            title="Demo accounts cannot edit invoices"
                                                                         ></i>
-                                                                    </Link> */}
-                                                            
+                                                                    )}
+                                                        </td>                                                            
                                                     </tr>
                                                 ))}
                                             </tbody>

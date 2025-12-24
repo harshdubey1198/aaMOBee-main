@@ -6,8 +6,8 @@ import { toast } from 'react-toastify';
 import axiosInstance from '../../utils/axiosInstance';
 
 import Breadcrumbs from '../../components/Common/Breadcrumb';
-import InvoiceInputs from '../../components/InvoicingComponents/InvoiceInputs';
-import InvoiceItems from '../../components/InvoicingComponents/InvoiceItems';
+import InvoiceInputs from '../../components/InvoicingComponents/EditInvoiceInputs';
+import InvoiceItems from '../../components/InvoicingComponents/EditInvoiceItems';
 import PrintFormat from '../../components/InvoicingComponents/printFormat';
 import PrintFormat2 from '../../components/InvoicingComponents/printFormat2';
 import PrintFormat3 from '../../components/InvoicingComponents/printFormat3';
@@ -20,8 +20,8 @@ const EditInvoiceTrader = () => {
   const { invoiceId } = useParams();
   const navigate = useNavigate();
   const printRef = useRef();
-    const authuser = JSON.parse(localStorage.getItem("authUser"));
-
+  const authuser = JSON.parse(localStorage.getItem("authUser"));
+  const EditMode = true;
 
   const authUser = JSON.parse(localStorage.getItem('authUser'));
   const createdBy = authUser?.response?._id;
@@ -40,26 +40,57 @@ const EditInvoiceTrader = () => {
     try {
       const res = await getInvoiceById(invoiceId);
       let data = res.data;
-      console.log("res" , res);
+      console.log("Invoice data:", data);
+      console.log("💰 Original amountPaid:", data.amountPaid, "Type:", typeof data.amountPaid);
+             console.log("📦 Items data:", data.items);
+       if (data.items && data.items.length > 0) {
+         console.log("📦 First item:", data.items[0]);
+         console.log("📦 First item price:", data.items[0].price);
+         console.log("📦 First item sellingPrice:", data.items[0].sellingPrice);
+         console.log("📦 First item itemId:", data.items[0].itemId);
+         console.log("📦 First item name from itemId:", data.items[0].itemId?.name);
+       }
       
+      if (!data) {
+        toast.error("Invoice not found");
+        navigate('/all-invoices');
+        return;
+      }
 
       // Split name
       const [firstName = '', ...rest] = (data.customerName || "").trim().split(" ");
       const lastName = rest.join(" ");
-      const issueDate = data.issueDate ? data.issueDate.slice(0, 10) : "";
+      const invoiceDate = data.invoiceDate ? data.invoiceDate.slice(0, 10) : "";
       const dueDate = data.dueDate ? data.dueDate.slice(0, 10) : "";
+
+             // Process items to ensure proper data structure
+       const processedItems = data.items ? data.items.map(item => ({
+         ...item,
+         name: item.name || item.itemId?.name || 'N/A',
+         price: item.sellingPrice || item.price || 0,
+         quantity: item.quantity || 0,
+         discount: item.discount || 0,
+         total: item.total || 0,
+         afterTax: item.afterTax || 0,
+         description: item.description || item.itemId?.description || '',
+         ProductHsn: item.ProductHsn || item.itemId?.ProductHsn || ''
+       })) : [];
 
       setInvoiceData({
         ...data,
         firstName,
         lastName,
         dueDate,
-        issueDate
+        invoiceDate,
+        amountPaid: data.amountPaid ? parseFloat(data.amountPaid) : 0,
+        items: processedItems
       });
-      setSelectedInvoiceLayout(res?.invoiceLayout || "layout1");
+      setSelectedInvoiceLayout(data?.invoiceLayout || "layout1");
       setIsAddItemVisible(!data.items || data.items.length === 0);
     } catch (error) {
+      console.error("Error fetching invoice:", error);
       toast.error("Error loading invoice");
+      navigate('/all-invoices');
     }
   };
 
@@ -122,6 +153,39 @@ const handleSubmit = async (e) => {
   e.preventDefault();
 
   try {
+    // Validate required fields
+    if (!invoiceData.firstName || !invoiceData.lastName) {
+      toast.error("Customer name is required");
+      return;
+    }
+
+    if (!invoiceData.customerEmail) {
+      toast.error("Customer email is required");
+      return;
+    }
+
+    if (!invoiceData.items || invoiceData.items.length === 0) {
+      toast.error("Invoice must have at least one item");
+      return;
+    }
+
+    // Validate items
+    for (let i = 0; i < invoiceData.items.length; i++) {
+      const item = invoiceData.items[i];
+      if (!item.itemId) {
+        toast.error(`Item ${i + 1}: Item selection is required`);
+        return;
+      }
+      if (!item.quantity || item.quantity <= 0) {
+        toast.error(`Item ${i + 1}: Quantity must be greater than 0`);
+        return;
+      }
+      if (!item.price || item.price <= 0) {
+        toast.error(`Item ${i + 1}: Price must be greater than 0`);
+        return;
+      }
+    }
+
     const invoicePayload = {
       customer: {
         firstName: invoiceData.firstName,
@@ -129,39 +193,45 @@ const handleSubmit = async (e) => {
         email: invoiceData.customerEmail,
         mobile: invoiceData.customerPhone,
         address: {
-          h_no: invoiceData.customerAddress.h_no,
-          city: invoiceData.customerAddress.city,
-          state: invoiceData.customerAddress.state,
-          zip_code: invoiceData.customerAddress.zip_code,
-          country: invoiceData.customerAddress.country,
-          nearby: invoiceData.customerAddress.nearby,
-          district: invoiceData.customerAddress.district,
+          h_no: invoiceData.customerAddress?.h_no || "",
+          city: invoiceData.customerAddress?.city || "",
+          state: invoiceData.customerAddress?.state || "",
+          zip_code: invoiceData.customerAddress?.zip_code || "",
+          country: invoiceData.customerAddress?.country || "",
+          nearby: invoiceData.customerAddress?.nearby || "",
+          district: invoiceData.customerAddress?.district || "",
         },
       },
-      items: invoiceData.items.map((item, index) => {
-        if (!item.price) {
-          console.error(`❌ Missing sellingPrice for item at index ${index}:`, item);
-        }
+             items: invoiceData.items.map((item, index) => {
+         if (!item.price) {
+           console.error(`❌ Missing sellingPrice for item at index ${index}:`, item);
+         }
 
-        return {
-          itemId: item.itemId,
-          selectedVariant: item.selectedVariant && item.selectedVariant.map(variant => ({
-            variationType: variant.variationType,
-            optionLabel: variant.optionLabel,
-            price: variant.price,
-            stock: variant.stock,
-            sku: variant.sku,
-            barcode: variant.barcode,
-          })),
-          quantity: item.quantity,
-          sellingPrice: item.price, // ✅ Important field
-          discount: item.discount || 0,
-          tax: item.tax || 0,
-        };
-      }),
-      invoiceDate: invoiceData.issueDate,
+                   return {
+            itemId: item.itemId,
+            name: item.name || item.itemId?.name || 'N/A',
+            description: item.description || item.itemId?.description || '',
+            ProductHsn: item.ProductHsn || item.itemId?.ProductHsn || '',
+            selectedVariant: item.selectedVariant && item.selectedVariant.map(variant => ({
+              variationType: variant.variationType,
+              optionLabel: variant.optionLabel,
+              price: variant.price,
+              stock: variant.stock,
+              sku: variant.sku,
+              barcode: variant.barcode,
+            })),
+            quantity: item.quantity,
+            sellingPrice: item.price, // ✅ Important field
+            discount: item.discount || 0,
+            tax: item.tax || 0,
+                         taxComponents: item.taxComponents || [], // ✅ Include tax components
+             total: item.total || 0,
+             afterTax: item.afterTax || 0,
+          };
+       }),
+      invoiceDate: invoiceData.invoiceDate,
       dueDate: invoiceData.dueDate,
-      amountPaid: invoiceData.amountPaid,
+      amountPaid: parseFloat(invoiceData.amountPaid) || 0,
       firmId: idToUse,
       createdBy: authuser?.response?._id,
       invoiceType: invoiceData.invoiceType,
@@ -170,15 +240,27 @@ const handleSubmit = async (e) => {
       notes: 'Please pay by due date.',
     };
 
-    console.log("📦 Payload to update invoice:", invoicePayload);
+         console.log("📦 Payload to update invoice:", invoicePayload);
+            console.log("💰 Amount Paid value:", invoiceData.amountPaid, "Type:", typeof invoiceData.amountPaid);
+       console.log("🧾 Tax components in items:", invoiceData.items.map(item => ({
+         itemName: item.name,
+         taxComponents: item.taxComponents,
+         afterTax: item.afterTax
+       })));
 
-    await updateInvoiceById(invoiceId, invoicePayload);
+     const response = await updateInvoiceById(invoiceId, invoicePayload);
+    
+    if (response.error) {
+      toast.error(response.error || "Failed to update invoice");
+      return;
+    }
 
     toast.success("Invoice updated successfully");
     navigate('/all-invoices');
   } catch (error) {
     console.error("❌ Error updating invoice:", error?.response?.data || error.message || error);
-    toast.error("Failed to update invoice");
+    const errorMessage = error?.response?.data?.error || error?.message || "Failed to update invoice";
+    toast.error(errorMessage);
   }
 };
 
@@ -219,6 +301,7 @@ const handleSubmit = async (e) => {
           <CardBody>
             <Form onSubmit={handleSubmit}>
               <InvoiceInputs
+                IsEditable={EditMode}
                 invoiceData={invoiceData}
                 selectedFirmId={selectedFirmId}
                 setSelectedFirmId={setSelectedFirmId}

@@ -405,7 +405,17 @@ export const getAllPlans = async () => {
     return error;
   }
 };
-
+export const demoUserLogin = async (email, token) => {
+  try {
+    const response = await axiosInstance.post("/auth/login", {
+      email,
+      token,
+    });
+    return response.data.response;
+  } catch (error) {
+    return error?.response?.data || { message: "Demo login failed" };
+  } 
+};
 //  to approve status of client
 export const approveClient = async (id, data) => {
   try {
@@ -676,6 +686,9 @@ export const getInventoryItems = async (firmId) => {
   }
 };
 
+export const updateInventoryItemById = (id, payload) =>
+  axiosInstance.put(`/inventory/update-item/${id}`, payload).then(res => res.data);
+
 export const createBom = async (data) => {
   try {
     const response = await axiosInstance.post(`/bom/create-bom`, data);
@@ -928,6 +941,20 @@ export const QueryFormRequest = async (data) => {
   }
 };
 
+// Send Contact OTP Request (POST)
+export const SendContactOtpRequest = async (data) => {
+  try {
+    const response = await axiosInstance.post(
+      `/blog/send-contact-otp`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+
 // Get All Contact Messages (GET)
 export const getAllContactMessages = async (page = 1, limit = 10) => {
   try {
@@ -1003,14 +1030,24 @@ export const superAdminDashboard = async (userId) => {
 
 
 export const getInvoiceById = async (id) => {
-    const response = await axiosInstance.get(`/invoice/get-invoice/${id}`);
-    return response.data;
+    try {
+        const response = await axiosInstance.get(`/invoice/get-invoice/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching invoice:", error);
+        throw error;
+    }
 };
 
 // ✅ Update invoice by ID
 export const updateInvoiceById = async (id, updatedInvoiceData) => {
-    const response = await axiosInstance.put(`/invoice/edit-invoice/${id}`, updatedInvoiceData);
-    return response.data;
+    try {
+        const response = await axiosInstance.put(`/invoice/edit-invoice/${id}`, updatedInvoiceData);
+        return response.data;
+    } catch (error) {
+        console.error("Error updating invoice:", error);
+        throw error;
+    }
 };
 
 export const rejectInvoiceById = async (id) => {
@@ -1023,4 +1060,189 @@ export const deleteFirm = async (firmId) => {
 };
 
 
+// Razorpay Integration 
+export const createRazorPayment = async (data) => {
+  try { 
+    const response = await axiosInstance.post(
+      "/payment/razorpay/create-order",
+      data
+    );
+    return response.data;
+  } catch (error) {
+    // console.error("Error creating firm industry service:", error);
+    throw error.response?.data || error;
+  }
+};
+export const verifyRazorPayment = async (data) => {
+  try {
+    const response = await axiosInstance.post(
+      "/payment/verify",   // maps to http://localhost:7200/api/payments/verify
+      data
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const getSettings = async()=>{
+  try{
+    const response = await axiosInstance.get('/settings/get-settings')
+    return response.data;
+  }catch(error){
+    throw error;
+  }
+}
+export const updateSettings = async (id, payload) => {
+  try {
+    const response = await axiosInstance.post(`/settings/update-settings/${id}`, payload);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const createDemoUser = async (payload) => {
+  try {
+    const response = await axiosInstance.post("/demo/create-demo-user", payload);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const loginDemoUser = async (payload) => {
+  try {
+    const response = await axiosInstance.post("/auth/login", payload);
+    console.log(response.data)
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getDemoUserList = async (payload) => {
+  try {
+    const { page = 1, limit = 10 } = payload;
+    const response = await axiosInstance.post(`/auth/get-demouser`, { page, limit });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const updateDemoUserExpiry = async (payload) => {
+  try {
+    const response = await axiosInstance.put("/auth/demoUser-ExpiryUpdate", payload);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getAllDemoUserLogs = async () => {
+  try {
+    const response = await axiosInstance.get("/auth/get-all-demouser-logs");
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getDemoUserLogsById = async (userId) => {
+  if (!userId) throw new Error("userId is required");
+  try {
+    const response = await axiosInstance.get(`/auth/get-demouser-logs/${userId}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+// FAQ Section 
+
+// FAQ APIs using slug
+export const createFAQ = async (faqData) => {
+  try {
+    const response = await axiosInstance.post("/faqs/create-faq", faqData);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const getAllFAQs = async () => {
+  try {
+    const response = await axiosInstance.get("/faqs/all-faqs");
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const getFAQBySlug = async (slug) => {
+  try {
+    const response = await axiosInstance.get(`/faqs/${slug}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const updateFAQ = async (slug, faqData) => {
+  try {
+    const response = await axiosInstance.put(`/faqs/${slug}`, faqData);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const deleteFAQ = async (slug) => {
+  try {
+    const response = await axiosInstance.delete(`/faqs/${slug}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+export const getItemSalesData = async (itemId) => {
+  try {
+    const response = await axiosInstance.get(`/inventory/item-sales-data/${itemId}`);
+    return response.data; 
+  } catch (error) {
+    console.error("Error fetching item sales data:", error);
+    throw error; 
+  }
+};
+
+export const aiChat = async (message) => {
+  try {
+    const response = await axiosInstance.post("/chat/ask", {
+      question: message, // Send 'question' as the key, make sure it matches the backend's expected key
+    });
+
+    console.log("Backend Response:", response.data);  // Log to check if the response is correct
+    return response.data;  // Make sure the backend sends { success, reply, context }
+  } catch (error) {
+    console.error("AI Chat API Error:", error);
+    throw error;  // Throw error to be caught by sendToAI function
+  }
+};
+
+// Save user data along with chats
+export const saveUserData = async (payload) => {
+  try {
+    const response = await axiosInstance.post('/chatbot/data', payload);
+
+    console.log("API Response: ", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error in saveUserData API call:", error);
+    throw new Error("Failed to save user data");
+  }
+};
+
+
 export default axiosInstance;
+
+

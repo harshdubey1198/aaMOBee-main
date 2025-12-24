@@ -45,29 +45,29 @@ function* loginUser({ payload: { user, history } }) {
 function fetchLogin(user) {
   let apiUrl = `${process.env.REACT_APP_URL}/auth/login`;
   const currentPath = window.location.pathname;
-  // console.log("Current path:", currentPath);
 
   if (currentPath === "/crm/login") {
     apiUrl = `${process.env.REACT_APP_URL}/crmuser/login-crmsuser`;
   } else if (currentPath === "/admin/login") {
     apiUrl = `${process.env.REACT_APP_URL}/auth/admin/login`;
+  } else if (currentPath === "/demo/login" && user.token) {
+    apiUrl = `${process.env.REACT_APP_URL}/auth/demo-login`;
   }
+  const body = user.token
+    ? { email: user.email, token: user.token } 
+    : { email: user.email, password: user.password }; 
 
   return fetch(apiUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      email: user.email,
-      password: user.password,
-    }),
+    body: JSON.stringify(body),
   })
     .then((response) => {
       if (!response.ok) {
         return response.json().then((data) => {
           throw { error: { message: data.error, redirectTo: data.data?.redirectTo } };
-
         });
       }
       return response.json();
@@ -77,9 +77,11 @@ function fetchLogin(user) {
     });
 }
 
+
 function* logoutUser() {
   try {
     localStorage.removeItem("authUser");
+    localStorage.removeItem("defaultFirm");
     yield put(logoutUserSuccess(LOGOUT_USER, true));
   } catch (error) {
     console.log("Logout error:", error?.message || error?.error); // Log the error message

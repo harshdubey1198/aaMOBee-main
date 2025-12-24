@@ -4,14 +4,21 @@ import axiosInstance from '../../utils/axiosInstance';
 import Select from "react-select";
 import InventoryItemForm from '../../Pages/Inventory-MNG/TableForm';
 import { Row, Col } from 'react-bootstrap';
+import VariantModal from '../../Pages/Inventory-MNG/VariantModal';
 
 
-const InvoiceItems = ({ items, selectedFirmId, isAddItemVisible ,removeItem, invoiceData, setInvoiceData, role, companyData }) => {
+const InvoiceItems = ({ items, selectedFirmId, isAddItemVisible, removeItem, invoiceData, setInvoiceData, role, companyData, ...props }) => {
   const [inventoryItems, setInventoryItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [variantModalOpen, setVariantModalOpen] = useState(false);
+  const [variantItemId, setVariantItemId] = useState(null);
+  const [variantRefreshKey, setVariantRefreshKey] = useState(0);
   const [createItemModalOpen, setCreateItemModalOpen] = useState(false);
-  // console.log("item data for edit : " , items[0]?.itemId.name);
+  // console.log("item array : " , items);
   // const [error, setError] = useState(null);
+  const [variantForm, setVariantForm] = useState({ variationType: "", optionLabel: "", price: "", stock: "", sku: "", barcode: "" });
+  const onVariantFormChange = (e) => { const { name, value } = e.target; setVariantForm(p => ({ ...p, [name]: value })); };
+
   const authuser = JSON.parse(localStorage.getItem("authUser"));
   const firmId = authuser?.response?.adminId;
   const currencyOptions = [
@@ -36,6 +43,51 @@ const InvoiceItems = ({ items, selectedFirmId, isAddItemVisible ,removeItem, inv
         if (!idToUse) return;
         const response = await axiosInstance.get(`${process.env.REACT_APP_URL}/inventory/get-items/${idToUse}`);
         setInventoryItems(response.data);
+
+        // Initialize existing items with proper data
+        if (items && items.length > 0) {
+          console.log("🔧 Original items:", items);
+          const updatedItems = items.map(item => {
+            console.log("🔧 Processing item:", item);
+            if (item.itemId && item.itemId._id) {
+              // Item already has data from database, preserve it
+              const updatedItem = {
+                ...item,
+                itemId: item.itemId._id, // Convert from object to string ID
+                price: item.sellingPrice || item.price || 0,
+                quantity: item.quantity || 0,
+                discount: item.discount || 0,
+                total: item.total || 0,
+                afterTax: item.afterTax || 0,
+                selectedVariant: item.selectedVariant || [],
+                taxComponents: item.taxComponents || []
+              };
+
+              // Recalculate totals
+              if (updatedItem.quantity && updatedItem.price) {
+                const calculatedTotal = calculateTotal(
+                  updatedItem.quantity,
+                  0,
+                  updatedItem.price,
+                  updatedItem.taxComponents || [],
+                  updatedItem.discount
+                );
+                updatedItem.total = calculatedTotal.total;
+                updatedItem.afterTax = calculatedTotal.afterTax;
+              }
+
+              console.log("🔧 Updated item:", updatedItem);
+              return updatedItem;
+            }
+            return item;
+          });
+
+          console.log("🔧 Final updated items:", updatedItems);
+          setInvoiceData(prevData => ({
+            ...prevData,
+            items: updatedItems
+          }));
+        }
       } catch (err) {
         console.log(err);
       } finally {
@@ -44,7 +96,43 @@ const InvoiceItems = ({ items, selectedFirmId, isAddItemVisible ,removeItem, inv
     };
 
     fetchInventoryItems();
-  }, [selectedFirmId, firmId, createItemModalOpen]);
+  }, [selectedFirmId, firmId, createItemModalOpen, variantRefreshKey]);
+
+  // Recalculate totals when items change
+  useEffect(() => {
+    if (items && items.length > 0) {
+      const updatedItems = items.map(item => {
+        if (item.itemId && item.quantity && item.price) {
+          const quantity = item.quantity || 0;
+          const price = item.price || 0;
+          const discount = item.discount || 0;
+
+          // Get tax components from inventory item or use existing ones
+          let taxComponents = item.taxComponents || [];
+          if (!taxComponents.length && item.itemId) {
+            const inventoryItem = inventoryItems.find(inv => inv._id === item.itemId);
+            if (inventoryItem?.tax?.selectedTaxTypes) {
+              taxComponents = inventoryItem.tax.selectedTaxTypes;
+            }
+          }
+
+          const calculatedTotal = calculateTotal(quantity, item.varSelPrice || 0, price, taxComponents, discount);
+          return {
+            ...item,
+            total: calculatedTotal.total,
+            afterTax: calculatedTotal.afterTax,
+            taxComponents: taxComponents
+          };
+        }
+        return item;
+      });
+
+      setInvoiceData(prevData => ({
+        ...prevData,
+        items: updatedItems
+      }));
+    }
+  }, [items, inventoryItems]);
 
 
   const getSellingPrice = (itemId) => {
@@ -55,18 +143,22 @@ const InvoiceItems = ({ items, selectedFirmId, isAddItemVisible ,removeItem, inv
   const getMaxQuantity = (itemId, selectedVariantName) => {
     const selectedItem = inventoryItems.find((invItem) => invItem._id === itemId);
     if (!selectedItem) return 1;
+    // If item is a service, don't cap the quantity
+    if (selectedItem.qtyType === 'service') return Number.POSITIVE_INFINITY;
 
     if (selectedItem.variants && selectedItem.variants.length > 0) {
       const selectedVariant = selectedItem.variants.find(
         (variant) => variant.optionLabel === selectedVariantName
       );
       if (selectedVariant) {
-        const availableQuantity = selectedVariant.stock - selectedVariant.reservedQuantity;
+        const availableQuantity =
+          (selectedVariant.stock || 0) - (selectedVariant.reservedQuantity || 0);
         return availableQuantity > 0 ? availableQuantity : 0;
       }
     }
     return selectedItem.quantity || 0;
   };
+
 
 
   // const calculateTotal = (quantity,varSelPrice, price, tax, discount) => {
@@ -79,19 +171,22 @@ const InvoiceItems = ({ items, selectedFirmId, isAddItemVisible ,removeItem, inv
   // };
 
   const calculateTotal = (quantity, varSelPrice, price, taxComponents, discount) => {
-
     const basePrice = varSelPrice > 0 ? quantity * varSelPrice : quantity * price;
+    const subtotalAfterDiscount = basePrice;
 
-    const totalTax = Array.isArray(taxComponents)
-      ? taxComponents.reduce((acc, tax) => acc + (basePrice * (tax.rate / 100)), 0)
-      : 0;
+    let totalTax = 0;
 
-    const taxedPrice = basePrice + totalTax;
+    if (Array.isArray(taxComponents) && taxComponents.length > 0) {
+      totalTax = taxComponents.reduce((acc, tax) => {
+        // Handle different tax component structures
+        const taxRate = tax.rate || tax.taxRate || 0;
+        return acc + (basePrice * (taxRate / 100));
+      }, 0);
+    }
 
-    const total = taxedPrice - discount;
-
+    const total = basePrice + totalTax - (discount || 0);
     return {
-      total: parseFloat(total.toFixed(2)),
+      total: parseFloat(Math.max(0, total).toFixed(2)),
       afterTax: parseFloat(totalTax.toFixed(2)),
     };
   };
@@ -128,26 +223,29 @@ const InvoiceItems = ({ items, selectedFirmId, isAddItemVisible ,removeItem, inv
       description: "",
       quantity: 0,
       price: 0,
-      tax: 0,
       ProductHsn: "",
-      taxComponents: [],
       discount: 0,
       total: 0,
       selectedVariant: [],
+      taxComponents: [],
     };
 
     const selectedItem = inventoryItems.find((invItem) => invItem._id === selectedItemId);
     if (selectedItem) {
       const price = getSellingPrice(selectedItem._id);
-      const taxComponents = selectedItem.tax?.selectedTaxTypes || []; // Get tax components
+      const taxComponents = selectedItem.tax?.selectedTaxTypes || [];
+      const tax = taxComponents.reduce((acc, t) => acc + (t.rate || t.taxRate || 0), 0);
+
       updatedItems[index] = {
         ...updatedItems[index],
         name: selectedItem.name,
         description: selectedItem.description || '',
         price,
         ProductHsn: selectedItem.ProductHsn,
-        taxComponents, // Set tax components in the item
+        tax,
+        taxComponents,
         total: calculateTotal(0, 0, price, taxComponents, 0).total,
+        itemId: selectedItemId,
       };
 
       setInvoiceData((prevData) => ({
@@ -234,7 +332,7 @@ const InvoiceItems = ({ items, selectedFirmId, isAddItemVisible ,removeItem, inv
     const varSelPrice = selectedItem.varSelPrice || 0;
     const discount = selectedItem.discount || 0;
     const taxComponents = inventoryItems.find((invItem) => invItem._id === selectedItem.itemId)?.tax?.selectedTaxTypes || [];
-    // console.log(taxComponents);
+    newItems[index].tax = taxComponents.reduce((acc, t) => acc + (t.rate || t.taxRate || 0), 0);
     newItems[index].total = calculateTotal(quantity, varSelPrice, price, taxComponents, discount).total;
     newItems[index].afterTax = calculateTotal(quantity, varSelPrice, price, taxComponents, discount).afterTax;
 
@@ -259,13 +357,35 @@ const InvoiceItems = ({ items, selectedFirmId, isAddItemVisible ,removeItem, inv
   // ✅ Correct before-tax calculation:
   const totalBeforeTax = items.reduce((acc, item) => {
     const quantity = item.quantity || 0;
-    const price = item.varSelPrice > 0 ? item.varSelPrice : item.price || 0;
+    const price = (item.varSelPrice && item.varSelPrice > 0) ? item.varSelPrice : (item.price || 0);
     return acc + (quantity * price);
   }, 0);
 
   // ✅ Use existing afterTax & discount:
   const totalTax = items.reduce((acc, item) => acc + (item.afterTax || 0), 0);
   const totalDiscount = items.reduce((acc, item) => acc + (item.discount || 0), 0);
+
+  // Calculate tax breakdown by tax type
+  const taxBreakdown = {};
+  items.forEach(item => {
+    if (item.taxComponents && item.taxComponents.length > 0) {
+      item.taxComponents.forEach(tax => {
+        const taxName = tax.taxName || tax.name || 'Tax';
+        const taxRate = tax.rate || tax.taxRate || 0;
+        const key = `${taxName} (${taxRate}%)`;
+
+        if (!taxBreakdown[key]) {
+          taxBreakdown[key] = 0;
+        }
+
+        const itemBasePrice = (item.quantity || 0) * ((item.varSelPrice && item.varSelPrice > 0 ? item.varSelPrice : item.price) || 0);
+        const itemDiscount = item.discount || 0;
+        const taxableAmount = itemBasePrice;
+        const taxAmount = taxableAmount * (taxRate / 100);
+        taxBreakdown[key] += taxAmount;
+      });
+    }
+  });
 
   // ✅ Final amount to be paid:
   const totalAfterTax = totalBeforeTax + totalTax - totalDiscount;
@@ -284,70 +404,69 @@ const InvoiceItems = ({ items, selectedFirmId, isAddItemVisible ,removeItem, inv
     }));
   };
 
-const handleAmountPaidChange = (e) => {
-  const input = e.target.value;
+  const handleAmountPaidChange = (e) => {
+    const input = e.target.value;
 
-  if (input === '') {
+    if (input === '') {
+      setInvoiceData((prevData) => ({
+        ...prevData,
+        amountPaid: '',
+      }));
+      return;
+    }
+
+    const value = parseFloat(input);
+    if (isNaN(value) || value < 0) return;
+
+    // ✅ Cap at totalAfterTax
+    const cappedValue = Math.min(value, totalAfterTax);
+
     setInvoiceData((prevData) => ({
       ...prevData,
-      amountPaid: '', 
+      amountPaid: cappedValue,
     }));
-    return;
-  }
-
-  const value = parseFloat(input);
-  if (isNaN(value)) return;
-
-  const cappedValue = Math.max(0, Math.min(totalInclusiveTaxes, value));
-
-  setInvoiceData((prevData) => ({
-    ...prevData,
-    amountPaid: cappedValue,
-  }));
-};
-
-
-
+  };
 
   return (
     <div>
       {items.length === 0 ? (
-  <div className="d-flex justify-content-center align-items-center empty-placeholder py-4">
-    <div className="p-4 rounded bg-white text-center w-100">
-      <h5 className="text-muted mb-2">No Invoice Items Added</h5>
-      <p className="text-muted mb-3">Please add your first item to start the invoice.</p>
-      {showAdd && (
-        <button
-          type="button"
-          className="btn btn-outline-info fw-semibold shadow-sm"
-          onClick={() =>
-            setInvoiceData(prev => ({
-              ...prev,
-              items: [
-                ...prev.items,
-                {
-                  itemId: "",
-                  name: "",
-                  variant: "",
-                  quantity: 1,
-                  price: 0,
-                  discount: 0,
-                  selectedVariant: [],
-                  total: 0,
-                  afterTax: 0,
-                  taxComponents: [],
-                  varSelPrice: 0
+        <div className="d-flex justify-content-center align-items-center empty-placeholder py-4">
+          <div className="p-4 rounded bg-white text-center w-100">
+            <h5 className="text-muted mb-2">No Invoice Items Added</h5>
+            <p className="text-muted mb-3">Please add your first item to start the invoice.</p>
+            {showAdd && (
+              <button
+                type="button"
+                className="btn btn-outline-info fw-semibold shadow-sm"
+                onClick={() =>
+                  setInvoiceData(prev => ({
+                    ...prev,
+                    items: [
+                      ...prev.items,
+                      {
+                        itemId: "",
+                        name: "",
+                        variant: "",
+                        quantity: 1,
+                        price: 0,
+                        discount: 0,
+                        selectedVariant: [],
+                        total: 0,
+                        afterTax: 0,
+                        tax: 0,
+                        taxComponents: [],
+                        varSelPrice: 0
+                      }
+                    ]
+                  }))
                 }
-              ]
-            }))
-          }
-        >
-          ➕ Add Item
-        </button>
-      )}
-    </div>
-  </div>
-) : (
+              >
+                ➕ Add Item
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
 
         <Row className="g-4">
 
@@ -374,7 +493,7 @@ const handleAmountPaidChange = (e) => {
                         ? {
                           label:
                             inventoryItems.find((inv) => inv._id === item.itemId)?.name ||
-                            item?.itemId?.name ||
+                            item?.name ||
                             "",
                           value: item.itemId,
                         }
@@ -460,7 +579,8 @@ const handleAmountPaidChange = (e) => {
                     <Input
                       type="number"
                       readOnly
-                      value={(item.selectedVariant?.length > 0 ? item.varSelPrice : item.price) || 0}
+                      value={(item.varSelPrice && item.varSelPrice > 0 ? item.varSelPrice : item.price) || 0}
+
                     />
                   </div>
 
@@ -470,12 +590,36 @@ const handleAmountPaidChange = (e) => {
                     <Input
                       type="number"
                       min="0"
-                      value={item.discount || 0}
+                      value={item.discount ?? ''}
                       onChange={(e) => {
-                        const value = parseFloat(e.target.value);
-                        handleItemChange(index, 'discount', isNaN(value) || value < 0 ? 0 : value);
+                        const raw = e.target.value;
+
+                        if (raw === '') {
+                          handleItemChange(index, 'discount', '');
+                          return;
+                        }
+
+                        const entered = Number(raw) || 0;
+
+                        // ✅ Get item values
+                        const quantity = item.quantity || 0;
+                        const unitPrice =
+                          item.varSelPrice && item.varSelPrice > 0
+                            ? item.varSelPrice
+                            : item.price || 0;
+                        const taxComponents = item.taxComponents || [];
+
+                        // ✅ Use your calculateTotal to get full amount including tax
+                        const { total } = calculateTotal(quantity, item.varSelPrice || 0, unitPrice, taxComponents, 0);
+
+                        // ✅ Cap discount at total (including tax)
+                        const finalDiscount = Math.min(entered, total);
+
+                        handleItemChange(index, 'discount', finalDiscount);
                       }}
                     />
+
+
                   </div>
 
                   {/* Total */}
@@ -486,6 +630,16 @@ const handleAmountPaidChange = (e) => {
                       readOnly
                       value={item.total?.toFixed(2) || 0}
                     />
+                    {item.afterTax > 0 && (
+                      <small className="text-muted d-block mt-1">
+                        Tax: {currency} {item.afterTax?.toFixed(2) || 0}
+                        {item.taxComponents && item.taxComponents.length > 0 && (
+                          <span className="ms-1" title={`Tax Breakdown: ${item.taxComponents.map(tax => `${tax.taxName || 'Tax'}: ${tax.rate || tax.taxRate}%`).join(', ')}`}>
+                            <i className="bx bx-info-circle text-info"></i>
+                          </span>
+                        )}
+                      </small>
+                    )}
                   </div>
 
                   {/* Delete Button */}
@@ -501,6 +655,21 @@ const handleAmountPaidChange = (e) => {
                     </button>
                   </div>
 
+                  {item.itemId && (
+                    <div className="col-md-4 mt-4">
+                      <button
+                        type="button"
+                        className="btn btn-outline-info w-100 fw-semibold shadow-sm"
+                        onClick={() => {
+                          setVariantForm({ variationType: "", optionLabel: "", price: "", stock: "", sku: "", barcode: "" });
+                          setVariantItemId(item.itemId);
+                          setVariantModalOpen(true);
+                        }}
+                      >
+                        ➕ Add Variant
+                      </button>
+                    </div>
+                  )}
 
                   {/* ➕ Add Item (Only on Last) */}
                   {index === items.length - 1 && (
@@ -549,7 +718,7 @@ const handleAmountPaidChange = (e) => {
                 <h5 className="card-title text-primary mb-0">Final Invoice Amount</h5>
                 <hr className="my-2" />
                 <h4 className="text-success fw-bold mb-0">
-                  {currency} {invoiceData.items.reduce((acc, item) => acc + (item.total || 0), 0).toFixed(2)}
+                  {currency} {totalAfterTax.toFixed(2)}
                 </h4>
               </div>
             </div>
@@ -569,16 +738,40 @@ const handleAmountPaidChange = (e) => {
                   </li>
                   <li className="list-group-item d-flex justify-content-between border-0 px-0">
                     <span>Total Tax</span>
-                    <strong>{currency} {totalTax.toFixed(2)}</strong>
+                    <strong className="text-danger">{currency} {totalTax.toFixed(2)}</strong>
                   </li>
+                  {Object.keys(taxBreakdown).length > 0 && (
+                    <li className="list-group-item border-0 px-0">
+                      <small className="text-muted">Tax Breakdown:</small>
+                      {Object.entries(taxBreakdown).map(([taxName, amount]) => (
+                        <div key={taxName} className="d-flex justify-content-between">
+                          <small className="text-muted">{taxName}</small>
+                          <small className="text-danger">{currency} {amount.toFixed(2)}</small>
+                        </div>
+                      ))}
+                    </li>
+                  )}
                   <li className="list-group-item d-flex justify-content-between border-0 px-0">
-                    <span>Total After Tax</span>
-                    <strong>{currency} {totalAfterTax.toFixed(2)}</strong>
+                    <span>Total Discount</span>
+                    <strong className="text-success">-{currency} {totalDiscount.toFixed(2)}</strong>
+                  </li>
+                  <li className="list-group-item d-flex justify-content-between border-0 px-0 border-top">
+                    <span className="fw-bold">Total After Tax</span>
+                    <strong className="fw-bold text-primary">{currency} {totalAfterTax.toFixed(2)}</strong>
                   </li>
                 </ul>
               </div>
             </div>
-
+            <VariantModal
+              {...props}
+              isOpen={variantModalOpen}
+              toggleModal={() => setVariantModalOpen(false)}
+              ItemId={variantItemId}
+              variant={variantForm}
+              handleVariantChange={onVariantFormChange}
+              addVariant={() => { }}
+              onVariantSaved={() => setVariantRefreshKey(k => k + 1)}
+            />
             {/* Amount Paid Card */}
             <div className="card border border-secondary rounded-3 shadow-sm">
               <div className="card-body">
@@ -594,11 +787,11 @@ const handleAmountPaidChange = (e) => {
                     onChange={handleAmountPaidChange}
                     required
                     min={0}
-                    max={totalInclusiveTaxes}
+                    step="0.01"
                     onWheel={(e) => e.target.blur()}
                   />
                   <small className="text-muted d-block mt-1">
-                    (Cannot exceed ₹ {totalInclusiveTaxes.toFixed(2)})
+                    Enter the amount that has been paid
                   </small>
                 </FormGroup>
               </div>
@@ -617,7 +810,7 @@ const handleAmountPaidChange = (e) => {
         <ModalBody>
           <InventoryItemForm isModal={true} />
         </ModalBody>
-       
+
       </Modal>
 
 

@@ -89,7 +89,12 @@ inventoryServices.createItem = async (userId, body) => {
       );
     }
   }
-  if (vendorId && !vendor) throw new Error("Vendor not found");
+if (vendorId && !vendor) {
+  // ✅ allow if vendorId equals firmId
+  if (String(vendorId) !== String(firmIdToUse)) {
+    throw new Error("Vendor not found");
+  }
+}
   if (!taxId || !tax) throw new Error("Tax not found");
 
   const selectedTaxIds = selectedTaxTypes.map(
@@ -137,50 +142,6 @@ inventoryServices.createItem = async (userId, body) => {
   return newItem;
 };
 
-// inventoryServices.getAllItems = async (adminId) => {
-//   const items = await InventoryItem.find({ firmId: adminId, deleted_at: null })
-//     .populate("categoryId")
-//     .populate("subcategoryId")
-//     .populate("vendor")
-//     .populate({ path: "createdBy", select: "firstName lastName email" })
-//     .populate({ path: "tax.taxId", select: "taxName taxRates" })
-//     .populate("brand")
-//     .populate("manufacturer")
-//     .populate({ path: "firmId", select: "currency" })
-//     .lean();
-
-//   if (!items.length) {
-//     throw new Error("No items found");
-//   }
-
-//   let firmCurrency = null;
-//   if (items[0].firmId && items[0].firmId.currency) {
-//     firmCurrency = items[0].firmId.currency;
-//   }
-
-//   for (const item of items) {
-//     if (
-//       item.tax &&
-//       item.tax.selectedTaxTypes?.length > 0 &&
-//       item.tax.taxId?.taxRates
-//     ) {
-//       const selectedTaxIds = new Set(
-//         item.tax.selectedTaxTypes.map((id) => id.toString())
-//       );
-//       item.tax.selectedTaxTypes = item.tax.taxId.taxRates.filter((rate) =>
-//         selectedTaxIds.has(rate._id.toString())
-//       );
-//     }
-//   }
-
-//   for (const item of items) {
-//     delete item.firmId;
-//   }
-
-//   return { items, firmCurrency };
-// };
-
-// GET SINGLE ITEM
 
 inventoryServices.getAllItems = async (adminId) => {
   const items = await InventoryItem.find({ firmId: adminId, deleted_at: null })
@@ -287,6 +248,7 @@ inventoryServices.updateItem = async (id, body) => {
     type,
     variants,
   } = body;
+
   const existingItem = await InventoryItem.findById(id);
   if (!existingItem) {
     throw new Error("Inventory item not found");
@@ -301,34 +263,49 @@ inventoryServices.updateItem = async (id, body) => {
 
   if (subcategoryId) {
     const subcategory = await Category.findOne({ _id: subcategoryId });
-    if (
-      !subcategory ||
-      String(subcategory.parentId) !== String(existingItem.categoryId)
-    ) {
+    const parentCategoryId = categoryId || existingItem.categoryId;
+    if (!subcategory || String(subcategory.parentId) !== String(parentCategoryId)) {
       throw new Error(
         "Invalid subcategory or subcategory does not belong to the parent category"
       );
     }
   }
 
-  let totalStock = existingItem.quantity;
   if (variants && variants.length > 0) {
     for (const variant of variants) {
-      const { _id, price, optionLabel, stock, sku, barcode, variationType } =
-        variant;
-      await InventoryItem.updateOne(
-        { _id: id, "variants._id": _id },
-        {
-          $set: {
-            "variants.$.variationType": variationType,
-            "variants.$.price": price,
-            "variants.$.optionLabel": optionLabel,
-            "variants.$.stock": stock,
-            "variants.$.sku": sku,
-            "variants.$.barcode": barcode,
-          },
-        }
-      );
+      const { _id, price, optionLabel, stock, sku, barcode, variationType } = variant;
+
+      if (_id) {
+        await InventoryItem.updateOne(
+          { _id: id, "variants._id": _id },
+          {
+            $set: {
+              "variants.$.variationType": variationType,
+              "variants.$.price": Number(price),
+              "variants.$.optionLabel": optionLabel,
+              "variants.$.stock": Number(stock),
+              "variants.$.sku": sku,
+              "variants.$.barcode": barcode,
+            },
+          }
+        );
+      } else {
+        await InventoryItem.updateOne(
+          { _id: id },
+          {
+            $push: {
+              variants: {
+                variationType,
+                optionLabel,
+                price: Number(price),
+                stock: Number(stock),
+                sku,
+                barcode,
+              },
+            },
+          }
+        );
+      }
     }
   }
 
@@ -338,15 +315,12 @@ inventoryServices.updateItem = async (id, body) => {
     if (!tax) {
       throw new Error("Tax not found");
     }
+
     let finalTaxComponents = [];
     if (selectedTaxTypes && selectedTaxTypes.length > 0) {
       finalTaxComponents = tax.taxRates.filter((taxRate) =>
         selectedTaxTypes.includes(taxRate._id.toString())
       );
-
-      // if (finalTaxComponents.length === 0) {
-      //     throw new Error("No valid tax components selected");
-      // }
     }
 
     taxUpdate = {
@@ -354,12 +328,14 @@ inventoryServices.updateItem = async (id, body) => {
       selectedTaxTypes: selectedTaxTypes || [],
     };
   }
-  const updateItem = await InventoryItem.findById(id);
-  // totalStock = calculateStock(updateItem.variants);
-  totalStock =
-    variants && variants.length > 0
-      ? calculateStock(updateItem.variants)
-      : quantity;
+
+  const itemAfterVariantOps = await InventoryItem.findById(id);
+  const hasVariants = itemAfterVariantOps?.variants?.length > 0;
+
+  const totalStock = hasVariants
+    ? itemAfterVariantOps.variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0)
+    : (typeof quantity === "number" ? quantity : existingItem.quantity);
+
   const updatedItem = await InventoryItem.findByIdAndUpdate(
     id,
     {
@@ -381,6 +357,7 @@ inventoryServices.updateItem = async (id, body) => {
     },
     { new: true }
   );
+
   return updatedItem;
 };
 
@@ -498,33 +475,6 @@ inventoryServices.createUserIndustry = async (payload) => {
 
   return newEntry;
 };
-// inventoryServices.getUserService = async (userId) => {
-//   const user = await User.findById(userId);
-//   if (!user) {
-//     throw new Error("User not found");
-//   }
-
-//   if (!user.firmIndustry || !user.firmSubIndustry) {
-//     throw new Error("User industry or sub-industry not specified.");
-//   }
-
-//   const industryData = await Industry.findOne({
-//     industry: user.firmIndustry,
-//     sub_industry: user.firmSubIndustry,
-//     status: 'active',
-//     deleted_at: null
-//   });
-
-//   if (!industryData) {
-//     throw new Error("No matching services found for the user's industry and sub-industry.");
-//   }
-
-//   return {
-//     industry: industryData.industry,
-//     sub_industry: industryData.sub_industry,
-//     services: industryData.services
-//   };
-// };
 
 inventoryServices.getUserService = async (userId) => {
   const user = await User.findById(userId);
@@ -911,6 +861,327 @@ inventoryServices.getCountConditionFirm = async (userId) => {
   }
 
   return roleBasedResponse;
+};
+
+inventoryServices.getItemSalesData = async (itemId, query) => {
+  const { startDate, endDate } = query;
+
+  const matchStage = {
+    "items.itemId": new mongoose.Types.ObjectId(itemId),
+    deleted_at: null,
+    status: { $nin: ["rejected"] }
+  };
+
+  if (startDate && endDate) {
+    matchStage.invoiceDate = {
+      $gte: new Date(startDate),
+      $lte: new Date(endDate),
+    };
+  }
+
+  const item = await InventoryItem.findById(itemId).lean();
+  if (!item) throw new Error("Item not found");
+
+  const baseCost = Number(item.costPrice) || 0;
+  const baseSelling = Number(item.sellingPrice) || 0;
+
+  const sales = await Invoice.aggregate([
+    { $unwind: "$items" },
+    { $match: matchStage },
+    {
+      $project: {
+        date: { $dateToString: { format: "%Y-%m-%d", date: "$invoiceDate" } },
+        invoiceNumber: "$invoiceNumber",
+        quantity: "$items.quantity",
+        total: "$items.total",
+        status: "$status",  
+        selectedVariant: "$items.selectedVariant"
+      }
+    }
+  ]);
+
+  const formatted = [];
+  let overallItemsSold = 0;
+  let overallRevenue = 0;
+  let backlogs = 0;
+
+  const backlogInvoiceNumbers = [];
+
+  for (const sale of sales) {
+    if (!sale.selectedVariant || sale.selectedVariant.length === 0) {
+      const revenue = baseSelling * sale.quantity;
+      const cost = baseCost * sale.quantity;
+      const profit = revenue - cost;
+
+      formatted.push({
+        date: sale.date,
+        invoiceNumber: sale.invoiceNumber,
+        variant: "Default",
+        adjustedSellingPrice: baseSelling,
+        quantitySold: sale.quantity,
+        revenue,
+        cost,
+        profit
+      });
+
+      overallItemsSold += sale.quantity;
+      overallRevenue += revenue;
+
+      if (sale.status === "unpaid" || sale.status === "partially paid") {
+        backlogs += sale.quantity;
+        backlogInvoiceNumbers.push(sale.invoiceNumber);
+      }
+
+      continue;
+    }
+
+    for (const variant of sale.selectedVariant) {
+      const adjustedPrice = baseSelling + (Number(variant.price) || 0);
+      const revenue = adjustedPrice * sale.quantity;
+      const cost = baseCost * sale.quantity;
+      const profit = revenue - cost;
+
+      formatted.push({
+        date: sale.date,
+        invoiceNumber: sale.invoiceNumber,
+        variant: variant.optionLabel,
+        adjustedSellingPrice: adjustedPrice,
+        quantitySold: sale.quantity,
+        revenue,
+        cost,
+        profit
+      });
+      overallItemsSold += sale.quantity;
+      overallRevenue += revenue;
+      if (sale.status === "unpaid" || sale.status === "partially paid") {
+        backlogs += sale.quantity;
+        backlogInvoiceNumbers.push(sale.invoiceNumber);
+      }
+    }
+  }
+
+  // console.log("Backlog Invoice Numbers:", backlogInvoiceNumbers);
+
+  return {
+    itemId,
+    itemName: item.name,
+    baseCostPrice: baseCost,
+    baseSellingPrice: baseSelling,
+    overallItemsSold,    
+    overallRevenue,       
+    backlogs,             
+    salesGraph: formatted
+  };
+};
+
+
+
+inventoryServices.getAllItemsSalesReport = async (query) => {
+  // console.log("🔥 Incoming Query:", query);
+
+  const {
+    page = 1,
+    limit = 10,
+    filter,
+    startDate,
+    endDate,
+    firmId: queryFirmId
+  } = query;
+
+  const firmId = queryFirmId || (query.user?.adminId || query.user?.id);
+  // console.log("🔥 Final firmId Used:", firmId);
+
+  const skip = (page - 1) * limit;
+
+  let dateFilter = {};
+
+  // console.log("🔍 Filter Applied:", filter);
+
+  // date helpers
+  let today = new Date();
+  let end = new Date(today.setHours(23, 59, 59, 999));
+
+  const getStartOfDay = (d) => new Date(d.setHours(0, 0, 0, 0));
+  const clone = (d) => new Date(JSON.parse(JSON.stringify(d)));
+
+  let start = getStartOfDay(new Date());
+
+  // ------------------------
+  // ⚡ Quick Filters
+  // ------------------------
+
+  if (filter === "today") {
+    start = getStartOfDay(new Date());
+    dateFilter = { invoiceDate: { $gte: start, $lte: end } };
+  }
+
+  if (filter === "yesterday") {
+    let y = new Date();
+    y.setDate(y.getDate() - 1);
+
+    start = getStartOfDay(clone(y));
+    let yEnd = new Date(y.setHours(23, 59, 59, 999));
+
+    dateFilter = { invoiceDate: { $gte: start, $lte: yEnd } };
+  }
+
+  if (filter === "weekly") {
+    let w = new Date();
+    w.setDate(w.getDate() - 7);
+    start = getStartOfDay(w);
+
+    dateFilter = { invoiceDate: { $gte: start, $lte: end } };
+  }
+
+  if (filter === "monthly") {
+    let m = new Date();
+    m.setDate(m.getDate() - 30);
+    start = getStartOfDay(m);
+
+    dateFilter = { invoiceDate: { $gte: start, $lte: end } };
+  }
+
+  // ------------------------
+  // ⚡ Custom Date Filter
+  // ------------------------
+  if (startDate && endDate) {
+    // console.log("📅 Custom Date Range:", startDate, endDate);
+
+    dateFilter = {
+      invoiceDate: {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      },
+    };
+  }
+
+  // console.log("📅 Final Date Filter:", dateFilter);
+
+  // ------------------------
+  // ⚡ MATCH STAGE
+  // ------------------------
+  const safeObjId = mongoose.Types.ObjectId.createFromHexString;
+
+  const matchStage = {
+    firmId: safeObjId(firmId),
+    deleted_at: null, 
+    status: { $in: ["paid", "unpaid", "partially paid"] },
+    ...dateFilter,
+  };
+
+  // console.log("🧩 MATCH STAGE Used for Invoice Query:", JSON.stringify(matchStage, null, 2));
+
+  // ------------------------
+  // ⚡ Fetch All Inventory Items
+  // ------------------------
+  // console.log("🛒 Fetching ITEMS for Firm:", firmId);
+
+  const allItems = await InventoryItem.find({
+    firmId: safeObjId(firmId),
+    deleted_at: null
+  })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  // console.log("📦 ITEMS FOUND:", allItems.length);
+
+  const totalItems = await InventoryItem.countDocuments({
+    firmId: safeObjId(firmId),
+    deleted_at: null,
+  });
+
+  // console.log("📦 Total Items Count:", totalItems);
+
+  const result = [];
+
+  // ------------------------
+  // ⚡ Loop Through Items
+  // ------------------------
+  for (const item of allItems) {
+    // console.log("\n==============================");
+    // console.log("📌 Checking Item:", item._id, item.name);
+
+    const sales = await Invoice.aggregate([
+      { $unwind: "$items" },
+      {
+        $match: {
+          ...matchStage,
+          "items.itemId": item._id,
+        },
+      },
+      {
+        $project: {
+          date: { $dateToString: { format: "%Y-%m-%d", date: "$invoiceDate" } },
+          invoiceNumber: "$invoiceNumber",
+          quantity: "$items.quantity",
+          total: "$items.total",
+          selectedVariant: "$items.selectedVariant"
+        }
+      }
+    ]);
+
+    // console.log("📊 SALES FOUND FOR ITEM:", sales.length);
+
+    let baseCost = Number(item.costPrice) || 0;
+    let baseSelling = Number(item.sellingPrice) || 0;
+
+    const salesGraph = [];
+
+    // ------------------------
+    // ⚡ Prepare Sales Graph
+    // ------------------------
+    for (const sale of sales) {
+      if (!sale.selectedVariant || sale.selectedVariant.length === 0) {
+        salesGraph.push({
+          date: sale.date,
+          invoiceNumber: sale.invoiceNumber,
+          variant: "Default",
+          adjustedSellingPrice: baseSelling,
+          quantitySold: sale.quantity,
+          revenue: baseSelling * sale.quantity,
+          cost: baseCost * sale.quantity,
+          profit: (baseSelling - baseCost) * sale.quantity,
+        });
+      } else {
+        for (const variant of sale.selectedVariant) {
+          const adjPrice = baseSelling + Number(variant.price || 0);
+
+          salesGraph.push({
+            date: sale.date,
+            invoiceNumber: sale.invoiceNumber,
+            variant: variant.optionLabel,
+            adjustedSellingPrice: adjPrice,
+            quantitySold: sale.quantity,
+            revenue: adjPrice * sale.quantity,
+            cost: baseCost * sale.quantity,
+            profit: (adjPrice - baseCost) * sale.quantity,
+          });
+        }
+      }
+    }
+
+    // console.log("📈 Final Sales Graph Size:", salesGraph.length);
+
+    result.push({
+      itemId: item._id,
+      itemName: item.name,
+      baseCostPrice: baseCost,
+      baseSellingPrice: baseSelling,
+      salesGraph
+    });
+  }
+
+  // console.log("\n============ FINAL RESULT ============");
+  // console.log("📦 Total Items Returned:", result.length);
+
+  return {
+    page,
+    limit,
+    totalItems,
+    totalPages: Math.ceil(totalItems / limit),
+    data: result
+  };
 };
 
 

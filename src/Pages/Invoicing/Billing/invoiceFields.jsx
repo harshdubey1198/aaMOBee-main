@@ -1,10 +1,21 @@
 import React from 'react';
+import { toast } from 'react-toastify';
 import { Card, CardBody, Row, Col, Input, Label, Button } from 'reactstrap';
 
 function InvoiceFields({ idToUse, invoiceData, setInvoiceData, onGenerateInvoice }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setInvoiceData(prev => ({ ...prev, [name]: value }));
+  };
+  const authuser = JSON.parse(localStorage.getItem("authUser")).response;
+  const isDemo = authuser?.isDemo;
+
+  const blockIfDemo = (actionName) => {
+    if (isDemo) {
+      toast.error(`Demo accounts cannot ${actionName}`);
+      return true;
+    }
+    return false;
   };
 
   const handleAddressChange = (e) => {
@@ -160,7 +171,10 @@ const handleItemChange = (index, field, value) => {
           color="primary" 
           className="d-flex align-items-center justify-content-center gap-2 px-4 py-2 fw-semibold rounded shadow"
           style={{ fontSize: '16px' }}
-          onClick={onGenerateInvoice}  // <-- Ensure this function is defined!
+          onClick={() => {
+              if (blockIfDemo("generate bills")) return;
+              onGenerateInvoice();
+            }}  
         >
           <i className="mdi mdi-file-document-outline" style={{ fontSize: '18px' }}></i>
           Generate Bill

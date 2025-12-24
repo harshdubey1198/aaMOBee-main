@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      margin: 0;
+      padding: 0;
+    }
+
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      margin: 10px;
+    }
+
+    .card-title-heading {
+      background: #0d4251;
+      color: #fff;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    .table th,
+    .table td {
+      border: 1px solid #ddd;
+      padding: 6px;
+      font-size: 12px;
+    }
+
+    .table-light {
+      background: #f8f8f8;
+    }
+
+    .bg-light {
+      background: #f9f9f9;
+      padding: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+
+    <!-- Header -->
+    <div class="card-title-heading">
+      <h2>{{invoice.invoiceType}}</h2>
+    </div>
+
+    <!-- Company + Invoice details -->
+    <div style="display:flex; justify-content: space-between; padding: 15px;">
+      <div style="flex: 1;">
+        {{#if firm.avatar}}
+        <img src="{{firm.avatar}}" alt="Company Logo" style="height:100px; max-width:200px;" />
+        {{/if}}
+
+        <h3>{{firm.companyTitle}}</h3>
+
+        {{#each firm.address}}
+        <p>{{this.h_no}}, {{this.nearby}}, {{this.district}}</p>
+        <p>{{this.city}}, {{this.state}}, {{this.country}}, {{this.zip_code}}</p>
+        {{/each}}
+
+        <p>{{firm.email}}</p>
+
+        {{#if firm.registeredTaxationDetail}}
+        {{#each firm.registeredTaxationDetail}}
+        {{#if this.toShow}}
+        <p><b>{{this.fieldName}}:</b> {{this.fieldValue}}</p>
+        {{/if}}
+        {{/each}}
+        {{/if}}
+      </div>
+
+      <div style="flex: 1; text-align:right;">
+        <p><strong>Invoice Number:</strong> {{invoice.invoiceNumber}}</p>
+        <p><strong>Issue Date:</strong> {{formatDate invoice.invoiceDate}}</p>
+        <p><strong>Due Date:</strong> {{formatDate invoice.dueDate}}</p>
+        <p><strong>Amount Due:</strong> {{currency}} {{invoice.balance}}</p>
+      </div>
+    </div>
+
+    <!-- Customer -->
+    <div style="border-bottom:1px solid #ddd; padding: 10px 15px;">
+      <h4>Customer Details:</h4>
+      <p>{{invoice.customerName}}</p>
+      <p>{{invoice.customerAddress.h_no}}, {{invoice.customerAddress.nearby}}, {{invoice.customerAddress.district}}</p>
+      <p>{{invoice.customerAddress.city}}, {{invoice.customerAddress.state}}, {{invoice.customerAddress.country}} -
+        {{invoice.customerAddress.zip_code}}</p>
+      <p>Phone: {{invoice.customerPhone}} | Email: {{invoice.customerEmail}}</p>
+    </div>
+
+    <!-- Items -->
+    <div style="padding: 10px 15px;">
+      <table class="table">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Item</th>
+            <th>Description</th>
+            <th>HSN/SAC</th>
+            <th>Qty</th>
+            <th>Price</th>
+            {{!-- <th>Tax</th> --}}
+            <th>Discount</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each invoice.items}}
+          <tr>
+            <td>{{inc @index}}</td>
+            <td>
+              {{this.name}}
+              {{#if this.variant}} <br /> ({{this.variant}}) {{/if}}
+            </td>
+            <td>{{{this.description}}}</td>
+            <td>{{this.hsn}}</td>
+            <td>{{this.qty}} {{this.qtyType}}</td>
+            <td>
+              {{currency}} {{this.unitPrice}}
+              <br />
+              {{#if this.taxComponents}}
+              (
+              {{#each this.taxComponents}}
+              {{this.taxName}}{{#unless this.taxName}}{{this.name}}{{/unless}}: {{this.rate}}%
+              {{#unless @last}}, {{/unless}}
+              {{/each}}
+              )
+              {{else}}
+              (N/A)
+              {{/if}}
+            </td>
+            <td>{{this.discount}}</td>
+            <td>{{this.total}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Bank + Summary -->
+    <div style="display:flex; justify-content: space-between;" class="bg-light">
+      <div style="flex:1;">
+        <h5>Bank Details</h5>
+        <p><strong>Bank Name:</strong> {{firm.bankName}}</p>
+        <p><strong>Account Number:</strong> {{firm.accountNumber}}</p>
+        <p><strong>Branch:</strong> {{firm.branchName}}</p>
+        <p><strong>IFSC Code:</strong> {{firm.ifscCode}}</p>
+      </div>
+      <div style="flex:1; text-align:right;">
+        <h4>Summary:</h4>
+        <p><strong>Subtotal:</strong> {{currency}} {{invoice.subtotal}}</p>
+        <p><strong>Total Tax:</strong> {{currency}} {{invoice.totalTaxAmount}}</p>
+        <p><strong>Total Discount:</strong> {{currency}} {{invoice.totalDiscount}}</p>
+        <p><strong>Grand Total:</strong> {{currency}} {{invoice.grandTotal}}</p>
+        <p><strong>Amount Paid:</strong> {{currency}} {{invoice.amountPaid}}</p>
+        <p><strong>Balance:</strong> {{currency}} {{invoice.balance}}</p>
+      </div>
+    </div>
+
+  </div>
+</body>
+
+</html>

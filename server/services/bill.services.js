@@ -124,7 +124,7 @@ billServices.createBill = async (data) => {
 
   billServices.getBillsByFirmId = async (firmId) => {
     try {
-      const bills = await ManualBill.find({ firmId });
+      const bills = await ManualBill.find({ firmId }).sort({ createdAt: -1 })
       if (!bills.length) {
         throw new Error("No bills found for this firm");
       }

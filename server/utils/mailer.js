@@ -1,5 +1,35 @@
 const nodemailer = require("nodemailer");
 
+function getTransporterAndFrom(firm = {}) {
+  const smtp = firm.smtpSettings || {}; // expects { host, port, secure, user, pass, fromEmail, fromName }
+
+  if (smtp.host && smtp.user && smtp.pass) {
+    const transporter = nodemailer.createTransport({
+      host: smtp.host,
+      port: Number(smtp.port ?? 465),
+      secure: smtp.secure ?? true, // true for 465, false for 587
+      auth: { user: smtp.user, pass: smtp.pass },
+    });
+
+    const fromName = smtp.fromName || firm.companyTitle || 'aaMOBee';
+    const fromEmail = smtp.fromEmail || smtp.user;
+    return { transporter, from: `"${fromName}" <${fromEmail}>` };
+  }
+
+  // Fallback: your global Gmail account
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GOOGLE_MAIL,
+      pass: process.env.GOOGLE_PASS,
+    },
+  });
+
+  const fromName = firm.companyTitle || 'aaMOBee';
+  const fromEmail = firm.email || process.env.GOOGLE_MAIL;
+  return { transporter, from: `"${fromName}" <${fromEmail}>` };
+}
+
 // GENERATE OTP
 const generateOtp = async (body) => {
     try {
@@ -307,9 +337,161 @@ const queryResponse = async (email, name, subject) => {
     }
   };
 
+// NEW: email invoice with attached PDF (Buffer)
+const sendInvoiceEmail = async ({ firm, to, invoice, pdfBuffer }) => {
+  const { transporter, from } = getTransporterAndFrom(firm);
+
+  const subject = `Invoice ${invoice?.invoiceNumber || invoice?._id} from ${firm?.companyTitle || 'aaMOBee'}`;
+  const html = `
+    <p>Hello ${invoice?.customer?.firstName || invoice?.customerName || ''},</p>
+    <p>Please find attached your <strong>${invoice?.invoiceType || 'Invoice'}</strong> ${invoice?.invoiceSubType ? `(${invoice.invoiceSubType})` : ''}.</p>
+    ${invoice?.dueDate ? `<p><strong>Due Date:</strong> ${invoice.dueDate}</p>` : ''}
+    ${invoice?.notes ? `<p>${invoice.notes}</p>` : ''}
+    <p>Thank you!</p>
+  `;
+
+  await transporter.sendMail({
+    from,
+    to,
+    replyTo: firm?.email || from,
+    subject,
+    html,
+    attachments: [
+      {
+        filename: `Invoice-${invoice?.invoiceNumber || invoice?._id}.pdf`,
+        content: pdfBuffer,
+      },
+    ],
+  });
+};
+const sendDemoCredentialsMail = async (email, name, password) => {
+  const loginLink = `${process.env.FRONTEND_URL}/login`;
+
+  const emailTemplate = `
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial; background: #f0f0f0; }
+          .container {
+            max-width: 600px; margin: auto; background: #fff0f5;
+            padding: 20px; border-radius: 10px; text-align: center;
+          }
+          .content { background: #fff; padding: 20px; border-radius: 5px; border: 2px solid #FF4081; }
+          a { color: #FF4081; text-decoration: none; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <img src="https://res.cloudinary.com/harshdubey1198/image/upload/v1726118056/aamobi_z8csyd.png" alt="aaMOBee" height="100" />
+          <h2>Welcome ${name},</h2>
+          <div class="content">
+            <p>You have been granted demo access to <strong>aaMOBee</strong>.</p>
+            <p><strong>Your Demo Credentials:</strong></p>
+            <p>Email: ${email}</p>
+            <p>Password: ${password}</p>
+            <p>Click here to log in: <a href="${loginLink}">${loginLink}</a></p>
+            <p><strong>Note:</strong> Your access will expire in 24 hours.</p>
+          </div>
+        </div>
+      </body>
+    </html>`;
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.GOOGLE_MAIL,
+      pass: process.env.GOOGLE_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.GOOGLE_MAIL,
+    to: email,
+    subject: "aaMOBee Demo Credentials",
+    html: emailTemplate,
+  };
+
+  await transporter.sendMail(mailOptions);
+  console.log(`Demo credentials sent to ${email}`);
+};
+
+// NEW: Send demo expiry notification (1 hour before expiry)
+const sendDemoExpiryEmail = async (email, name, firm = {}) => {
+  const { transporter, from } = getTransporterAndFrom(firm);
+
+  const loginLink = `${process.env.FRONTEND_URL}/login`;
+
+  const emailTemplate = `
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial; background: #f0f0f0; }
+          .container { max-width: 600px; margin: auto; background: #fff0f5; padding: 20px; border-radius: 10px; text-align: center; }
+          .content { background: #fff; padding: 20px; border-radius: 5px; border: 2px solid #FF4081; }
+          a { color: #FF4081; text-decoration: none; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <img src="https://res.cloudinary.com/harshdubey1198/image/upload/v1726118056/aamobi_z8csyd.png" alt="aaMOBee" height="100" />
+          <h2>Hello ${name},</h2>
+          <div class="content">
+            <p>Your <strong>demo plan</strong> is about to expire in <strong>1 hour</strong>.</p>
+            <p>Please log in to continue using our service:</p>
+            <p><a href="${loginLink}">${loginLink}</a></p>
+           <p>Want to keep enjoying aaMOBee? Reply to this email to extend your demo and continue exploring without interruption!</p>
+            <p>Thank you for using <strong>aaMOBee</strong>!</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  await transporter.sendMail({
+    from,
+    to: email,
+    subject: "Your Demo Plan is Expiring Soon",
+    html: emailTemplate,
+  });
+
+  console.log(`Demo expiry email sent to ${email}`);
+};
+
+
+const sendPlanExpiryReminder = async ({ email, name, planTitle, remaining }) => {
+  const { transporter, from } = getTransporterAndFrom();
+
+  const subject = `Your ${planTitle} plan expires in ${remaining}`;
+  const html = `
+    <html>
+      <body style="font-family: Arial; background: #f0f0f0;">
+        <div style="max-width:600px; margin:auto; background:#fff0f5; padding:20px; border-radius:10px; text-align:center;">
+          <img src="https://res.cloudinary.com/harshdubey1198/image/upload/v1726118056/aamobi_z8csyd.png" height="100" />
+          <h2>Hello ${name || "User"},</h2>
+          <div style="background:#fff; border:2px solid #FF4081; border-radius:5px; padding:20px;">
+            <p>Your <strong>${planTitle}</strong> plan is expiring in <strong>${remaining}</strong>.</p>
+            <p>To avoid interruption, please renew your plan before expiry.</p>
+            <p><a href="${process.env.FRONTEND_URL}/plans" style="color:#FF4081; text-decoration:none;">Renew Now</a></p>
+            <p>Thank you for using <strong>aaMOBee</strong>.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  await transporter.sendMail({ from, to: email, subject, html });
+  console.log(`📧 Sent ${remaining} expiry reminder to ${email}`);
+};
+
+
 // Export the function
 module.exports = {
     sendCredentialsEmail,
     generateOtp,
-    queryResponse
+    queryResponse,
+    sendInvoiceEmail,
+    sendDemoCredentialsMail,
+    getTransporterAndFrom,
+    sendDemoExpiryEmail,
+    sendPlanExpiryReminder,
 };

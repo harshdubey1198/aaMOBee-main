@@ -54,7 +54,8 @@ const invoiceSchema = new Schema({
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
     notes: { type: String },
     deleted_at: { type: Date, default: null },
-    invoiceLayout: { type: String, default: '' }
+    invoiceLayout: { type: String, default: '' },
+    termsAndConditions: { type: String, default: '' }
 }, { timestamps: true });
 
 const Invoice = mongoose.model('Invoice', invoiceSchema);
