@@ -43,5 +43,11 @@ router.get(
     // tokenVerification,
     departmentController.getDepartmentWithDesignations
 );
+//  search via name 
+router.post(
+    "/search",
+    // tokenVerification,
+    departmentController.search
+);
 
 module.exports = router;

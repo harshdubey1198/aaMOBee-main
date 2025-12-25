@@ -128,5 +128,26 @@ departmentController.getDepartmentWithDesignations = async (req, res) => {
     }
 };
 
+departmentController.search = async (req, res) => {
+    try {
+        const { firmId, search, page, limit } = req.body;
+
+        const result = await departmentServices.searchDepartments({
+            firmId,
+            search,
+            page: Number(page) || 1,
+            limit: Number(limit) || 10
+        });
+
+        return res
+            .status(200)
+            .json(createResult("Departments fetched successfully", result));
+    } catch (error) {
+        console.error("Search error:", error.message);
+        return res
+            .status(400)
+            .json(createResult(null, null, error.message));
+    }
+};
 
 module.exports = departmentController;

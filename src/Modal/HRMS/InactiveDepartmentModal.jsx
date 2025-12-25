@@ -38,38 +38,46 @@ function InactiveDepartmentModal({ isOpen, toggle, firmId, onSuccess }) {
         <Table bordered responsive>
           <thead>
             <tr>
-              <th>#</th>
-              <th>Name</th>
-              <th>Code</th>
-              <th>Action</th>
+                <th>Name</th>
+                <th>Sub-department</th>
+                <th>Code</th>
+                <th>Status</th>
+                <th>Actions</th>
             </tr>
-          </thead>
+            </thead>
+
           <tbody>
             {departments.length > 0 ? (
-              departments.map((dept, index) => (
-                <tr key={dept._id}>
-                  <td>{index + 1}</td>
-                  <td>{dept.name}</td>
-                  <td>{dept.code}</td>
-                  <td>
-                    <Button
-                      size="sm"
-                      color="success"
-                      onClick={() => handleReactivate(dept._id)}
-                    >
-                      Reactivate
-                    </Button>
-                  </td>
-                </tr>
-              ))
+                departments.map((parent) =>
+                parent.children?.map((child, idx) => (
+                    <tr key={child._id}>
+                    <td>{parent.name}</td>
+                    <td>{child.name}</td>
+                    <td>{child.code}</td>
+                    <td>{child.status}</td>
+                    <td>
+                        {child.status === "inactive" && (
+                        <Button
+                            size="sm"
+                            color="success"
+                            onClick={() => handleReactivate(child._id)}
+                        >
+                            Reactivate
+                        </Button>
+                        )}
+                    </td>
+                    </tr>
+                ))
+                )
             ) : (
-              <tr>
-                <td colSpan="4" className="text-center">
-                  No inactive departments
+                <tr>
+                <td colSpan="5" className="text-center">
+                    No inactive departments
                 </td>
-              </tr>
+                </tr>
             )}
-          </tbody>
+            </tbody>
+
         </Table>
       </ModalBody>
       <ModalFooter>

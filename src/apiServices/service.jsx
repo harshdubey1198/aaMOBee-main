@@ -1474,6 +1474,20 @@ export const getInactiveDesignationsByDepartment = async (
   }
 };
 
+// 11th api for search department
+export const searchDepartments = async (firmId, search, page = 1) => {
+  try {
+    const response = await axiosInstance.post(`/department/search`, {
+      firmId,
+      search,
+      page
+    });
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+}
+
 
 export default axiosInstance;
 

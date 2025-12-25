@@ -5,21 +5,45 @@ const Designation = require("../schemas/designation.schema");
 
 // CREATE
 departmentServices.createDepartment = async (body) => {
-    const { firmId, name } = body;
+    const { firmId, name, code } = body;
 
-    if (!firmId || !name) {
-        throw new Error("firmId and name are required");
+    if (!firmId || !name || !code) {
+        throw new Error("firmId, name and code are required");
     }
 
-    const existing = await Department.findOne({ firmId, name });
+    // normalize string: lowercase, remove spaces & symbols
+    const normalize = (value) =>
+        value
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, ""); // removes spaces & symbols
+
+    const normalizedName = normalize(name);
+    const normalizedCode = normalize(code);
+
+    // check uniqueness using normalized values
+    const existing = await Department.findOne({
+        firmId,
+        $or: [
+            { normalizedName },
+            { normalizedCode }
+        ]
+    });
 
     if (existing) {
-        throw new Error("Department already exists for this firm");
+        throw new Error(
+            "Department name or code already exists for this firm"
+        );
     }
 
-    const department = await Department.create(body);
+    const department = await Department.create({
+        ...body,
+        normalizedName,
+        normalizedCode,
+    });
+
     return department;
 };
+
 
 // GET ALL BY FIRM
 departmentServices.getDepartmentsByFirm = async (firmId, page = 1) => {
@@ -27,53 +51,49 @@ departmentServices.getDepartmentsByFirm = async (firmId, page = 1) => {
 
     const { limit, skip } = getPagination(page);
 
-    const totalCount = await Department.countDocuments({
-        firmId,
-        status: "active",
+    // fetch ALL departments of firm (active + inactive)
+    const allDepartments = await Department.find({ firmId })
+        .populate("parentDepartmentId", "_id status code name")
+        .lean();
+
+    // create map for fast lookup
+    const departmentMap = new Map();
+    allDepartments.forEach(dep => {
+        departmentMap.set(dep._id.toString(), dep);
     });
 
+    // recursive check → if ANY parent is inactive → hide
+    const isHierarchyActive = (department) => {
+        let current = department;
+
+        while (current.parentDepartmentId) {
+            const parent = departmentMap.get(
+                current.parentDepartmentId._id.toString()
+            );
+
+            if (!parent || parent.status !== "active") {
+                return false;
+            }
+
+            current = parent;
+        }
+
+        return department.status === "active";
+    };
+
+    // filter valid hierarchy
+    const validDepartments = allDepartments.filter(isHierarchyActive);
+
+    const totalCount = validDepartments.length;
     const totalPages = Math.ceil(totalCount / limit);
 
-    // const activeParents = await Department.find({
-    //     firmId,
-    //     status: "active",
-    //     parentDepartmentId: null,
-    // }).select("_id");
+    const paginatedDepartments = validDepartments
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(skip, skip + limit);
 
-    // const activeParentIds = activeParents.map((p) => p._id.toString());
-
-    const departments = await Department.find({
-        firmId,
-        status: "active",
-    })
-        .populate("parentDepartmentId", "name code")
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit);
-
-    if (!departments.length) {
-        return {
-        totalCount,
-        totalPages,
-        currentPage: Number(page),
-        nextPage: null,
-        previousPage: null,
-        data: [],
-        };
-    }
-
-    // const filteredDepartments = departments.filter((dep) => {
-    //     if (!dep.parentDepartmentId) return true;
-    //     return activeParentIds.includes(dep.parentDepartmentId._id.toString());
-    // });
-
-   const formattedDepartments = departments.map((dep) => ({
-    ...dep.toObject(),
-    parentDepartmentName: dep.parentDepartmentId
-        ? dep.parentDepartmentId.name
-        : null,
-}));
-
+    const formattedDepartments = paginatedDepartments.map(dep => ({
+        ...dep
+    }));
 
     const baseUrl =
         process.env.BASE_URL + `/api/department/by-firm/${firmId}`;
@@ -83,12 +103,13 @@ departmentServices.getDepartmentsByFirm = async (firmId, page = 1) => {
         totalPages,
         currentPage: Number(page),
         nextPage:
-        page < totalPages ? `${baseUrl}?page=${Number(page) + 1}` : null,
+            page < totalPages ? `${baseUrl}?page=${Number(page) + 1}` : null,
         previousPage:
-        page > 1 ? `${baseUrl}?page=${Number(page) - 1}` : null,
+            page > 1 ? `${baseUrl}?page=${Number(page) - 1}` : null,
         data: formattedDepartments,
     };
-    };
+};
+
 
 
 // GET BY ID
@@ -278,4 +299,59 @@ departmentServices.getDepartmentWithDesignations = async (departmentId) => {
         designations
     };
 };
+departmentServices.searchDepartments = async ({ firmId, search, page = 1, limit = 10 }) => {
+    // console.log("Function called with:", { firmId, search, page, limit });
+
+    if (!firmId) {
+        // console.log("Error: firmId is missing");
+        throw new Error("firmId is required");
+    }
+
+    if (!search || search.trim().length < 3) {
+        // console.log("Error: search term too short or missing");
+        throw new Error("Search must be at least 3 characters");
+    }
+
+    const normalize = (value) => {
+        const normalized = value.toLowerCase().replace(/[^a-z0-9]/g, "");
+        // console.log("Normalized keyword:", normalized);
+        return normalized;
+    };
+
+    const keyword = normalize(search);
+
+    const { skip } = getPagination(page, limit);
+    // console.log("Pagination skip value:", skip);
+
+    const matchQuery = {
+        firmId,
+        status: "active",
+        $or: [
+            { name: { $regex: keyword, $options: "i" } },
+            { code: { $regex: keyword, $options: "i" } }
+        ]
+    };
+    // console.log("Match query:", matchQuery);
+
+    const data = await Department.find(matchQuery)
+        .populate("parentDepartmentId", "name code status")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+    // console.log("Fetched data:", data);
+
+    const totalCount = await Department.countDocuments(matchQuery);
+    // console.log("Total count of matching departments:", totalCount);
+
+    const result = {
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        data
+    };
+    // console.log("Final result:", result);
+
+    return result;
+};
+
 module.exports = departmentServices;

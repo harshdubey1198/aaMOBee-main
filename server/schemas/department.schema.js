@@ -16,6 +16,7 @@ const departmentSchema = new mongoose.Schema({
 
   code: {
     type: String,
+    unique:true,
     uppercase: true
   },
 
