@@ -34,13 +34,13 @@ departmentServices.getDepartmentsByFirm = async (firmId, page = 1) => {
 
     const totalPages = Math.ceil(totalCount / limit);
 
-    const activeParents = await Department.find({
-        firmId,
-        status: "active",
-        parentDepartmentId: null,
-    }).select("_id");
+    // const activeParents = await Department.find({
+    //     firmId,
+    //     status: "active",
+    //     parentDepartmentId: null,
+    // }).select("_id");
 
-    const activeParentIds = activeParents.map((p) => p._id.toString());
+    // const activeParentIds = activeParents.map((p) => p._id.toString());
 
     const departments = await Department.find({
         firmId,
@@ -62,17 +62,18 @@ departmentServices.getDepartmentsByFirm = async (firmId, page = 1) => {
         };
     }
 
-    const filteredDepartments = departments.filter((dep) => {
-        if (!dep.parentDepartmentId) return true;
-        return activeParentIds.includes(dep.parentDepartmentId._id.toString());
-    });
+    // const filteredDepartments = departments.filter((dep) => {
+    //     if (!dep.parentDepartmentId) return true;
+    //     return activeParentIds.includes(dep.parentDepartmentId._id.toString());
+    // });
 
-    const formattedDepartments = filteredDepartments.map((dep) => ({
-        ...dep.toObject(),
-        parentDepartmentName: dep.parentDepartmentId
+   const formattedDepartments = departments.map((dep) => ({
+    ...dep.toObject(),
+    parentDepartmentName: dep.parentDepartmentId
         ? dep.parentDepartmentId.name
         : null,
-    }));
+}));
+
 
     const baseUrl =
         process.env.BASE_URL + `/api/department/by-firm/${firmId}`;

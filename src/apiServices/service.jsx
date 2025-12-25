@@ -1242,7 +1242,7 @@ export const saveUserData = async (payload) => {
   }
 };
 
-// HRMS APIs are listed below :- 
+// HRMS APIs are listed below :- {Department Management}
 
 /* 1. Create Department */
 export const createDepartment = async (payload) => {
@@ -1353,6 +1353,121 @@ export const getAllDepartmentsByFirm = async (firmId, page = 1) => {
 export const toGetDesignationsListOfTheDepartmentById = async (departmentId) => {
   try {
     const response = await axiosInstance.get(`/department/with-designations/${departmentId}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// {Designation Management}
+
+// HRMS Designation APIs
+
+
+/* 1. Create Designation */
+export const createDesignation = async (payload) => {
+  try {
+    const response = await axiosInstance.post(
+      `/designation/create`,
+      payload
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+/* 2. Get Designations by Department (Active) */
+export const getDesignationsByDepartment = async (departmentId, page = 1) => {
+  try {
+    const response = await axiosInstance.get(
+      `/designation/by-department/${departmentId}?page=${page}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+/* 3. Get Designation by ID */
+export const getDesignationById = async (designationId) => {
+  try {
+    const response = await axiosInstance.get(
+      `/designation/${designationId}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+/* 4. Update Designation */
+export const updateDesignation = async (designationId, payload) => {
+  try {
+    const response = await axiosInstance.put(
+      `/designation/${designationId}`,
+      payload
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+/* 5. Delete Designation (Soft Delete) */
+export const deleteDesignation = async (designationId) => {
+  try {
+    const response = await axiosInstance.delete(
+      `/designation/${designationId}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+/* 6. Reactivate Designation */
+export const reactivateDesignation = async (designationId) => {
+  try {
+    const response = await axiosInstance.put(
+      `/designation/reactivate/${designationId}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+/* 7. Get Inactive Designations (by Firm OR Department) */
+export const getInactiveDesignations = async ({
+  firmId,
+  departmentId,
+  page = 1,
+}) => {
+  try {
+    let query = `?page=${page}`;
+
+    if (firmId) query += `&firmId=${firmId}`;
+    if (departmentId) query += `&departmentId=${departmentId}`;
+
+    const response = await axiosInstance.get(
+      `/designation/inactive${query}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+/* 8. Get Inactive Designations by Department */
+export const getInactiveDesignationsByDepartment = async (
+  departmentId,
+  page = 1
+) => {
+  try {
+    const response = await axiosInstance.get(
+      `/designation/inactive?departmentId=${departmentId}&page=${page}`
+    );
     return response.data;
   } catch (error) {
     return error;
