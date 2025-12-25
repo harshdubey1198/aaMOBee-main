@@ -1242,6 +1242,123 @@ export const saveUserData = async (payload) => {
   }
 };
 
+// HRMS APIs are listed below :- 
+
+/* 1. Create Department */
+export const createDepartment = async (payload) => {
+  try {
+    const response = await axiosInstance.post(`/department/create`, payload);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+/* 2. Get Department by ID */
+export const getDepartmentById = async (departmentId) => {
+  try {
+    const response = await axiosInstance.get(`/department/${departmentId}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+/* 3. Get Departments by Firm (Active) */
+export const getDepartmentsByFirm = async (firmId, page = 1) => {
+  try {
+    const response = await axiosInstance.get(
+      `/department/by-firm/${firmId}?page=${page}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+/* 4. Update Department */
+export const updateDepartment = async (departmentId, payload) => {
+  try {
+    const response = await axiosInstance.put(
+      `/department/${departmentId}`,
+      payload
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+/* 5. Delete Department */
+export const deleteDepartment = async (departmentId) => {
+  try {
+    const response = await axiosInstance.delete(
+      `/department/${departmentId}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+/* 6. Reactivate Department */
+export const reactivateDepartment = async (departmentId) => {
+  try {
+    const response = await axiosInstance.put(
+      `/department/reactivate/${departmentId}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+/* 7. Get Departments by Parent */
+export const getDepartmentsByParent = async (parentId, page = 1) => {
+  try {
+    const response = await axiosInstance.get(
+      `/department/by-parent/${parentId}?page=${page}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+/* 8. Get Inactive Departments by Firm */
+export const getInactiveDepartmentsByFirm = async (firmId, page = 1) => {
+  try {
+    const response = await axiosInstance.get(
+      `/department/inactive/by-firm/${firmId}?page=${page}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+/* 9. Get All Departments (Active + Inactive) by Firm */
+export const getAllDepartmentsByFirm = async (firmId, page = 1) => {
+  try {
+    const response = await axiosInstance.get(
+      `/department/all/by-firm/${firmId}?page=${page}`
+    );
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
+// 10. To get departments designations available  toGetDesignationsListOfTheDepartmentById
+export const toGetDesignationsListOfTheDepartmentById = async (departmentId) => {
+  try {
+    const response = await axiosInstance.get(`/department/with-designations/${departmentId}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
+
 
 export default axiosInstance;
 

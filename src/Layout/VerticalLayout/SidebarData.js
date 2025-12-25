@@ -194,6 +194,14 @@ export const masterAdminSidebarData = () => [
         { sublabel: "All My Businesses", link: "/my-businesses" }
       ],
     },
+      {
+        label: "HRMS",
+        icon: "mdi mdi-account-tie-outline",
+        subItem: [
+          { sublabel: "Departments", link: "/departments" },
+          { sublabel: "Designations", link: "/designations" },
+        ],
+      },
     {
       label:"Pricing",
       icon:"mdi mdi-cash-multiple",

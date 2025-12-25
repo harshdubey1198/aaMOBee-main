@@ -27,63 +27,68 @@ departmentServices.getDepartmentsByFirm = async (firmId, page = 1) => {
 
     const { limit, skip } = getPagination(page);
 
-    // ✅ TOTAL ACTIVE COUNT
     const totalCount = await Department.countDocuments({
         firmId,
-        status: "active"
+        status: "active",
     });
 
     const totalPages = Math.ceil(totalCount / limit);
 
-    // ✅ Get ALL ACTIVE PARENTS (not paginated)
     const activeParents = await Department.find({
         firmId,
         status: "active",
-        parentDepartmentId: null
+        parentDepartmentId: null,
     }).select("_id");
 
-    const activeParentIds = activeParents.map(p => p._id.toString());
+    const activeParentIds = activeParents.map((p) => p._id.toString());
 
-    // ✅ Get PAGINATED DATA
     const departments = await Department.find({
         firmId,
-        status: "active"
+        status: "active",
     })
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit);
+        .populate("parentDepartmentId", "name code")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
 
     if (!departments.length) {
         return {
-            totalCount,
-            totalPages,
-            currentPage: Number(page),
-            nextPage: null,
-            previousPage: null,
-            data: []
+        totalCount,
+        totalPages,
+        currentPage: Number(page),
+        nextPage: null,
+        previousPage: null,
+        data: [],
         };
     }
 
-    // ✅ Filter based on global parent list
-    const filteredDepartments = departments.filter(dep => {
+    const filteredDepartments = departments.filter((dep) => {
         if (!dep.parentDepartmentId) return true;
-        return activeParentIds.includes(dep.parentDepartmentId.toString());
+        return activeParentIds.includes(dep.parentDepartmentId._id.toString());
     });
 
-    const baseUrl = process.env.BASE_URL + `/api/department/by-firm/${firmId}`;
+    const formattedDepartments = filteredDepartments.map((dep) => ({
+        ...dep.toObject(),
+        parentDepartmentName: dep.parentDepartmentId
+        ? dep.parentDepartmentId.name
+        : null,
+    }));
+
+    const baseUrl =
+        process.env.BASE_URL + `/api/department/by-firm/${firmId}`;
 
     return {
         totalCount,
         totalPages,
         currentPage: Number(page),
-
-        nextPage: page < totalPages ? `${baseUrl}?page=${Number(page) + 1}` : null,
-
-        previousPage: page > 1 ? `${baseUrl}?page=${Number(page) - 1}` : null,
-
-        data: filteredDepartments
+        nextPage:
+        page < totalPages ? `${baseUrl}?page=${Number(page) + 1}` : null,
+        previousPage:
+        page > 1 ? `${baseUrl}?page=${Number(page) - 1}` : null,
+        data: formattedDepartments,
     };
-};
+    };
+
 
 // GET BY ID
 departmentServices.getDepartmentById = async (id) => {
