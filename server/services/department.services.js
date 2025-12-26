@@ -299,6 +299,7 @@ departmentServices.getDepartmentWithDesignations = async (departmentId) => {
         designations
     };
 };
+
 departmentServices.searchDepartments = async ({ firmId, search, page = 1, limit = 10 }) => {
     // console.log("Function called with:", { firmId, search, page, limit });
 

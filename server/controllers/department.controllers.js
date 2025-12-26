@@ -128,9 +128,12 @@ departmentController.getDepartmentWithDesignations = async (req, res) => {
     }
 };
 
+// SEARCH DEPARTMENTS BY NAME
+
 departmentController.search = async (req, res) => {
     try {
-        const { firmId, search, page, limit } = req.body;
+       const { firmId, departmentId, search, page, limit } = req.body;
+
 
         const result = await departmentServices.searchDepartments({
             firmId,

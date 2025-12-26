@@ -26,16 +26,46 @@ designationServices.createDesignation = async (body) => {
 };
 
 // GET ALL BY DEPARTMENT
-designationServices.getByDepartment = async (departmentId) => {
+
+designationServices.getByDepartment = async (departmentId, page = 1) => {
     if (!departmentId) throw new Error("departmentId is required");
 
-    const list = await Designation.find({
+    const { limit, skip } = getPagination(page);
+
+    const query = {
         departmentId,
         status: "active"
-    }).sort({ createdAt: -1 });
+    };
 
-    return list;
+    // ✅ SAME QUERY for count & data (important)
+    const totalCount = await Designation.countDocuments(query);
+    const totalPages = Math.ceil(totalCount / limit);
+
+    const designations = await Designation.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+    const baseUrl =
+        process.env.BASE_URL +
+        `/api/designation/by-department/${departmentId}`;
+
+    return {
+        totalCount,
+        totalPages,
+        currentPage: Number(page),
+        nextPage:
+            page < totalPages
+                ? `${baseUrl}?page=${Number(page) + 1}`
+                : null,
+        previousPage:
+            page > 1
+                ? `${baseUrl}?page=${Number(page) - 1}`
+                : null,
+        data: designations
+    };
 };
+
 
 // GET BY ID
 designationServices.getById = async (id) => {
@@ -175,6 +205,53 @@ designationServices.getInactiveDesignations = async (filters, page = 1) => {
         data: designations
     };
 };
+
+designationServices.searchDesignations = async ({
+    firmId,
+    departmentId,
+    search,
+    page = 1,
+    limit = 10
+}) => {
+
+    if (!firmId || !departmentId) {
+        throw new Error("firmId and departmentId are required");
+    }
+
+    if (!search || search.trim().length < 3) {
+        throw new Error("Search must be at least 3 characters");
+    }
+
+    const normalize = (value) =>
+        value.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+    const keyword = normalize(search);
+
+    const { skip } = getPagination(page, limit);
+
+    const matchQuery = {
+        firmId,
+        departmentId,
+        status: "active",
+        title: { $regex: keyword, $options: "i" }
+    };
+
+    const data = await Designation.find(matchQuery)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+    const totalCount = await Designation.countDocuments(matchQuery);
+
+    return {
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        data
+    };
+};
+
+
 
 
 module.exports = designationServices;

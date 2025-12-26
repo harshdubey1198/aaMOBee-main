@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
-import {Button,Table,Card,CardBody,Row,Col,Spinner,
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import {Button,Table,Card,CardBody,Row,Col,Spinner, Input,
 } from "reactstrap";
 import FirmSwitcher from "../../Firms/FirmSwitcher";
 import { toast } from "react-toastify";
 import Breadcrumbs from "../../../components/Common/Breadcrumb";
-import { deleteDesignation, getDesignationsByDepartment,getDepartmentsByFirm } from "../../../apiServices/service";
+// search designations
+import { deleteDesignation, getDesignationsByDepartment,getDepartmentsByFirm,searchDesignations } from "../../../apiServices/service";
 import DesignationModal from "../../../Modal/HRMS/DesignationModal";
 import InactiveDesignationModal from "../../../Modal/HRMS/InactiveDesignationModal";
 
@@ -22,39 +23,116 @@ function DesignationMain() {
 
   const [designations, setDesignations] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [page] = useState(1);
   const [departments, setDepartments] = useState([]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInactiveModalOpen, setIsInactiveModalOpen] = useState(false);
   const [selectedDesignation, setSelectedDesignation] = useState(null);
 
-  
+  // Pagination state for departments
+  const [departmentPage, setDepartmentPage] = useState(1);
+  const [departmentHasMore, setDepartmentHasMore] = useState(true);
+  const [departmentLoading, setDepartmentLoading] = useState(false);
 
-  const fetchDepartments = async () => {
-  if (!idToUse) return;
-  try {
-    const res = await getDepartmentsByFirm(idToUse, 1);
-    setDepartments(res?.data?.data || []);
-  } catch (err) {
-    toast.error("Failed to load departments");
-  }
-};
+  // Pagination state for designations
+  const [designationPage, setDesignationPage] = useState(1);
+  const [designationHasMore, setDesignationHasMore] = useState(true);
+  const [designationLoading, setDesignationLoading] = useState(false);
 
-const fetchDesignations = async () => {
-  if (!departmentId) return;
+  const [search, setSearch] = useState("");
+  const searchTimeout = useRef(null);
 
-  try {
-    const res = await getDesignationsByDepartment(departmentId, 1);
-  // ✅ ONLY LINE CHANGED
-   setDesignations( res.data.data || []);
+  // Refs for infinite scroll
+  const departmentSelectRef = useRef(null);
+  const tableContainerRef = useRef(null);
 
+  const fetchDepartments = async (page = 1, append = false) => {
+    if (!idToUse || departmentLoading) return;
 
-  } catch (err) {
-    toast.error("Failed to load designations");
-  }
-};
+    setDepartmentLoading(true);
+    if (!append) setLoading(true);
 
+    try {
+      const res = await getDepartmentsByFirm(idToUse, page);
+      const newDepartments = res?.data?.data || [];
+      
+      if (append) {
+        setDepartments(prev => [...prev, ...newDepartments]);
+      } else {
+        setDepartments(newDepartments);
+      }
+
+      // Check if there are more pages
+      const hasNext = res?.data?.nextPage !== null;
+      setDepartmentHasMore(hasNext);
+      
+    } catch (err) {
+      toast.error("Failed to load departments");
+    } finally {
+      setDepartmentLoading(false);
+      if (!append) setLoading(false);
+    }
+  };
+
+  const fetchDesignations = async (page = 1, append = false) => {
+    if (!departmentId || designationLoading) return;
+
+    setDesignationLoading(true);
+    if (!append) setLoading(true);
+
+    try {
+      const res = await getDesignationsByDepartment(departmentId, page);
+      console.log("Designations response:",res?.data?.data?.data);
+      const newDesignations = res?.data?.data?.data || [];
+      
+      if (append) {
+        setDesignations(prev => [...prev, ...newDesignations]);
+      } else {
+        setDesignations(newDesignations);
+      }
+
+      // Check if there are more pages
+      const hasNext = res?.data?.data?.nextPage !== null;
+      setDesignationHasMore(hasNext);
+      
+    } catch (err) {
+      toast.error("Failed to load designations");
+    } finally {
+      setDesignationLoading(false);
+      if (!append) setLoading(false);
+    }
+  };
+
+  // Handle department dropdown scroll
+  const handleDepartmentScroll = useCallback((e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    
+    // Check if scrolled to bottom
+    if (scrollHeight - scrollTop <= clientHeight + 50) {
+      if (departmentHasMore && !departmentLoading) {
+        const nextPage = departmentPage + 1;
+        setDepartmentPage(nextPage);
+        fetchDepartments(nextPage, true);
+      }
+    }
+  }, [departmentPage, departmentHasMore, departmentLoading]);
+
+  // Handle designations table scroll
+  const handleTableScroll = useCallback((e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    
+    // Check if scrolled to bottom
+    if (scrollHeight - scrollTop <= clientHeight + 100) {
+      if (designationHasMore && !designationLoading) {
+        const nextPage = designationPage + 1;
+        setDesignationPage(nextPage);
+        search
+    ? fetchSearchDesignations(search, nextPage, true)
+    : fetchDesignations(nextPage, true);
+        fetchDesignations(nextPage, true);
+      }
+    }
+  }, [designationPage, designationHasMore, designationLoading]);
 
   const handleEdit = (desg) => {
     setSelectedDesignation(desg);
@@ -65,55 +143,96 @@ const fetchDesignations = async () => {
     try {
       await deleteDesignation(id);
       toast.success("Designation deactivated");
-      fetchDesignations();
+      // Reset and fetch from page 1
+      setDesignationPage(1);
+      setDesignations([]);
+      fetchDesignations(1, false);
     } catch (err) {
       toast.error("Failed to deactivate designation");
     }
   };
- 
+
+  const fetchSearchDesignations = async (value, page = 1, append = false) => {
+  if (!value || !departmentId) return;
+
+  setDesignationLoading(true);
+
+  try {
+    const res = await searchDesignations({
+      firmId: idToUse,
+      departmentId,
+      search: value,
+      page
+    });
+
+    const newData = res?.data?.data?.data || [];
+
+    setDesignations(prev =>
+      append ? [...prev, ...newData] : newData
+    );
+
+    setDesignationHasMore(res?.data?.data?.nextPage !== null);
+  } catch (err) {
+    toast.error("Search failed");
+  } finally {
+    setDesignationLoading(false);
+  }
+};
 
   useEffect(() => {
-  if (!idToUse) return;
-  fetchDepartments();
-}, [idToUse]);
+    if (!idToUse) return;
+    setDepartmentPage(1);
+    setDepartments([]);
+    setDepartmentHasMore(true);
+    fetchDepartments(1, false);
+    setSearch("");
 
-useEffect(() => {
-  if (!departmentId || !idToUse) return;
-  fetchDesignations();
-}, [departmentId, idToUse]);
+  }, [idToUse]);
 
-
+  useEffect(() => {
+    if (!departmentId || !idToUse) return;
+    setDesignationPage(1);
+    setDesignations([]);
+    setDesignationHasMore(true);
+    fetchDesignations(1, false);
+  }, [departmentId, idToUse]);
 
   return (
     <div className="page-content">
       <Breadcrumbs title="HRMS" breadcrumbItem="Designations" />
 
       <Card className="mb-3">
-  <CardBody>
-    <Row className="align-items-center">
-     <Col md="3">
-      <select
-        className="form-select"
-        value={departmentId}
-        onChange={(e) => setDepartmentId(e.target.value)}
-      >
-        <option value="">— Select Department —</option>
-        {departments.map((dept) => (
-          <option key={dept._id} value={dept._id}>
-            {dept.name}
-          </option>
-        ))}
-      </select>
-    </Col>
-        </Row>
-      </CardBody>
-    </Card>
-
+        <CardBody>
+          <Row className="align-items-center">
+            <Col md="3">
+              <select
+                ref={departmentSelectRef}
+                className="form-select"
+                value={departmentId}
+                onChange={(e) => setDepartmentId(e.target.value)}
+                onScroll={handleDepartmentScroll}
+                style={{ maxHeight: '200px', overflowY: 'auto' }}
+              >
+                <option value="">
+                  {loading ? "Loading departments..." : "— Select Department —"}
+                </option>
+                {departments.map((dept) => (
+                  <option key={dept._id} value={dept._id}>
+                    {dept.name}
+                  </option>
+                ))}
+                {departmentLoading && (
+                  <option disabled>Loading more...</option>
+                )}
+              </select>
+            </Col>
+          </Row>
+        </CardBody>
+      </Card>
 
       <Row className="mb-3 align-items-center">
-        <Col className="d-flex gap-2 align-items-center">
-          <Button
-            color="primary"
+        <Col className="d-flex align-items-center gap-2">
+          <Button color="primary" className="justified-button"
             onClick={() => {
               if (!departmentId) {
                 toast.error("Please select department first");
@@ -125,8 +244,7 @@ useEffect(() => {
             + Add Designation
           </Button>
 
-          <Button
-            color="secondary"
+          <Button color="success" className="justified-button"
             onClick={() => setIsInactiveModalOpen(true)}
             disabled={!departmentId}
           >
@@ -138,80 +256,119 @@ useEffect(() => {
               selectedFirmId={selectedFirmId}
               onSelectFirm={(id) => {
                 setSelectedFirmId(id);
-
               }}
             />
           )}
         </Col>
+
+        <Col md="4">
+                   <Input
+                      placeholder="Search designation..."
+                      value={search}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setSearch(value);
+
+                        clearTimeout(searchTimeout.current);
+
+                        searchTimeout.current = setTimeout(() => {
+                          setDesignationPage(1);
+                          fetchSearchDesignations(value, 1, false);
+                        }, 400);
+                      }}
+                    />
+
+                  </Col>
       </Row>
 
       <Card>
         <CardBody>
           {loading ? (
-            <Spinner />
+            <div className="d-flex justify-content-center align-items-center py-5">
+              <Spinner />
+            </div>
           ) : (
-            <Table bordered hover responsive>
-              <thead>
-                 <tr>
-                  <th>#</th>
-                  <th>Title</th>
-                  <th>Level</th>
-                  <th>Status</th>
-                  <th>Created At</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-             <tbody>
-                {designations.length > 0 ? (
-                  designations.map((desg, index) => (
-                    <tr key={desg._id || desg.id}>
-
-                      <td>{index + 1}</td>
-                      <td>{desg.title}</td>
-                      <td className="text-capitalize">{desg.level}</td>
-                      <td>
-                        <span
-                          className={`badge ${
-                            desg.status === "active" ? "bg-success" : "bg-secondary"
-                          }`}
-                        >
-                          {desg.status}
-                        </span>
-                      </td>
-                      <td>
-                        {desg.createdAt
-                          ? new Date(desg.createdAt).toLocaleDateString()
-                          : "—"}
-
-                      </td>
-                      <td className="d-flex gap-2">
-                        <Button
-                          size="sm"
-                          color="info"
-                          onClick={() => handleEdit(desg)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          color="danger"
-                          onClick={() => handleDelete(desg._id)}
-                        >
-                          Deactivate
-                        </Button>
+            <div 
+              ref={tableContainerRef}
+              onScroll={handleTableScroll}
+              style={{ maxHeight: '600px', overflowY: 'auto' }}
+            >
+              <Table bordered hover responsive>
+                <thead style={{ position: 'sticky', top: 0, backgroundColor: '#fff', zIndex: 1 }}>
+                  <tr>
+                    <th>#</th>
+                    <th>Title</th>
+                    <th>Level</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {designations.length > 0 ? (
+                    <>
+                      {designations.map((desg, index) => (
+                        <tr key={desg._id || desg.id}>
+                          <td>{index + 1}</td>
+                          <td>{desg.title}</td>
+                          <td className="text-capitalize">{desg.level}</td>
+                          <td>
+                            <span
+                              className={`badge ${
+                                desg.status === "active" ? "bg-success" : "bg-secondary"
+                              }`}
+                            >
+                              {desg.status}
+                            </span>
+                          </td>
+                          <td>
+                            {desg.createdAt
+                              ? new Date(desg.createdAt).toLocaleDateString()
+                              : "—"}
+                          </td>
+                          <td className="d-flex gap-2">
+                            <Button
+                              size="sm"
+                              color="info"
+                              onClick={() => handleEdit(desg)}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              color="danger"
+                              onClick={() => handleDelete(desg._id)}
+                            >
+                              Deactivate
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                      {designationLoading && (
+                        <tr>
+                          <td colSpan="6" className="text-center py-3">
+                            <Spinner size="sm" /> Loading more...
+                          </td>
+                        </tr>
+                      )}
+                      {!designationHasMore && designations.length > 0 && (
+                        <tr>
+                          <td colSpan="6" className="text-center text-muted py-2">
+                            No more designations
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="text-center">
+                        No designations found
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="6" className="text-center">
-                      No designations found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-
-            </Table>
+                  )}
+                </tbody>
+              </Table>
+            </div>
           )}
         </CardBody>
       </Card>
@@ -222,17 +379,28 @@ useEffect(() => {
           setIsModalOpen(!isModalOpen);
           setSelectedDesignation(null);
         }}
-        firmId={idToUse}           // ✅ FIX
-        departmentId={departmentId} // ✅ FIX
+        firmId={idToUse}
+        departmentId={departmentId}
+        departmentName={
+          departments.find((d) => d._id === departmentId)?.name || ""
+        }
         designation={selectedDesignation}
-        onSuccess={fetchDesignations}
+        onSuccess={() => {
+          setDesignationPage(1);
+          setDesignations([]);
+          fetchDesignations(1, false);
+        }}
       />
 
       <InactiveDesignationModal
         isOpen={isInactiveModalOpen}
         toggle={() => setIsInactiveModalOpen(!isInactiveModalOpen)}
         departmentId={departmentId}
-        onSuccess={fetchDesignations}
+        onSuccess={() => {
+          setDesignationPage(1);
+          setDesignations([]);
+          fetchDesignations(1, false);
+        }}
       />
     </div>
   );

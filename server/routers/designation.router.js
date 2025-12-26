@@ -24,5 +24,8 @@ router.delete("/:id", designationController.delete);
 // ✅ GET SINGLE DESIGNATION (THIS MUST BE LAST)
 router.get("/:id", designationController.getById);
 
+router.post("/search", designationController.search);
+
+
 
 module.exports = router;

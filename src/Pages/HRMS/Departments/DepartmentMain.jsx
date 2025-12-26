@@ -176,7 +176,9 @@ useEffect(() => {
         <Card>
           <CardBody>
             {loading ? (
+              <div className="d-flex justify-content-center align-items-center py-5">
               <Spinner />
+            </div>
             ) : (
               <div style={{ height: "calc(100vh - 200px)", overflowY: "auto" }} >
                 <Table bordered hover responsive>

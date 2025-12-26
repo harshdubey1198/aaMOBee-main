@@ -1359,6 +1359,20 @@ export const toGetDesignationsListOfTheDepartmentById = async (departmentId) => 
   }
 };
 
+// 11th api for search department
+export const searchDepartments = async (firmId, search, page = 1) => {
+  try {
+    const response = await axiosInstance.post(`/department/search`, {
+      firmId,
+      search,
+      page
+    });
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+}
+
 // {Designation Management}
 
 // HRMS Designation APIs
@@ -1474,19 +1488,29 @@ export const getInactiveDesignationsByDepartment = async (
   }
 };
 
-// 11th api for search department
-export const searchDepartments = async (firmId, search, page = 1) => {
+/* 8. Search Designations (by title + department + firm) */
+export const searchDesignations = async ({
+  firmId,
+  departmentId,
+  search,
+  page = 1,
+}) => {
   try {
-    const response = await axiosInstance.post(`/department/search`, {
-      firmId,
-      search,
-      page
-    });
+    let query = `?page=${page}`;
+
+    if (firmId) query += `&firmId=${firmId}`;
+    if (departmentId) query += `&departmentId=${departmentId}`;
+    if (search) query += `&search=${search}`;
+
+    const response = await axiosInstance.get(
+      `/designation/search${query}`
+    );
+
     return response.data;
   } catch (error) {
     return error;
   }
-}
+};
 
 
 export default axiosInstance;

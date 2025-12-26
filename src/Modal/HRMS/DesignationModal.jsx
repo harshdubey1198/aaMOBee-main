@@ -4,7 +4,7 @@ import {Modal,ModalHeader,ModalBody,ModalFooter,Button,Form,FormGroup,Label,Inpu
 import {createDesignation,updateDesignation,getDesignationsByDepartment,} from "../../apiServices/service";
 import { toast } from "react-toastify";
 
-function DesignationModal({isOpen,toggle, firmId, departmentId, designation, onSuccess,
+function DesignationModal({isOpen,toggle, firmId, departmentId, designation, onSuccess,departmentName, 
 }) {
   const authUser = JSON.parse(localStorage.getItem("authUser"))?.response;
 
@@ -48,6 +48,11 @@ function DesignationModal({isOpen,toggle, firmId, departmentId, designation, onS
         await createDesignation(payload);
         toast.success("Designation created");
       }
+
+      // ✅ CLEAR FORM AFTER SUCCESS
+      setTitle("");
+      setLevel("");
+
       toggle();
       onSuccess();
     } catch (err) {
@@ -64,6 +69,12 @@ function DesignationModal({isOpen,toggle, firmId, departmentId, designation, onS
       <ModalBody>
         <Form onSubmit={handleSubmit}>
           <FormGroup>
+          <Label>Department</Label>
+          <Input
+            type="text"
+            value={departmentName}
+            disabled
+          />
             <Label>Designation Title</Label>
             <Input
               type="text"

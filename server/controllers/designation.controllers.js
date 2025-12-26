@@ -16,8 +16,14 @@ designationController.create = async (req, res) => {
 // GET BY DEPARTMENT
 designationController.getByDepartment = async (req, res) => {
     try {
-        const result = await designationServices.getByDepartment(req.params.departmentId);
-        return res.status(200).json(createResult("Designations fetched successfully", result));
+        const page = req.query.page || 1;   // ✅ ADD
+        const result = await designationServices.getByDepartment(
+            req.params.departmentId,
+            page
+        );
+        return res.status(200).json(
+            createResult("Designations fetched successfully", result)
+        );
     } catch (error) {
         return res.status(500).json(createResult(null, null, error.message));
     }
@@ -91,5 +97,29 @@ designationController.getInactive = async (req, res) => {
         );
     }
 };
+
+// SEARCH DESIGNATIONS (ACTIVE)
+designationController.search = async (req, res) => {
+    try {
+        const { firmId, departmentId, search, page = 1 } = req.body;
+
+
+        const result = await designationServices.searchDesignations({
+            firmId,
+            departmentId,
+            search,
+            page
+        });
+
+        return res.status(200).json(
+            createResult("Designations search results fetched successfully", result)
+        );
+    } catch (error) {
+        return res.status(500).json(
+            createResult(null, null, error.message)
+        );
+    }
+};
+
 
 module.exports = designationController;

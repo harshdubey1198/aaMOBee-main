@@ -9,6 +9,7 @@ const { initializeSocket } = require("./utils/socket"); // Import socket initial
 
 dotenv.config();
 const app = express();
+
 const server = http.createServer(app); // Create HTTP server
 
 // ✅ Add this to get correct client IP behind proxies (like Render, Vercel, NGINX)
