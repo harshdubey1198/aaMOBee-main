@@ -1496,22 +1496,20 @@ export const searchDesignations = async ({
   page = 1,
 }) => {
   try {
-    let query = `?page=${page}`;
+    const requestBody = {
+      firmId,
+      departmentId,
+      search,
+      page,
+    };
 
-    if (firmId) query += `&firmId=${firmId}`;
-    if (departmentId) query += `&departmentId=${departmentId}`;
-    if (search) query += `&search=${search}`;
-
-    const response = await axiosInstance.get(
-      `/designation/search${query}`
-    );
+    const response = await axiosInstance.post(`/designation/search`, requestBody);
 
     return response.data;
   } catch (error) {
     return error;
   }
 };
-
 
 export default axiosInstance;
 

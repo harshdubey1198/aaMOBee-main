@@ -165,7 +165,7 @@ function DesignationMain() {
       page
     });
 
-    const newData = res?.data?.data?.data || [];
+    const newData = res?.data?.data || [];
 
     setDesignations(prev =>
       append ? [...prev, ...newData] : newData
