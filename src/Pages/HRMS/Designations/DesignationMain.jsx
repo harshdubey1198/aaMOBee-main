@@ -42,20 +42,19 @@ function DesignationMain() {
 };
 
 const fetchDesignations = async () => {
-    if (!departmentId) return;
-    try {
-      setLoading(true);
-      const res = await getDesignationsByDepartment(departmentId, page);
-      console.log(res);
-     setDesignations(res?.data?.data || []);
+  if (!departmentId) return;
+
+  try {
+    const res = await getDesignationsByDepartment(departmentId, 1);
+  // ✅ ONLY LINE CHANGED
+   setDesignations( res.data.data || []);
 
 
-    } catch (err) {
-      toast.error("Failed to load designations");
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (err) {
+    toast.error("Failed to load designations");
+  }
+};
+
 
   const handleEdit = (desg) => {
     setSelectedDesignation(desg);
@@ -71,6 +70,7 @@ const fetchDesignations = async () => {
       toast.error("Failed to deactivate designation");
     }
   };
+ 
 
   useEffect(() => {
   if (!idToUse) return;
@@ -78,9 +78,10 @@ const fetchDesignations = async () => {
 }, [idToUse]);
 
 useEffect(() => {
-  if (!departmentId) return;
+  if (!departmentId || !idToUse) return;
   fetchDesignations();
-}, [departmentId]);
+}, [departmentId, idToUse]);
+
 
 
   return (
@@ -138,7 +139,6 @@ useEffect(() => {
               onSelectFirm={(id) => {
                 setSelectedFirmId(id);
 
-                setDesignations([]);
               }}
             />
           )}
