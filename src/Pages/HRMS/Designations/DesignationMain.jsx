@@ -103,58 +103,9 @@ function DesignationMain() {
     }
   };
 
-  // Handle department dropdown scroll
-  const handleDepartmentScroll = useCallback((e) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.target;
-    
-    // Check if scrolled to bottom
-    if (scrollHeight - scrollTop <= clientHeight + 50) {
-      if (departmentHasMore && !departmentLoading) {
-        const nextPage = departmentPage + 1;
-        setDepartmentPage(nextPage);
-        fetchDepartments(nextPage, true);
-      }
-    }
-  }, [departmentPage, departmentHasMore, departmentLoading]);
-
-  // Handle designations table scroll
-  const handleTableScroll = useCallback((e) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.target;
-    
-    // Check if scrolled to bottom
-    if (scrollHeight - scrollTop <= clientHeight + 100) {
-      if (designationHasMore && !designationLoading) {
-        const nextPage = designationPage + 1;
-        setDesignationPage(nextPage);
-        search
-    ? fetchSearchDesignations(search, nextPage, true)
-    : fetchDesignations(nextPage, true);
-        fetchDesignations(nextPage, true);
-      }
-    }
-  }, [designationPage, designationHasMore, designationLoading]);
-
-  const handleEdit = (desg) => {
-    setSelectedDesignation(desg);
-    setIsModalOpen(true);
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      await deleteDesignation(id);
-      toast.success("Designation deactivated");
-      // Reset and fetch from page 1
-      setDesignationPage(1);
-      setDesignations([]);
-      fetchDesignations(1, false);
-    } catch (err) {
-      toast.error("Failed to deactivate designation");
-    }
-  };
-
   const fetchSearchDesignations = async (value, page = 1, append = false) => {
-  if (!value || !departmentId) return;
-
+  const trimmed = value?.trim();
+  if (!trimmed || trimmed.length < 3 || !departmentId) return;
   setDesignationLoading(true);
 
   try {
@@ -178,6 +129,57 @@ function DesignationMain() {
     setDesignationLoading(false);
   }
 };
+
+  // Handle department dropdown scroll
+  const handleDepartmentScroll = useCallback((e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    
+    // Check if scrolled to bottom
+    if (scrollHeight - scrollTop <= clientHeight + 50) {
+      if (departmentHasMore && !departmentLoading) {
+        const nextPage = departmentPage + 1;
+        setDepartmentPage(nextPage);
+        fetchDepartments(nextPage, true);
+      }
+    }
+  }, [departmentPage, departmentHasMore, departmentLoading]);
+
+  // Handle designations table scroll
+  const handleTableScroll = useCallback((e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    
+    // Check if scrolled to bottom
+    if (scrollHeight - scrollTop <= clientHeight + 100) {
+      if (designationHasMore && !designationLoading) {
+        const nextPage = designationPage + 1;
+        setDesignationPage(nextPage);
+        search && search.trim().length >= 3
+        ? fetchSearchDesignations(search, nextPage, true)
+        : fetchDesignations(nextPage, true);
+
+      }
+    }
+  }, [designationPage, designationHasMore, designationLoading]);
+
+  const handleEdit = (desg) => {
+    setSelectedDesignation(desg);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteDesignation(id);
+      toast.success("Designation deactivated");
+      // Reset and fetch from page 1
+      setDesignationPage(1);
+      setDesignations([]);
+      fetchDesignations(1, false);
+    } catch (err) {
+      toast.error("Failed to deactivate designation");
+    }
+  };
+
+ 
 
   useEffect(() => {
     if (!idToUse) return;
@@ -263,20 +265,28 @@ function DesignationMain() {
 
         <Col md="4">
                    <Input
-                      placeholder="Search designation..."
-                      value={search}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setSearch(value);
+                placeholder="Search designation..."
+                value={search}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearch(value);
 
-                        clearTimeout(searchTimeout.current);
+                  clearTimeout(searchTimeout.current);
 
-                        searchTimeout.current = setTimeout(() => {
-                          setDesignationPage(1);
-                          fetchSearchDesignations(value, 1, false);
-                        }, 400);
-                      }}
-                    />
+                  searchTimeout.current = setTimeout(() => {
+                    const trimmed = value.trim();
+                    setDesignationPage(1);
+
+                    if (trimmed.length >= 3) {
+                      fetchSearchDesignations(trimmed, 1, false);
+                    } 
+                    else if (trimmed.length === 0) {
+                      fetchDesignations(1, false); // ✅ reset to full list
+                    }
+                  }, 400);
+                }}
+              />          
+
 
                   </Col>
       </Row>
