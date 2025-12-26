@@ -21,7 +21,6 @@ function DesignationMain() {
   const [departmentId, setDepartmentId] = useState("");
 
   const [designations, setDesignations] = useState([]);
-  console.log("desiganation",designations);
   const [loading, setLoading] = useState(false);
   const [page] = useState(1);
   const [departments, setDepartments] = useState([]);
@@ -30,19 +29,7 @@ function DesignationMain() {
   const [isInactiveModalOpen, setIsInactiveModalOpen] = useState(false);
   const [selectedDesignation, setSelectedDesignation] = useState(null);
 
-  const fetchDesignations = async () => {
-    if (!departmentId) return;
-    try {
-      setLoading(true);
-      const res = await getDesignationsByDepartment(departmentId, page);
-      console.log(res.data);
-      setDesignations(res?.data || []);
-    } catch (err) {
-      toast.error("Failed to load designations");
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   const fetchDepartments = async () => {
   if (!idToUse) return;
@@ -54,16 +41,21 @@ function DesignationMain() {
   }
 };
 
-useEffect(() => {
-  fetchDepartments();
-  setDepartmentId("");        // 🔑 reset department
-  setDesignations([]);        // clean old data
-}, [idToUse]);
+const fetchDesignations = async () => {
+    if (!departmentId) return;
+    try {
+      setLoading(true);
+      const res = await getDesignationsByDepartment(departmentId, page);
+      console.log(res);
+     setDesignations(res?.data?.data || []);
 
- useEffect(() => {
-  if (departmentId) fetchDesignations();
-}, [departmentId]);
 
+    } catch (err) {
+      toast.error("Failed to load designations");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEdit = (desg) => {
     setSelectedDesignation(desg);
@@ -80,6 +72,17 @@ useEffect(() => {
     }
   };
 
+  useEffect(() => {
+  if (!idToUse) return;
+  fetchDepartments();
+}, [idToUse]);
+
+useEffect(() => {
+  if (!departmentId) return;
+  fetchDesignations();
+}, [departmentId]);
+
+
   return (
     <div className="page-content">
       <Breadcrumbs title="HRMS" breadcrumbItem="Designations" />
@@ -87,27 +90,23 @@ useEffect(() => {
       <Card className="mb-3">
   <CardBody>
     <Row className="align-items-center">
-      <Col md="4">
-        <label className="form-label fw-semibold">
-          Select Department
-        </label>
-        <select
+     <Col md="3">
+      <select
         className="form-select"
-        value={departmentId || ""}
-        onChange={(e) => setDepartmentId(String(e.target.value))}
+        value={departmentId}
+        onChange={(e) => setDepartmentId(e.target.value)}
       >
-
-          <option value="">— Select Department —</option>
-          {departments.map((dept) => (
-            <option key={dept._id} value={dept._id}>
-              {dept.name}
-            </option>
-          ))}
-        </select>
-      </Col>
-    </Row>
-  </CardBody>
-</Card>
+        <option value="">— Select Department —</option>
+        {departments.map((dept) => (
+          <option key={dept._id} value={dept._id}>
+            {dept.name}
+          </option>
+        ))}
+      </select>
+    </Col>
+        </Row>
+      </CardBody>
+    </Card>
 
 
       <Row className="mb-3 align-items-center">
@@ -138,7 +137,6 @@ useEffect(() => {
               selectedFirmId={selectedFirmId}
               onSelectFirm={(id) => {
                 setSelectedFirmId(id);
-                setDepartmentId("");
 
                 setDesignations([]);
               }}

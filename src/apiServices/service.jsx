@@ -1383,7 +1383,7 @@ export const getDesignationsByDepartment = async (departmentId, page = 1) => {
     const response = await axiosInstance.get(
       `/designation/by-department/${departmentId}?page=${page}`
     );
-    return response.data;
+    return response;
   } catch (error) {
     return error;
   }
