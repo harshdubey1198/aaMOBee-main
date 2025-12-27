@@ -179,7 +179,8 @@ function DesignationMain() {
     }
   };
 
- 
+ const handleRefetch = () => fetchDesignations(1, false);
+
 
   useEffect(() => {
     if (!idToUse) return;
@@ -233,7 +234,8 @@ function DesignationMain() {
       </Card>
 
       <Row className="mb-3 align-items-center">
-        <Col className="d-flex align-items-center gap-2">
+       <Col md="8" className="d-flex gap-2 align-items-center">
+                   <i className='bx bx-refresh cursor-pointer'  style={{fontSize: "24.5px",fontWeight: "bold",marginRight: "10px",color: "black",transition: "color 0.3s ease"}} onClick={handleRefetch} onMouseEnter={(e) => e.target.style.color = "green"}  onMouseLeave={(e) => e.target.style.color = "black"}></i>
           <Button color="primary" className="justified-button"
             onClick={() => {
               if (!departmentId) {

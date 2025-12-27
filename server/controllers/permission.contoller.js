@@ -53,10 +53,16 @@ permissionController.getByUser = async (req, res) => {
       .json(createResult(null, null, error.message));
   }
 };
+
 permissionController.getUsersByPermission = async (req, res) => {
   try {
+    const page = req.query.page || 1;
+    const limit = req.query.limit || 10;
+
     const result = await permissionServices.getUsersByPermission(
-      req.params.permission
+      req.params.permission,
+      page,
+      limit
     );
 
     return res
@@ -71,7 +77,13 @@ permissionController.getUsersByPermission = async (req, res) => {
 
 permissionController.getFirmUsersByPermission = async (req, res) => {
   try {
-    const result = await permissionServices.getFirmUsersByPermission(req.body);
+    const { page, limit, ...filters } = req.body;
+
+    const result = await permissionServices.getFirmUsersByPermission({
+      ...filters,
+      page: Number(page) || 1,
+      limit: Number(limit) || 10
+    });
 
     return res
       .status(200)
@@ -82,6 +94,7 @@ permissionController.getFirmUsersByPermission = async (req, res) => {
       .json(createResult(null, null, error.message));
   }
 };
+
 
 
 module.exports = permissionController;

@@ -9,6 +9,8 @@ import AssignPermissionToUserModal from "../../../Modal/Firms/AssignPermissionTo
 
 export default function PermissionMain() {
   const authUser = JSON.parse(localStorage.getItem("authUser"))?.response;
+const [nextPageUrl, setNextPageUrl] = useState(null);
+const [fetchingMore, setFetchingMore] = useState(false);
 
   const role = authUser?.role;
   const defaultFirm =
@@ -37,6 +39,7 @@ export default function PermissionMain() {
   const loadPermissions = async () => {
     try {
       const res = await getAllHrmsPermissions();
+      console.log("Permissions:", res);
       setPermissions(res?.data || []);
     } catch {
       toast.error("Failed to load permissions");
@@ -53,7 +56,7 @@ export default function PermissionMain() {
       setLoading(true);
       try {
         const res = await getFirmUsersWithPermissions({ firmId });
-        setUsers(res?.data || []);
+        setUsers(res?.data.data || []);
       } catch {
         toast.error("Failed to load firm users");
       } finally {
@@ -176,7 +179,7 @@ export default function PermissionMain() {
             onMouseLeave={(e) => (e.target.style.color = "black")}
           ></i>
 
-          <Button color="primary" onClick={toggleAssignModal}>
+          <Button color="primary" className="justified-button" onClick={toggleAssignModal}>
             + Assign Permission To User
           </Button>
 
