@@ -3,6 +3,31 @@ const { createResult } = require("../utils/utills");
 
 const permissionController = {};
 
+permissionController.add = async (req, res) => {
+  try {
+    const result = await permissionServices.addPermission(req.body);
+    return res
+      .status(200)
+      .json(createResult("Permission added successfully", result));
+  } catch (error) {
+    return res
+      .status(500)
+      .json(createResult(null, null, error.message));
+  }
+};
+
+permissionController.remove = async (req, res) => {
+  try {
+    const result = await permissionServices.removePermission(req.body);
+    return res
+      .status(200)
+      .json(createResult("Permission removed successfully", result));
+  } catch (error) {
+    return res
+      .status(500)
+      .json(createResult(null, null, error.message));
+  }
+};
 permissionController.getAll = async (req, res) => {
   try {
     const result = await permissionServices.getAll();
@@ -43,5 +68,20 @@ permissionController.getUsersByPermission = async (req, res) => {
       .json(createResult(null, null, error.message));
   }
 };
+
+permissionController.getFirmUsersByPermission = async (req, res) => {
+  try {
+    const result = await permissionServices.getFirmUsersByPermission(req.body);
+
+    return res
+      .status(200)
+      .json(createResult("Firm users fetched successfully", result));
+  } catch (error) {
+    return res
+      .status(500)
+      .json(createResult(null, null, error.message));
+  }
+};
+
 
 module.exports = permissionController;

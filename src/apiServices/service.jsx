@@ -137,6 +137,14 @@ export const getFirmUsers = async () => {
     return error;
   }
 };
+export const getFirmUsersMain = async (firmId) => {
+  try {
+    const response = await axiosInstance.get(`/auth/getCompany/${firmId}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  }
+};
 
 // ro get company for admin
 export const getCompanyForAdmin = async (id) => {
@@ -1510,7 +1518,159 @@ export const searchDesignations = async ({
     return error;
   }
 };
+// HRMS job & onboarding APIs
+// CREATE JOB
+export const createOnboardingJob = async (payload) => {
+  try {
+    const res = await axiosInstance.post("/job/create", payload);
+    return res.data;
+  } catch (err) {
+    return err;
+  }
+};
 
+// GET ALL JOBS
+export const getAllOnboardingJobs = async () => {
+  try {
+    const res = await axiosInstance.get("/job/alljobs");
+    return res.data;
+  } catch (err) {
+    return err;
+  }
+};
+
+// SEARCH JOBS (firmId required)
+export const searchOnboardingJobs = async (payload) => {
+  try {
+    const res = await axiosInstance.post("/job/search", payload);
+    return res.data;
+  } catch (err) {
+    return err;
+  }
+};
+
+// GET BY ID
+export const getOnboardingJobById = async (jobId) => {
+  try {
+    const res = await axiosInstance.get(`/job/${jobId}`);
+    return res.data;
+  } catch (err) {
+    return err;
+  }
+};
+
+// UPDATE JOB
+export const updateOnboardingJob = async (jobId, payload) => {
+  try {
+    const res = await axiosInstance.put(`/job/${jobId}`, payload);
+    return res.data;
+  } catch (err) {
+    return err;
+  }
+};
+
+// SOFT DELETE JOB (jobId + userId)
+export const deleteOnboardingJob = async (payload) => {
+  try {
+    const res = await axiosInstance.post("/job/delete", payload);
+    return res.data;
+  } catch (err) {
+    return err;
+  }
+};
+
+// JOBS CREATED BY USER
+export const getJobsByUser = async (userId) => {
+  try {
+    const res = await axiosInstance.get(`/job/by-user/${userId}`);
+    return res.data;
+  } catch (err) {
+    return err;
+  }
+};
+
+// JOBS BY FIRM
+export const getJobsByFirm = async (firmId) => {
+  try {
+    const res = await axiosInstance.get(`/job/by-firm/${firmId}`);
+    return res.data;
+  } catch (err) {
+    return err;
+  }
+};
+
+// JOBS BY DEPARTMENT
+export const getJobsByDepartment = async (departmentId) => {
+  try {
+    const res = await axiosInstance.get(`/job/by-department/${departmentId}`);
+    return res.data;
+  } catch (err) {
+    return err;
+  }
+};
+
+// HRMS permission api's
+// ADD PERMISSION TO USER
+export const addHrmsPermission = async (payload) => {
+  try {
+    const res = await axiosInstance.post("/permission/add", payload);
+    return res.data;
+  } catch (err) {
+    return err;
+  }
+};
+
+// REMOVE PERMISSION FROM USER
+export const removeHrmsPermission = async (payload) => {
+  try {
+    const res = await axiosInstance.post("/permission/remove", payload);
+    return res.data;
+  } catch (err) {
+    return err;
+  }
+};
+
+// GET ALL AVAILABLE PERMISSIONS (from permissions.js)
+export const getAllHrmsPermissions = async () => {
+  try {
+    const res = await axiosInstance.get("/permission/getAll");
+    return res.data;
+  } catch (err) {
+    return err;
+  }
+};
+
+// GET PERMISSIONS OF A USER
+export const getHrmsPermissionsByUser = async (userId) => {
+  try {
+    const res = await axiosInstance.get(`/permission/user/${userId}`);
+    return res.data;
+  } catch (err) {
+    return err;
+  }
+};
+
+// LIST USERS HAVING A SPECIFIC PERMISSION
+export const getUsersByHrmsPermission = async (permission) => {
+  try {
+    const res = await axiosInstance.get(
+      `/permission/by-permission/${permission}`
+    );
+    return res.data;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const getFirmUsersWithPermissions = async (payload) => {
+  try {
+    const res = await axiosInstance.post(
+      "/permission/firm-users",
+      payload
+    );
+    return res.data;
+  } catch (err) {
+    return err;
+  }
+};
 export default axiosInstance;
-
-

@@ -359,37 +359,5 @@ departmentServices.searchDepartments = async ({ firmId, search, page = 1, limit 
 
 
 
-departmentServices.addPermission = async (body) => {
-  const { userId, permission } = body;
 
-  if (!userId || !permission) throw new Error("userId and permission are required");
-
-  if (!HRMS_PERMISSIONS.includes(permission)) {
-    throw new Error("Invalid HRMS permission");
-  }
-
-  const user = await User.findById(userId);
-  if (!user) throw new Error("User not found");
-
-  if (!user.permissionsHolding.includes(permission)) {
-    user.permissionsHolding.push(permission);
-    await user.save();
-  }
-
-  return user;
-};
-
-departmentServices.removePermission = async (body) => {
-  const { userId, permission } = body;
-
-  if (!userId || !permission) throw new Error("userId and permission are required");
-
-  const user = await User.findById(userId);
-  if (!user) throw new Error("User not found");
-
-  user.permissionsHolding = user.permissionsHolding.filter((p) => p !== permission);
-  await user.save();
-
-  return user;
-};
 module.exports = departmentServices;

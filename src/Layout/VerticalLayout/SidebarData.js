@@ -191,6 +191,7 @@ export const masterAdminSidebarData = () => [
         { sublabel: "Add New Business", link: "/add-business" },
         { sublabel: "Business Branding", link: "/business-branding" },
         { sublabel: "Team Access", link: "/team-access" },
+        { sublabel: "Permissions", link: "/permissions" },
         { sublabel: "All My Businesses", link: "/my-businesses" }
       ],
     },

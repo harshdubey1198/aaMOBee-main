@@ -22,6 +22,7 @@ const authProtectedRoutes = [
   // HRMS
   { path: "/departments", component: lazy(() => import("../Pages/HRMS/Departments/DepartmentMain")) },
   { path: "/designations", component: lazy(() => import("../Pages/HRMS/Designations/DesignationMain")) },
+  { path: "/permissions", component: lazy(() => import("../Pages/Firms/Permissions/PermissionMain")) },
 
   // plans
   { path: "/create-plan", component: lazy(() => import("../Pages/Plans/CreatePlan")) },

@@ -15,6 +15,8 @@ const HRMS_PERMISSIONS = [
   "hr.candidates.update",
   "hr.candidates.delete",
 
+  "hr.candidates.manage",
+
   "hr.interview.schedule",
   "hr.interview.update",
   "hr.interview.feedback",
