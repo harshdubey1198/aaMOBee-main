@@ -54,20 +54,12 @@ onboardingJobController.delete = async (req, res) => {
 // GET ALL
 onboardingJobController.getAll = async (req, res) => {
   try {
-    const result = await onboardingJobServices.getAll();
-    return res.status(200).json(createResult("Jobs fetched successfully", result));
-  } catch (error) {
-    return res.status(500).json(createResult(null, null, error.message));
-  }
-};
+    const page = req.query.page || 1;
+    const result = await onboardingJobServices.getAll(page);
 
-// SEARCH
-onboardingJobController.search = async (req, res) => {
-  try {
-    const result = await onboardingJobServices.search(req.body);
     return res
       .status(200)
-      .json(createResult("Jobs search result", result));
+      .json(createResult("Jobs fetched successfully", result));
   } catch (error) {
     return res
       .status(500)
@@ -76,34 +68,84 @@ onboardingJobController.search = async (req, res) => {
 };
 
 
-// JOBS CREATED BY USER
+// SEARCH
+onboardingJobController.search = async (req, res) => {
+  try {
+    const { search, page, limit } = req.query;
+
+    const result = await onboardingJobServices.search({
+      search,
+      page: Number(page) || 1,
+      limit: Number(limit) || 10
+    });
+
+    return res
+      .status(200)
+      .json(createResult("Jobs search result", result));
+  } catch (error) {
+    return res
+      .status(400)
+      .json(createResult(null, null, error.message));
+  }
+};
+
+
+// BY USER
 onboardingJobController.getByUser = async (req, res) => {
   try {
-    const result = await onboardingJobServices.getByUser(req.params.userId);
-    return res.status(200).json(createResult("User jobs fetched", result));
+    const page = req.query.page || 1;
+    const result = await onboardingJobServices.getByUser(
+      req.params.userId,
+      page
+    );
+
+    return res
+      .status(200)
+      .json(createResult("User jobs fetched", result));
   } catch (error) {
-    return res.status(500).json(createResult(null, null, error.message));
+    return res
+      .status(500)
+      .json(createResult(null, null, error.message));
   }
 };
 
-// FIRM JOB LIST
+// BY FIRM
 onboardingJobController.getByFirm = async (req, res) => {
   try {
-    const result = await onboardingJobServices.getByFirm(req.params.firmId);
-    return res.status(200).json(createResult("Firm jobs fetched", result));
+    const page = req.query.page || 1;
+    const result = await onboardingJobServices.getByFirm(
+      req.params.firmId,
+      page
+    );
+
+    return res
+      .status(200)
+      .json(createResult("Firm jobs fetched", result));
   } catch (error) {
-    return res.status(500).json(createResult(null, null, error.message));
+    return res
+      .status(500)
+      .json(createResult(null, null, error.message));
   }
 };
 
-// DEPARTMENT JOB LIST
+// BY DEPARTMENT
 onboardingJobController.getByDepartment = async (req, res) => {
   try {
-    const result = await onboardingJobServices.getByDepartment(req.params.departmentId);
-    return res.status(200).json(createResult("Department jobs fetched", result));
+    const page = req.query.page || 1;
+    const result = await onboardingJobServices.getByDepartment(
+      req.params.departmentId,
+      page
+    );
+
+    return res
+      .status(200)
+      .json(createResult("Department jobs fetched", result));
   } catch (error) {
-    return res.status(500).json(createResult(null, null, error.message));
+    return res
+      .status(500)
+      .json(createResult(null, null, error.message));
   }
 };
+
 
 module.exports = onboardingJobController;
