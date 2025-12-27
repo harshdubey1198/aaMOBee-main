@@ -2,7 +2,8 @@ const Department = require("../schemas/department.schema");
 const { getPagination } = require("../utils/pagination");
 const departmentServices = {};
 const Designation = require("../schemas/designation.schema");
-
+const User = require("../schemas/user.schema")
+const { HRMS_PERMISSIONS } = require("../utils/permissions");
 // CREATE
 departmentServices.createDepartment = async (body) => {
     const { firmId, name, code } = body;
@@ -355,4 +356,40 @@ departmentServices.searchDepartments = async ({ firmId, search, page = 1, limit 
     return result;
 };
 
+
+
+
+departmentServices.addPermission = async (body) => {
+  const { userId, permission } = body;
+
+  if (!userId || !permission) throw new Error("userId and permission are required");
+
+  if (!HRMS_PERMISSIONS.includes(permission)) {
+    throw new Error("Invalid HRMS permission");
+  }
+
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+
+  if (!user.permissionsHolding.includes(permission)) {
+    user.permissionsHolding.push(permission);
+    await user.save();
+  }
+
+  return user;
+};
+
+departmentServices.removePermission = async (body) => {
+  const { userId, permission } = body;
+
+  if (!userId || !permission) throw new Error("userId and permission are required");
+
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+
+  user.permissionsHolding = user.permissionsHolding.filter((p) => p !== permission);
+  await user.save();
+
+  return user;
+};
 module.exports = departmentServices;

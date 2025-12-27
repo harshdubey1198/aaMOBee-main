@@ -21,7 +21,13 @@ const designationSchema = new mongoose.Schema({
 
   level: {
     type: String,
-    enum: [ "intern", "trainee", "junior", "associate", "mid", "senior", "team_lead","lead", "assistant_manager", "manager", "senior_manager", "department_head", "director", "senior_director", "vice_president", "senior_vice_president", "executive_director", "coo", "cto", "cfo", "ceo", "head", "founder" ],
+    enum: [ "intern", "trainee", "junior", 
+      "associate", "mid", "senior", "team_lead",
+      "lead", "assistant_manager", "manager", 
+      "senior_manager", "department_head", 
+      "director", "senior_director", "vice_president",
+      "senior_vice_president", "executive_director", "coo",
+       "cto", "cfo", "ceo", "head", "founder" ],
     default: "junior"
     },
 

@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const countryEnum = require("../data/commonData/countryEnum")
 const currencyEnum = require("../data/commonData/currencyEnum")
+const {HRMS_PERMISSIONS}= require("../utils/permissions")
 const SmtpSettingsSchema = new Schema(
   {
     host: { type: String },
@@ -26,33 +27,23 @@ const userSchema = new Schema(
       type: String,
     },
     isDemo: { type: Boolean, default: false },
-    sidebarAccess: [
+    permissionsHolding: [
       {
-        label: { type: String },
-        icon: { type: String },
-        url: { type: String },
-        order: { type: Number },
-        permissions: {
-          create: { type: Boolean, default: false },
-          read: { type: Boolean, default: false },
-          update: { type: Boolean, default: false },
-          delete: { type: Boolean, default: false },
-        },
-        subItem: [
-          {
-            sublabel: { type: String },
-            link: { type: String },
-            order: { type: Number },
-            permissions: {
-              create: { type: Boolean, default: false },
-              read: { type: Boolean, default: false },
-              update: { type: Boolean, default: false },
-              delete: { type: Boolean, default: false },
-            },
-          },
-        ],
+        type: String,
+        enum: HRMS_PERMISSIONS,
       },
     ],
+    departmentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+      default: null,
+    },
+
+    designationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Designation",
+      default: null,
+    },
     birthday: { type: Date },
     gender: {
       type: String,
@@ -181,45 +172,6 @@ const userSchema = new Schema(
           "12aAnd80gRegistration": { type: String },
           jvAgreement: { type: String },
           otherBusinessSpecificLicenses: { type: String },
-          // New Country-Specific Banking Details
-          // bankDetails: {
-          //   type: new Schema(
-          //     {
-          //       country: { type: String, enum: ["India", "UAE", "Saudi Arabia", "Malaysia"], required: true },
-
-          //       // Common Fields
-          //       bankName: { type: String },
-          //       accountHolder: { type: String },
-          //       branchName: { type: String },
-
-          //       // India-Specific Fields
-          //       ifscCode: { type: String },
-          //       cifNumber: { type: String },
-          //       gstin: { type: String },
-          //       panNumber: { type: String },
-          //       udyamNumber: { type: String },
-
-          //       // UAE-Specific Fields
-          //       iban: { type: String },
-          //       swiftCode: { type: String },
-          //       vatRegistrationNumber: { type: String },
-          //       tradeLicenseNumber: { type: String },
-
-          //       // Saudi Arabia-Specific Fields
-          //       iban: { type: String },
-          //       swiftCode: { type: String },
-          //       vatRegistrationNumber: { type: String },
-          //       commercialRegistrationNumber: { type: String },
-
-          //       // Malaysia-Specific Fields
-          //       swiftCode: { type: String },
-          //       taxRegistrationNumber: { type: String },
-          //       ssmRegistrationNumber: { type: String },
-          //     },
-          //     { _id: false }
-          //   ),
-          // },
-
         },
         { _id: false }
       ),

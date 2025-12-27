@@ -50,4 +50,9 @@ router.post(
     departmentController.search
 );
 
+// ADD PERMISSION TO USER
+router.post("/permission/add", departmentController.add);
+
+// REMOVE PERMISSION FROM USER
+router.post("/permission/remove", departmentController.remove);
 module.exports = router;

@@ -153,4 +153,29 @@ departmentController.search = async (req, res) => {
     }
 };
 
+departmentController.add = async (req, res) => {
+  try {
+    const result = await departmentServices.addPermission(req.body);
+    return res
+      .status(200)
+      .json(createResult("Permission added successfully", result));
+  } catch (error) {
+    return res
+      .status(500)
+      .json(createResult(null, null, error.message));
+  }
+};
+
+departmentController.remove = async (req, res) => {
+  try {
+    const result = await departmentServices.removePermission(req.body);
+    return res
+      .status(200)
+      .json(createResult("Permission removed successfully", result));
+  } catch (error) {
+    return res
+      .status(500)
+      .json(createResult(null, null, error.message));
+  }
+};
 module.exports = departmentController;
