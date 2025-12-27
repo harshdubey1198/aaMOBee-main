@@ -1,7 +1,7 @@
 // services/onboardingJob.services.js
 const OnboardingJob = require("../schemas/onboardingJob.schema");
 const User = require("../schemas/user.schema");
-
+const { getPagination } = require("../utils/pagination");
 const onboardingJobServices = {};
 
 // 🔐 common permission checker
@@ -91,34 +91,161 @@ onboardingJobServices.delete = async (id, userId) => {
 };
 
 // GET ALL
-onboardingJobServices.getAll = async () => {
-  return await OnboardingJob.find({}).sort({ createdAt: -1 });
+onboardingJobServices.getAll = async (page = 1) => {
+  const { limit, skip } = getPagination(page);
+
+  const totalCount = await OnboardingJob.countDocuments({ deletedAt: null });
+
+  const data = await OnboardingJob.find({ deletedAt: null })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  const baseUrl = process.env.BASE_URL + "/api/onboarding-job/alljobs";
+
+  return {
+    totalCount,
+    totalPages,
+    currentPage: Number(page),
+    nextPage: page < totalPages ? `${baseUrl}?page=${Number(page) + 1}` : null,
+    previousPage: page > 1 ? `${baseUrl}?page=${Number(page) - 1}` : null,
+    data
+  };
 };
 
+
 // SEARCH
-onboardingJobServices.search = async (search) => {
-  return await OnboardingJob.find({
+onboardingJobServices.search = async ({ search, page = 1, limit = 10 }) => {
+  if (!search || search.trim().length < 3) {
+    throw new Error("Search must be at least 3 characters");
+  }
+
+  const { skip } = getPagination(page, limit);
+
+  const matchQuery = {
+    deletedAt: null,
     $or: [
       { jobTitle: { $regex: search, $options: "i" } },
       { description: { $regex: search, $options: "i" } },
-      { jobSlug: { $regex: search, $options: "i" } },
-    ],
-  });
+      { jobSlug: { $regex: search, $options: "i" } }
+    ]
+  };
+
+  const data = await OnboardingJob.find(matchQuery)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const totalCount = await OnboardingJob.countDocuments(matchQuery);
+
+  return {
+    totalCount,
+    totalPages: Math.ceil(totalCount / limit),
+    currentPage: Number(page),
+    data
+  };
 };
+
 
 // CREATED BY USER
-onboardingJobServices.getByUser = async (userId) => {
-  return await OnboardingJob.find({ createdBy: userId }).sort({ createdAt: -1 });
+onboardingJobServices.getByUser = async (userId, page = 1) => {
+  const { limit, skip } = getPagination(page);
+
+  const totalCount = await OnboardingJob.countDocuments({
+    createdBy: userId,
+    deletedAt: null
+  });
+
+  const data = await OnboardingJob.find({
+    createdBy: userId,
+    deletedAt: null
+  })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  const baseUrl =
+    process.env.BASE_URL + `/api/onboarding-job/by-user/${userId}`;
+
+  return {
+    totalCount,
+    totalPages,
+    currentPage: Number(page),
+    nextPage: page < totalPages ? `${baseUrl}?page=${Number(page) + 1}` : null,
+    previousPage: page > 1 ? `${baseUrl}?page=${Number(page) - 1}` : null,
+    data
+  };
 };
+
 
 // BY FIRM
-onboardingJobServices.getByFirm = async (firmId) => {
-  return await OnboardingJob.find({ firmId }).sort({ createdAt: -1 });
+onboardingJobServices.getByFirm = async (firmId, page = 1) => {
+  const { limit, skip } = getPagination(page);
+
+  const totalCount = await OnboardingJob.countDocuments({
+    firmId,
+    deletedAt: null
+  });
+
+  const data = await OnboardingJob.find({
+    firmId,
+    deletedAt: null
+  })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  const baseUrl =
+    process.env.BASE_URL + `/api/onboarding-job/by-firm/${firmId}`;
+
+  return {
+    totalCount,
+    totalPages,
+    currentPage: Number(page),
+    nextPage: page < totalPages ? `${baseUrl}?page=${Number(page) + 1}` : null,
+    previousPage: page > 1 ? `${baseUrl}?page=${Number(page) - 1}` : null,
+    data
+  };
 };
 
+
 // BY DEPARTMENT
-onboardingJobServices.getByDepartment = async (departmentId) => {
-  return await OnboardingJob.find({ departmentId }).sort({ createdAt: -1 });
+onboardingJobServices.getByDepartment = async (departmentId, page = 1) => {
+  const { limit, skip } = getPagination(page);
+
+  const totalCount = await OnboardingJob.countDocuments({
+    departmentId,
+    deletedAt: null
+  });
+
+  const data = await OnboardingJob.find({
+    departmentId,
+    deletedAt: null
+  })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  const baseUrl =
+    process.env.BASE_URL + `/api/onboarding-job/by-department/${departmentId}`;
+
+  return {
+    totalCount,
+    totalPages,
+    currentPage: Number(page),
+    nextPage: page < totalPages ? `${baseUrl}?page=${Number(page) + 1}` : null,
+    previousPage: page > 1 ? `${baseUrl}?page=${Number(page) - 1}` : null,
+    data
+  };
 };
+
 
 module.exports = onboardingJobServices;
