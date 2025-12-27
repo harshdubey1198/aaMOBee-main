@@ -11,7 +11,7 @@ router.post("/create", onboardingJobController.create);
 router.get("/alljobs", onboardingJobController.getAll);
 
 // SEARCH ?search=
-router.get("/search", onboardingJobController.search);
+router.post("/search", onboardingJobController.search);
 
 // GET BY ID
 router.get("/:id", onboardingJobController.getById);

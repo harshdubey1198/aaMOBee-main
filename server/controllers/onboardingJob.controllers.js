@@ -64,12 +64,17 @@ onboardingJobController.getAll = async (req, res) => {
 // SEARCH
 onboardingJobController.search = async (req, res) => {
   try {
-    const result = await onboardingJobServices.search(req.query.search || "");
-    return res.status(200).json(createResult("Jobs search result", result));
+    const result = await onboardingJobServices.search(req.body);
+    return res
+      .status(200)
+      .json(createResult("Jobs search result", result));
   } catch (error) {
-    return res.status(500).json(createResult(null, null, error.message));
+    return res
+      .status(500)
+      .json(createResult(null, null, error.message));
   }
 };
+
 
 // JOBS CREATED BY USER
 onboardingJobController.getByUser = async (req, res) => {

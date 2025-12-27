@@ -96,15 +96,30 @@ onboardingJobServices.getAll = async () => {
 };
 
 // SEARCH
-onboardingJobServices.search = async (search) => {
-  return await OnboardingJob.find({
-    $or: [
+// SEARCH
+onboardingJobServices.search = async (body) => {
+  const { firmId, departmentId, search } = body;
+
+  if (!firmId) throw new Error("firmId is required");
+
+  const filter = {
+    firmId,
+    deletedAt: null
+  };
+
+  if (departmentId) filter.departmentId = departmentId;
+
+  if (search) {
+    filter.$or = [
       { jobTitle: { $regex: search, $options: "i" } },
       { description: { $regex: search, $options: "i" } },
       { jobSlug: { $regex: search, $options: "i" } },
-    ],
-  });
+    ];
+  }
+
+  return await OnboardingJob.find(filter).sort({ createdAt: -1 });
 };
+
 
 // CREATED BY USER
 onboardingJobServices.getByUser = async (userId) => {
