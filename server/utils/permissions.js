@@ -38,6 +38,21 @@ const HRMS_PERMISSIONS = [
 
   "hr.documents.manage",
   "hr.policies.manage",
+
+  // HRMS → Department Management
+  "hr.department.manage",
+"hr.department.create",
+"hr.department.view",
+"hr.department.update",
+"hr.department.delete",
+
+// HRMS → Designation Management
+"hr.designation.manage",
+"hr.designation.create",
+"hr.designation.view",
+"hr.designation.update",
+"hr.designation.delete",
+
 ];
 
 module.exports = {

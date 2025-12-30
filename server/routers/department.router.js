@@ -1,3 +1,5 @@
+const { checkPermission } = require("../middleware/permission.middleware");
+
 const express = require("express");
 const router = express.Router();
 
@@ -5,9 +7,12 @@ const { tokenVerification } = require("../middleware/auth.middleware");
 const departmentController = require("../controllers/department.controllers");
 
 // CREATE DEPARTMENT
-router.post("/create", 
-    // tokenVerification,
-     departmentController.create);
+router.post(
+  "/create",
+  tokenVerification,
+  checkPermission("hr.department.create"),
+  departmentController.create
+);
 
 // GET ALL DEPARTMENTS BY FIRM
 router.get("/by-firm/:firmId", 
@@ -20,14 +25,20 @@ router.get("/:id",
      departmentController.getById);
 
 // UPDATE DEPARTMENT
-router.put("/:id", 
-    // tokenVerification,
-     departmentController.update);
+router.put(
+  "/:id",
+  tokenVerification,
+  checkPermission("hr.department.update"),
+  departmentController.update
+);
 
 // SOFT DELETE DEPARTMENT
-router.delete("/:id", 
-    // tokenVerification,
-     departmentController.delete);
+router.delete(
+  "/:id",
+  tokenVerification,
+  checkPermission("hr.department.delete"),
+  departmentController.delete
+);
 
 // GET SUB DEPARTMENTS BY PARENT ID
 router.get("/by-parent/:parentDepartmentId", departmentController.getByParent);

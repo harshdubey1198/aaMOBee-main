@@ -57,19 +57,33 @@ function DepartmentModal({ isOpen, toggle, firmId, department, onSuccess }) {
       ...(parentDepartmentId && { parentDepartmentId }),
     };
 
-    try {
+     try {
+      let res;
       if (department) {
-        await updateDepartment(department._id, payload);
-        toast.success("Department updated");
+        res = await updateDepartment(department._id, payload);
       } else {
-        await createDepartment(payload);
-        toast.success("Department created");
+        res = await createDepartment(payload);
       }
-      toggle();
-      onSuccess();
-    } catch (err) {
-      toast.error("Failed to save department");
-    }
+      
+      // Check if API call was successful
+      if (res?.data?.success || res?.status === 200 || res?.status === 201) {
+        toast.success(res?.data?.message || (department ? "Department updated successfully" : "Department created successfully"));
+        toggle();
+        onSuccess();
+      } else {
+        // API returned but with error
+        const msg = res?.data?.message || res?.message || "Operation failed";
+        toast.error(msg);
+      }
+   } catch (err) {
+  const msg =
+    err?.response?.data?.message ||
+    err?.response?.message ||
+    err?.response?.error ||
+    "You do not have permission to perform this action";
+
+  toast.error(msg);
+}
   };
 
   return (

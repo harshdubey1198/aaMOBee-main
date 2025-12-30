@@ -113,9 +113,14 @@ const [fetchingMore, setFetchingMore] = useState(false);
       await deleteDepartment(id);
       toast.success("Department deactivated");
       fetchDepartments();
-    } catch {
-      toast.error("Failed to deactivate department");
+    } catch (err) {
+      const msg =
+        err?.response?.message ||
+        "You do not have permission to perform this action";
+
+      toast.error(msg);
     }
+
   };
 useEffect(() => {
   const handleWindowScroll = () => {
