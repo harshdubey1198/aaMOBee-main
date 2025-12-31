@@ -23,6 +23,7 @@ const authProtectedRoutes = [
   { path: "/departments", component: lazy(() => import("../Pages/HRMS/Departments/DepartmentMain")) },
   { path: "/designations", component: lazy(() => import("../Pages/HRMS/Designations/DesignationMain")) },
   { path: "/permissions", component: lazy(() => import("../Pages/Firms/Permissions/PermissionMain")) },
+  { path: "/onboarding-jobs", component: lazy(() => import("../Pages/HRMS/OnboardingJob/OnboardingJobMain")) },
 
   // plans
   { path: "/create-plan", component: lazy(() => import("../Pages/Plans/CreatePlan")) },

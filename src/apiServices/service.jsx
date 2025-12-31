@@ -1258,7 +1258,7 @@ export const createDepartment = async (payload) => {
     const response = await axiosInstance.post(`/department/create`, payload);
     return response.data;
   } catch (error) {
-    return error;
+    throw error;
   }
 };
 
@@ -1525,7 +1525,8 @@ export const createOnboardingJob = async (payload) => {
     const res = await axiosInstance.post("/job/create", payload);
     return res.data;
   } catch (err) {
-    return err;
+    throw err;
+
   }
 };
 
@@ -1535,7 +1536,8 @@ export const getAllOnboardingJobs = async () => {
     const res = await axiosInstance.get("/job/alljobs");
     return res.data;
   } catch (err) {
-    return err;
+   throw err;
+
   }
 };
 
@@ -1545,7 +1547,7 @@ export const searchOnboardingJobs = async (payload) => {
     const res = await axiosInstance.post("/job/search", payload);
     return res.data;
   } catch (err) {
-    return err;
+    throw err;
   }
 };
 
@@ -1555,7 +1557,7 @@ export const getOnboardingJobById = async (jobId) => {
     const res = await axiosInstance.get(`/job/${jobId}`);
     return res.data;
   } catch (err) {
-    return err;
+    throw err; 
   }
 };
 
@@ -1565,7 +1567,7 @@ export const updateOnboardingJob = async (jobId, payload) => {
     const res = await axiosInstance.put(`/job/${jobId}`, payload);
     return res.data;
   } catch (err) {
-    return err;
+    throw err;
   }
 };
 
@@ -1575,7 +1577,8 @@ export const deleteOnboardingJob = async (payload) => {
     const res = await axiosInstance.post("/job/delete", payload);
     return res.data;
   } catch (err) {
-    return err;
+    throw err;
+
   }
 };
 
@@ -1605,7 +1608,7 @@ export const getJobsByDepartment = async (departmentId) => {
     const res = await axiosInstance.get(`/job/by-department/${departmentId}`);
     return res.data;
   } catch (err) {
-    return err;
+    throw err;
   }
 };
 
@@ -1616,7 +1619,8 @@ export const addHrmsPermission = async (payload) => {
     const res = await axiosInstance.post("/permission/add", payload);
     return res.data;
   } catch (err) {
-    return err;
+    throw err;
+
   }
 };
 
@@ -1670,7 +1674,8 @@ export const getFirmUsersWithPermissions = async (payload) => {
     );
     return res.data;
   } catch (err) {
-    return err;
+   throw err;
+
   }
 };
 export default axiosInstance;

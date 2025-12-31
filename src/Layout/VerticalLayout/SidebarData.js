@@ -201,6 +201,7 @@ export const masterAdminSidebarData = () => [
         subItem: [
           { sublabel: "Departments", link: "/departments" },
           { sublabel: "Designations", link: "/designations" },
+          { sublabel: "Onboarding Jobs", link: "/onboarding-jobs" },
         ],
       },
     {

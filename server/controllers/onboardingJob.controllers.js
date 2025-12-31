@@ -71,7 +71,7 @@ onboardingJobController.getAll = async (req, res) => {
 // SEARCH
 onboardingJobController.search = async (req, res) => {
   try {
-    const { search, page, limit } = req.query;
+    const { search, page, limit } = req.body;
 
     const result = await onboardingJobServices.search({
       search,

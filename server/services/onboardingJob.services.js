@@ -195,6 +195,7 @@ onboardingJobServices.getByFirm = async (firmId, page = 1) => {
     firmId,
     deletedAt: null
   })
+     .populate("departmentId", "name") 
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
