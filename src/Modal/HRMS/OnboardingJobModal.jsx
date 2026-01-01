@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Modal, ModalHeader,ModalBody, ModalFooter, Button, Form, FormGroup,  Label, Input
-} from "reactstrap";
+import {Modal,ModalHeader,ModalBody,ModalFooter,Button,Form,FormGroup,Label,Input,} from "reactstrap";
 import { toast } from "react-toastify";
-import { createOnboardingJob, updateOnboardingJob, getDepartmentsByFirm } from "../../apiServices/service";
+import {createOnboardingJob,updateOnboardingJob,getDepartmentsByFirm,} from "../../apiServices/service";
 
 function OnboardingJobModal({ isOpen, toggle, firmId, job, onSuccess }) {
   const authUser = JSON.parse(localStorage.getItem("authUser"))?.response;
@@ -13,16 +12,16 @@ function OnboardingJobModal({ isOpen, toggle, firmId, job, onSuccess }) {
   const [experience, setExperience] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [departments, setDepartments] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const blockIfDemo = () => {
-    if (authUser?.isDemo) {
-      toast.error("Demo accounts cannot modify jobs");
-      return true;
-    }
-    return false;
+  const resetForm = () => {
+    setJobTitle("");
+    setDescription("");
+    setCriteria("");
+    setExperience("");
+    setDepartmentId("");
   };
 
-  // fetch departments
   const fetchDepartments = async () => {
     try {
       const res = await getDepartmentsByFirm(firmId, 1);
@@ -33,28 +32,25 @@ function OnboardingJobModal({ isOpen, toggle, firmId, job, onSuccess }) {
   };
 
   useEffect(() => {
-    if (isOpen) fetchDepartments();
+    if (isOpen) {
+      fetchDepartments();
+      if (!job) resetForm();
+    }
   }, [isOpen, firmId]);
 
   useEffect(() => {
     if (job) {
-      setJobTitle(job.jobTitle);
+      setJobTitle(job.jobTitle || "");
       setDescription(job.description || "");
       setCriteria(job.criteria || "");
       setExperience(job.experience || "");
-      setDepartmentId(job.departmentId);
-    } else {
-      setJobTitle("");
-      setDescription("");
-      setCriteria("");
-      setExperience("");
-      setDepartmentId("");
+      setDepartmentId(job.departmentId?._id || "");
     }
   }, [job]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (blockIfDemo()) return;
+    if (isSubmitting) return;
 
     if (!departmentId) {
       toast.error("Department is required");
@@ -69,37 +65,34 @@ function OnboardingJobModal({ isOpen, toggle, firmId, job, onSuccess }) {
       experience,
       departmentId,
       firmId,
-      createdBy: authUser?._id
+      createdBy: authUser?._id,
     };
 
-    try {
-      let res;
-      if (job) {
-        res = await updateOnboardingJob(job._id, payload);
-      } else {
-        res = await createOnboardingJob(payload);
-      }
+    setIsSubmitting(true);
 
-      if (res?.status === 200 || res?.status === 201 || res?.success) {
+    try {
+      const res = job
+        ? await updateOnboardingJob(job._id, payload)
+        : await createOnboardingJob(payload);
+
+     if (res?.message) {
         toast.success(job ? "Job updated successfully" : "Job created successfully");
-        toggle();
-        onSuccess();
+
+        toggle();       // ✅ CLOSE MODAL
+        onSuccess();    // ✅ FETCH JOB LIST
+        resetForm();
       } else {
-        toast.error(res?.message || "Operation failed");
+        toast.error("Operation failed");
       }
     } catch (err) {
-  toast.error(
-       err?.response?.data?.error ||
-       err?.error ||
-       err?.message ||
-       "Failed to deactivate job"
-     );
-}
-
+      toast.error(err?.message || "Operation failed");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <Modal isOpen={isOpen} toggle={toggle}>
+    <Modal isOpen={isOpen} toggle={toggle} backdrop="static">
       <ModalHeader toggle={toggle}>
         {job ? "Update Job" : "Create Job"}
       </ModalHeader>
@@ -153,14 +146,13 @@ function OnboardingJobModal({ isOpen, toggle, firmId, job, onSuccess }) {
           <FormGroup>
             <Label>Experience</Label>
             <Input
-              placeholder="e.g. 1-2 years"
               value={experience}
               onChange={(e) => setExperience(e.target.value)}
             />
           </FormGroup>
 
-          <Button color="primary" type="submit">
-            {job ? "Update" : "Create"}
+          <Button color="primary" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : job ? "Update" : "Create"}
           </Button>
         </Form>
       </ModalBody>

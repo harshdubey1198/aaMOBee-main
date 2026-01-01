@@ -1,14 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Button, Table, Card, CardBody, Row, Col, Spinner, Input, InputGroup, InputGroupText
+import { Button, Table, Card, CardBody, Row, Col, Spinner, Input, InputGroup, InputGroupText,
 } from "reactstrap";
 import Breadcrumbs from "../../../components/Common/Breadcrumb";
 import FirmSwitcher from "../../Firms/FirmSwitcher";
 import { toast } from "react-toastify";
-import { deleteOnboardingJob, getJobsByFirm, searchOnboardingJobs } from "../../../apiServices/service";
+import { deleteOnboardingJob, getJobsByFirm, searchOnboardingJobs,} from "../../../apiServices/service";
 import OnboardingJobModal from "../../../Modal/HRMS/OnboardingJobModal";
-
-
-
 
 function OnboardingJobMain() {
   const authUser = JSON.parse(localStorage.getItem("authUser"));
@@ -22,8 +19,8 @@ function OnboardingJobMain() {
 
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
-
   const [search, setSearch] = useState("");
+
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
 
@@ -37,7 +34,6 @@ function OnboardingJobMain() {
     try {
       setLoading(true);
       const res = await getJobsByFirm(idToUse);
-      
       setJobs(res?.data?.data || []);
     } catch {
       toast.error("Failed to load jobs");
@@ -63,9 +59,9 @@ function OnboardingJobMain() {
       setLoading(true);
       const res = await searchOnboardingJobs({
         firmId: idToUse,
-        search: trimmed
+        search: trimmed,
       });
-      setJobs(res?.data.data || []);
+      setJobs(res?.data?.data || []);
     } catch {
       toast.error("Search failed");
     } finally {
@@ -78,29 +74,18 @@ function OnboardingJobMain() {
     setIsJobModalOpen(true);
   };
 
- const handleDelete = async (job) => {
-  try {
-    await deleteOnboardingJob({
-      jobId: job._id,
-      userId: authUser?.response?._id
-    });
-
-    toast.success("Job deactivated");
-    fetchJobs();
-
-  } catch (err) {
-    console.log(err); // 👈 debugging ke liye alag rakho
-
-    toast.error(
-      err?.response?.data?.error ||
-      err?.error ||
-      err?.message ||
-      "Failed to deactivate job"
-    );
-  }
-};
-
-
+  const handleDelete = async (job) => {
+    try {
+      await deleteOnboardingJob({
+        jobId: job._id,
+        userId: authUser?.response?._id,
+      });
+      toast.success("Job deactivated");
+      fetchJobs();
+    } catch {
+      toast.error("Failed to deactivate job");
+    }
+  };
 
   useEffect(() => {
     fetchJobs();
@@ -112,7 +97,7 @@ function OnboardingJobMain() {
 
       <Row className="mb-3">
         <Col md="8" className="d-flex gap-2 align-items-center">
-           <Button color="primary" className="justified-button" onClick={toggleJobModal}>
+          <Button color="primary" className="justified-button" onClick={toggleJobModal}>
             + Add Job
           </Button>
 
@@ -147,67 +132,66 @@ function OnboardingJobMain() {
             </div>
           ) : (
             <Table bordered hover responsive>
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Job Title</th>
-       <th>Department</th>
-      <th>Slug</th>
-      <th>Experience</th>
-      <th>Status</th>
-      <th>Created At</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Job Title</th>
+                  <th>Department</th>
+                  <th>Experience</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
 
-  <tbody>
-    {jobs.length ? (
-      jobs.map((job, i) => (
-        <tr key={job._id}>
-          <td>{i + 1}</td>
-          <td>{job.jobTitle}</td>
-          <td>
-            {job.departmentId?.name || "—"} {/* ✅ Department Name */}
-            </td>
-          <td>{job.jobSlug}</td>
-          <td>{job.experience}</td>
-          <td>
-            <span className={job.status === "active" ? "text-success" : "text-danger"}>
-              {job.status}
-            </span>
-          </td>
-          <td>{new Date(job.createdAt).toLocaleDateString()}</td>
-          <td className="d-flex gap-2">
-            <Button size="sm" color="info" onClick={() => handleEdit(job)}>
-              Edit
-            </Button>
-            <Button size="sm" color="danger" onClick={() => handleDelete(job)}>
-              Deactivate
-            </Button>
-          </td>
-        </tr>
-      ))
-    ) : (
-      <tr>
-        <td colSpan="7" className="text-center">
-          No jobs found
-        </td>
-      </tr>
-    )}
-  </tbody>
-</Table>
-
+              <tbody>
+                {jobs.length ? (
+                  jobs.map((job, i) => (
+                    <tr key={job._id}>
+                      <td>{i + 1}</td>
+                      <td>{job.jobTitle}</td>
+                      <td>{job.departmentId?.name || "—"}</td>
+                      <td>{job.experience}</td>
+                      <td>{job.status}</td>
+                      <td className="d-flex gap-2">
+                        <Button
+                          size="sm"
+                          color="info"
+                          onClick={() => handleEdit(job)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          color="danger"
+                          onClick={() => handleDelete(job)}
+                        >
+                          Deactivate
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="text-center">
+                      No jobs found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
           )}
         </CardBody>
       </Card>
 
-      <OnboardingJobModal
-        isOpen={isJobModalOpen}
-        toggle={toggleJobModal}
-        firmId={idToUse}
-        job={selectedJob}
-        onSuccess={fetchJobs}
-      />
+      {isJobModalOpen && (
+        <OnboardingJobModal
+          isOpen={isJobModalOpen}
+          toggle={toggleJobModal}
+          firmId={idToUse}
+          job={selectedJob}
+          onSuccess={fetchJobs}  
+        />
+      )}
     </div>
   );
 }
