@@ -318,6 +318,15 @@ export const masterAdminSidebarData = () => [
       icon: "mdi mdi-home-variant-outline",
       url: "/dashboard",
     },
+    {
+        label: "HRMS",
+        icon: "mdi mdi-account-tie-outline",
+        subItem: [
+          { sublabel: "Departments", link: "/departments" },
+          { sublabel: "Designations", link: "/designations" },
+          { sublabel: "Onboarding Jobs", link: "/onboarding-jobs" },
+        ],
+      },
     
     // {
       //   label: "google maps",

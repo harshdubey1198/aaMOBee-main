@@ -3,7 +3,7 @@ const User = require("../schemas/user.schema");
 const checkPermission = (requiredPermission) => {
   return async (req, res, next) => {
     try {
-      const userId = req.user?.id; // tokenVerification se aata hai
+      const userId = req.user?.id; // comes from tokenVerification
 
       if (!userId) {
         return res.status(401).json({
@@ -11,26 +11,39 @@ const checkPermission = (requiredPermission) => {
         });
       }
 
-      const user = await User.findById(userId).select("permissionsHolding role");
+      const user = await User.findById(userId)
+        .select("permissionsHolding role");
 
       if (!user) {
-        return res.status(401).json({ message: "User not found" });
+        return res.status(401).json({
+          message: "User not found"
+        });
       }
 
-      // super admin → full access
-      if (user.role === "super_admin") {
+      // ✅ SUPER ADMIN & CLIENT ADMIN → FULL ACCESS
+      if (
+        user.role === "super_admin" ||
+        user.role === "client_admin"
+      ) {
         return next();
       }
 
+      // safety check
+      if (!user.permissionsHolding || !Array.isArray(user.permissionsHolding)) {
+        return res.status(403).json({
+          message: "No permissions assigned"
+        });
+      }
+
       // exact permission OR manage permission
+      const managePermission = requiredPermission.replace(
+        /\.(create|view|update|delete)$/,
+        ".manage"
+      );
+
       const hasPermission =
         user.permissionsHolding.includes(requiredPermission) ||
-        user.permissionsHolding.includes(
-          requiredPermission.replace(
-            /\.(create|view|update|delete)$/,
-            ".manage"
-          )
-        );
+        user.permissionsHolding.includes(managePermission);
 
       if (!hasPermission) {
         return res.status(403).json({
@@ -40,7 +53,9 @@ const checkPermission = (requiredPermission) => {
 
       next();
     } catch (error) {
-      return res.status(500).json({ message: error.message });
+      return res.status(500).json({
+        message: error.message
+      });
     }
   };
 };

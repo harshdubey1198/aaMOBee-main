@@ -4,8 +4,32 @@ const departmentServices = {};
 const Designation = require("../schemas/designation.schema");
 const User = require("../schemas/user.schema")
 const { HRMS_PERMISSIONS } = require("../utils/permissions");
+
+// 🔐 common permission checker (same rule everywhere)
+const hasPermission = (user, required) => {
+  if (!user) return false;
+
+  // super_admin & client_admin → full access
+  if (user.role === "super_admin" || user.role === "client_admin") {
+    return true;
+  }
+
+  if (!user.permissionsHolding) return false;
+
+  // manage permission → allow all
+  if (user.permissionsHolding.includes("hr.department.manage")) {
+    return true;
+  }
+
+  return user.permissionsHolding.includes(required);
+};
+
 // CREATE
-departmentServices.createDepartment = async (body) => {
+departmentServices.createDepartment = async (body, user) => {
+
+    if (!hasPermission(user, HRMS_PERMISSIONS.DEPARTMENT_CREATE)) {
+        throw new Error("You do not have permission to create department");
+    }
     const { firmId, name, code } = body;
 
     if (!firmId || !name || !code) {
@@ -47,7 +71,9 @@ departmentServices.createDepartment = async (body) => {
 
 
 // GET ALL BY FIRM
-departmentServices.getDepartmentsByFirm = async (firmId, page = 1) => {
+departmentServices.getDepartmentsByFirm = async (firmId, page = 1, user) => {
+
+   
     if (!firmId) throw new Error("firmId is required");
 
     const { limit, skip } = getPagination(page);
@@ -114,7 +140,10 @@ departmentServices.getDepartmentsByFirm = async (firmId, page = 1) => {
 
 
 // GET BY ID
-departmentServices.getDepartmentById = async (id) => {
+departmentServices.getDepartmentById = async (id, user) => {
+
+   
+
     const department = await Department.findById(id);
 
     if (!department) {
@@ -125,7 +154,11 @@ departmentServices.getDepartmentById = async (id) => {
 };
 
 // UPDATE
-departmentServices.updateDepartment = async (id, data) => {
+departmentServices.updateDepartment = async (id, data, user) => {
+
+    if (!hasPermission(user, HRMS_PERMISSIONS.DEPARTMENT_EDIT)) {
+        throw new Error("You do not have permission to update department");
+    }
     const department = await Department.findByIdAndUpdate(id, data, { new: true });
 
     if (!department) {
@@ -136,7 +169,11 @@ departmentServices.updateDepartment = async (id, data) => {
 };
 
 // SOFT DELETE
-departmentServices.deleteDepartment = async (id) => {
+departmentServices.deleteDepartment = async (id, user) => {
+
+    if (!hasPermission(user, HRMS_PERMISSIONS.DEPARTMENT_DELETE)) {
+        throw new Error("You do not have permission to delete department");
+    }
     const department = await Department.findByIdAndUpdate(
         id,
         { status: "inactive" },
@@ -192,7 +229,12 @@ departmentServices.getByParent = async (parentDepartmentId, page = 1) => {
 };
 
 // REACTIVATE DEPARTMENT
-departmentServices.reactivateDepartment = async (id) => {
+departmentServices.reactivateDepartment = async (id, user) => {
+
+    if (!hasPermission(user, HRMS_PERMISSIONS.DEPARTMENT_DELETE)) {
+        throw new Error("You do not have permission to reactivate department");
+    }
+
     const department = await Department.findByIdAndUpdate(
         id,
         { status: "active" },
@@ -301,7 +343,10 @@ departmentServices.getDepartmentWithDesignations = async (departmentId) => {
     };
 };
 
-departmentServices.searchDepartments = async ({ firmId, search, page = 1, limit = 10 }) => {
+departmentServices.searchDepartments = async ({ firmId, search, page = 1, limit = 10 }, user) => {
+
+    
+
     // console.log("Function called with:", { firmId, search, page, limit });
 
     if (!firmId) {

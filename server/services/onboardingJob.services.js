@@ -6,13 +6,23 @@ const onboardingJobServices = {};
 
 // 🔐 common permission checker
 const hasPermission = (user, required) => {
-  if (!user || !user.permissionsHolding) return false;
+  if (!user) return false;
 
-  // if manage → allow everything
-  if (user.permissionsHolding.includes("hr.onboarding.manage")) return true;
+  // super_admin & client_admin → full access
+  if (user.role === "super_admin" || user.role === "client_admin") {
+    return true;
+  }
+
+  if (!user.permissionsHolding) return false;
+
+  // manage permission → allow all
+  if (user.permissionsHolding.includes("hr.onboarding.manage")) {
+    return true;
+  }
 
   return user.permissionsHolding.includes(required);
 };
+
 
 // CREATE
 onboardingJobServices.create = async (body) => {
