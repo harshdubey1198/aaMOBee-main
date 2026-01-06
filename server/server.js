@@ -59,6 +59,11 @@ const designationRouter = require("./routers/designation.router");
 const hrmsRouter = require("./routers/hrms.router");
 const permissionRouter = require("./routers/permission.router");
 const jobRouter = require("./routers/onboardingJob.router.js")
+const firmPolicyRouter = require("./routers/firmPolicy.routes");
+const employeeRouter = require("./routers/employee.router");
+const employeeCompensationRouter = require("./routers/employeeCompensation.router");
+const employeeVerificationRouter = require("./routers/employeeVerification.router");
+
 
 app.use("/api/auth", userRoute);
 app.use("/api/faqs", FAQRoutes);
@@ -94,6 +99,14 @@ app.use("/api/designation", designationRouter);
 app.use("/api/hrms", hrmsRouter);
 app.use("/api/job", jobRouter);
 app.use("/api/permission", permissionRouter);
+app.use("/api/firm-policy", firmPolicyRouter);
+app.use("/api/employee", employeeRouter);
+app.use("/api/employee-compensation", employeeCompensationRouter);
+app.use("/api/employee-verification", employeeVerificationRouter);
+
+
+
+
 
 app.get("/", (req, res) => {
   res.send("Welcome to aaMOBee Main Server!");
