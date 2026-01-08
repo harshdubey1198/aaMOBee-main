@@ -1678,4 +1678,180 @@ export const getFirmUsersWithPermissions = async (payload) => {
 
   }
 };
+
+// Employee Management → Firm Policy APIs
+
+  //  CREATE FIRM POLICY
+
+export const createFirmPolicy = async (data) => {
+  try {
+    const response = await axiosInstance.post(
+      "/firm-policy/create",
+      data
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+  //  GET POLICY BY FIRM ID
+
+export const getFirmPolicyByFirm = async (firmId) => {
+  try {
+    const response = await axiosInstance.get(
+      `/firm-policy/by-firm/${firmId}`
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+  //  UPDATE FIRM POLICY
+export const updateFirmPolicy = async (policyId, data) => {
+  try {
+    const response = await axiosInstance.put(
+      `/firm-policy/update/${policyId}`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+//  DELETE FIRM POLICY
+
+export const deleteFirmPolicy = async (policyId) => {
+  try {
+    const response = await axiosInstance.delete(
+      `/firm-policy/delete/${policyId}`
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+// Employee API -----------------------
+
+  //  CREATE EMPLOYEE
+
+export const createEmployee = async (payload) => {
+  try {
+    const res = await axiosInstance.post("/employee/create", payload);
+    return res.data;
+  } catch (err) {
+    throw err;
+  }
+};
+
+  //  GET EMPLOYEE BY ID
+  
+export const getEmployeeById = async (employeeId) => {
+  try {
+    const res = await axiosInstance.get(`/employee/${employeeId}`);
+    return res.data;
+  } catch (err) {
+    throw err;
+  }
+};
+
+  //  GET EMPLOYEES BY FIRM
+
+export const getEmployeesByFirm = async (firmId) => {
+  try {
+    const res = await axiosInstance.get(`/employee/by-firm/${firmId}`);
+    return res.data;
+  } catch (err) {
+    throw err;
+  }
+};
+
+  //  UPDATE EMPLOYEE
+
+export const updateEmployee = async (employeeId, payload) => {
+  try {
+    const res = await axiosInstance.put(
+      `/employee/update/${employeeId}`,
+      payload
+    );
+    return res.data;
+  } catch (err) {
+    throw err;
+  }
+};
+
+  //  DELETE EMPLOYEE
+
+export const deleteEmployee = async (employeeId) => {
+  try {
+    const res = await axiosInstance.delete(
+      `/employee/delete/${employeeId}`
+    );
+    return res.data;
+  } catch (err) {
+    throw err;
+  }
+};
+
+// Employee Compensation
+  //  CREATE EMPLOYEE COMPENSATION
+
+export const createEmployeeCompensation = async (payload) => {
+  try {
+    const res = await axiosInstance.post(
+      "/employee-compensation/create",
+      payload
+    );
+    return res.data;
+  } catch (err) {
+    throw err;
+  }
+};
+
+//  GET COMPENSATION BY EMPLOYEE
+export const getEmployeeCompensationByEmployee = async (employeeId) => {
+  try {
+    const res = await axiosInstance.get(
+      `/employee-compensation/by-employee/${employeeId}`
+    );
+    return res.data;
+  } catch (err) {
+    throw err;
+  }
+};
+
+//  UPDATE EMPLOYEE COMPENSATION
+
+export const updateEmployeeCompensation = async (
+  compensationId,
+  payload
+) => {
+  try {
+    const res = await axiosInstance.put(
+      `/employee-compensation/update/${compensationId}`,
+      payload
+    );
+    return res.data;
+  } catch (err) {
+    throw err;
+  }
+};
+
+  // DELETE EMPLOYEE COMPENSATION
+  
+export const deleteEmployeeCompensation = async (compensationId) => {
+  try {
+    const res = await axiosInstance.delete(
+      `/employee-compensation/delete/${compensationId}`
+    );
+    return res.data;
+  } catch (err) {
+    throw err;
+  }
+};
+
+
 export default axiosInstance;

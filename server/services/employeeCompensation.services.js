@@ -5,27 +5,36 @@ const OnboardingJob = require("../schemas/onboardingJob.schema");
 const services = {};
 
 const generateSalaryArray = (policy, ctc, start, end = new Date()) => {
+  const safeCTC = Number(ctc);
+
+  if (isNaN(safeCTC)) {
+    throw new Error("CTC must be a valid number");
+  }
+
   const data = [];
   const date = new Date(start);
 
   while (date <= end) {
-    const basic = (ctc * policy.basicPercent) / 100 / 12;
-    const hra = (ctc * policy.hraPercent) / 100 / 12;
+    const basic = Number(((safeCTC * policy.basicPercent) / 100 / 12).toFixed(2));
+    const hra = Number(((safeCTC * policy.hraPercent) / 100 / 12).toFixed(2));
 
     const allowances = policy.allowances.map(a => ({
       name: a.name,
-      amount: (ctc * a.percent) / 100 / 12
+      amount: Number(((safeCTC * a.percent) / 100 / 12).toFixed(2))
     }));
+
+    const total = Number((
+      basic +
+      hra +
+      allowances.reduce((s, a) => s + a.amount, 0)
+    ).toFixed(2));
 
     data.push({
       month: `${date.getFullYear()}-${date.getMonth() + 1}`,
       basic,
       hra,
       allowances,
-      total:
-        basic +
-        hra +
-        allowances.reduce((s, a) => s + a.amount, 0)
+      total
     });
 
     date.setMonth(date.getMonth() + 1);
@@ -34,24 +43,32 @@ const generateSalaryArray = (policy, ctc, start, end = new Date()) => {
   return data;
 };
 
-// CREATE / GENERATE
+// ✅ CREATE / GENERATE
 services.create = async ({
   employeeId,
   firmId,
   onboardingJobId,
   joiningDate,
-  endDate
+  endDate,
+  ctc
 }) => {
+
+  if (!ctc || isNaN(Number(ctc))) {
+    throw new Error("CTC must be a valid number");
+  }
 
   const policy = await FirmPolicy.findOne({ firmId });
   if (!policy) throw new Error("Firm policy missing");
 
-  const job = await OnboardingJob.findById(onboardingJobId);
-  if (!job) throw new Error("Job not found");
+  // Optional: keep job check only for relation validation
+  if (onboardingJobId) {
+    const job = await OnboardingJob.findById(onboardingJobId);
+    if (!job) throw new Error("Job not found");
+  }
 
   const salaryArray = generateSalaryArray(
     policy,
-    job.ctc,
+    Number(ctc),
     joiningDate,
     endDate
   );
@@ -59,17 +76,15 @@ services.create = async ({
   return EmployeeCompensation.create({
     employeeId,
     firmId,
-    offerCTC: job.ctc,
+    offerCTC: Number(ctc),
     salaryBreakdown: salaryArray
   });
 };
 
-// READ (by employee)
 services.getByEmployee = async (employeeId) => {
   return EmployeeCompensation.findOne({ employeeId });
 };
 
-// UPDATE (recalculate)
 services.update = async (compensationId, body) => {
   return EmployeeCompensation.findByIdAndUpdate(
     compensationId,
@@ -78,7 +93,6 @@ services.update = async (compensationId, body) => {
   );
 };
 
-// DELETE
 services.remove = async (compensationId) => {
   return EmployeeCompensation.findByIdAndDelete(compensationId);
 };

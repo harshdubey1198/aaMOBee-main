@@ -195,15 +195,29 @@ export const masterAdminSidebarData = () => [
         { sublabel: "All My Businesses", link: "/my-businesses" }
       ],
     },
-      {
-        label: "HRMS",
-        icon: "mdi mdi-account-tie-outline",
-        subItem: [
-          { sublabel: "Departments", link: "/departments" },
-          { sublabel: "Designations", link: "/designations" },
-          { sublabel: "Onboarding Jobs", link: "/onboarding-jobs" },
-        ],
-      },
+     {
+            label: "HRMS",
+            icon: "mdi mdi-account-tie-outline",
+            subItem: [
+              { sublabel: "Departments", link: "/departments" },
+              { sublabel: "Designations", link: "/designations" },
+              { sublabel: "Onboarding Jobs", link: "/onboarding-jobs" },
+              { sublabel: "Firm Policy", link: "/firm-policies" },
+
+              // {
+              //   sublabel: "Employees Management",
+              //   icon: "mdi mdi-account-group-outline",
+              //   subItem: [
+                  
+              //     { sublabel: "Manage Employee", link: "/manage-employee" },
+              //     { sublabel: "Employee Salary", link: "/employee-salary" },
+              //     { sublabel: "Employee Verification", link: "/employee-verification" }
+              //   ]
+              // }
+            ]
+          },
+
+
     {
       label:"Pricing",
       icon:"mdi mdi-cash-multiple",
