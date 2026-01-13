@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import {Modal,ModalHeader,ModalBody, ModalFooter, Button, Form,FormGroup,Label,Input} from "reactstrap";
-import {createFirmPolicy, updateFirmPolicy} from "../../apiServices/service";
+import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Form, FormGroup, Label, Input} from "reactstrap";
+import { createFirmPolicy, updateFirmPolicy } from "../../apiServices/service";
 import { toast } from "react-toastify";
 
 function FirmPolicyModal({ isOpen, toggle, firmId, policy, onSuccess }) {
@@ -9,6 +9,9 @@ function FirmPolicyModal({ isOpen, toggle, firmId, policy, onSuccess }) {
   const [policyName, setPolicyName] = useState("");
   const [hraPercentage, setHraPercentage] = useState("");
   const [basicPercentage, setBasicPercentage] = useState("");
+
+  // ✅ NEW: Allowances state
+  const [allowances, setAllowances] = useState([{ name: "", percent: "" }]);
 
   const blockIfDemo = () => {
     if (authUser?.isDemo) {
@@ -21,14 +24,35 @@ function FirmPolicyModal({ isOpen, toggle, firmId, policy, onSuccess }) {
   useEffect(() => {
     if (policy) {
       setPolicyName(policy.policyName);
-      setHraPercentage(policy.hraPercentage);
-      setBasicPercentage(policy.basicPercentage);
+      setHraPercentage(policy.hraPercent);
+      setBasicPercentage(policy.basicPercent);
+      setAllowances(
+        policy.allowances?.length
+          ? policy.allowances
+          : [{ name: "", percent: "" }]
+      );
     } else {
       setPolicyName("");
       setHraPercentage("");
       setBasicPercentage("");
+      setAllowances([{ name: "", percent: "" }]);
     }
   }, [policy]);
+
+  // ✅ Allowance handlers
+  const handleAllowanceChange = (index, field, value) => {
+    const updated = [...allowances];
+    updated[index][field] = value;
+    setAllowances(updated);
+  };
+
+  const addAllowance = () => {
+    setAllowances([...allowances, { name: "", percent: "" }]);
+  };
+
+  const removeAllowance = (index) => {
+    setAllowances(allowances.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,8 +61,12 @@ function FirmPolicyModal({ isOpen, toggle, firmId, policy, onSuccess }) {
     const payload = {
       firmId,
       policyName,
-      hraPercentage,
-      basicPercentage
+      basicPercent: Number(basicPercentage),
+      hraPercent: Number(hraPercentage),
+      allowances: allowances.map((a) => ({
+        name: a.name,
+        percent: Number(a.percent)
+      }))
     };
 
     try {
@@ -53,7 +81,9 @@ function FirmPolicyModal({ isOpen, toggle, firmId, policy, onSuccess }) {
       onSuccess();
     } catch (err) {
       toast.error(
-        err?.message || "You do not have permission to perform this action"
+        err?.response?.data?.message ||
+          err?.message ||
+          "You do not have permission to perform this action"
       );
     }
   };
@@ -94,6 +124,49 @@ function FirmPolicyModal({ isOpen, toggle, firmId, policy, onSuccess }) {
               onChange={(e) => setBasicPercentage(e.target.value)}
               required
             />
+          </FormGroup>
+
+          {/* ✅ Allowances UI */}
+          <FormGroup>
+            <Label>Allowances</Label>
+
+            {allowances.map((item, index) => (
+              <div key={index} className="d-flex gap-2 mb-2">
+                <Input
+                  type="text"
+                  placeholder="Allowance Name"
+                  value={item.name}
+                  onChange={(e) =>
+                    handleAllowanceChange(index, "name", e.target.value)
+                  }
+                  required
+                />
+
+                <Input
+                  type="number"
+                  placeholder="%"
+                  value={item.percent}
+                  onChange={(e) =>
+                    handleAllowanceChange(index, "percent", e.target.value)
+                  }
+                  required
+                />
+
+                {allowances.length > 1 && (
+                  <Button
+                    color="danger"
+                    type="button"
+                    onClick={() => removeAllowance(index)}
+                  >
+                    ✕
+                  </Button>
+                )}
+              </div>
+            ))}
+
+            <Button color="secondary" type="button" onClick={addAllowance}>
+              + Add Allowance
+            </Button>
           </FormGroup>
 
           <Button color="primary" type="submit">

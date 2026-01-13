@@ -1674,7 +1674,7 @@ export const getFirmUsersWithPermissions = async (payload) => {
     );
     return res.data;
   } catch (err) {
-   throw err;
+   return err;
 
   }
 };
@@ -1691,7 +1691,7 @@ export const createFirmPolicy = async (data) => {
     );
     return response.data;
   } catch (error) {
-    throw error.response?.data || error.message;
+    return (error);
   }
 };
 
@@ -1704,7 +1704,7 @@ export const getFirmPolicyByFirm = async (firmId) => {
     );
     return response.data;
   } catch (error) {
-    throw error.response?.data || error.message;
+    return error.response?.data || error.message;
   }
 };
 
