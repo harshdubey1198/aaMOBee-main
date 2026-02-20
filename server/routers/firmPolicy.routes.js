@@ -37,4 +37,12 @@ router.delete(
   firmPolicyController.remove
 );
 
+// ACTIVATE / DEACTIVATE POLICY
+router.patch(
+  "/change-status/:policyId",
+  tokenVerification,
+  checkPermission("hr.policies.manage"),
+  firmPolicyController.changeStatus
+);
+
 module.exports = router;

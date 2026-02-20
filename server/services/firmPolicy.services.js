@@ -36,4 +36,16 @@ firmPolicyServices.remove = async (policyId) => {
   return FirmPolicy.findByIdAndDelete(policyId);
 };
 
+firmPolicyServices.changeStatus = async (policyId, status) => {
+  if (!["active", "inactive"].includes(status)) {
+    throw new Error("Invalid status value");
+  }
+
+  return FirmPolicy.findByIdAndUpdate(
+    policyId,
+    { status },
+    { new: true }
+  );
+};
+
 module.exports = firmPolicyServices;

@@ -64,4 +64,25 @@ firmPolicyController.remove = async (req, res) => {
   }
 };
 
+// CHANGE STATUS (ACTIVE / INACTIVE)
+firmPolicyController.changeStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    const result = await firmPolicyServices.changeStatus(
+      req.params.policyId,
+      status
+    );
+
+    return res.status(200).send(
+      utills.createResult("Firm policy status updated successfully", result)
+    );
+  } catch (error) {
+    return res.status(500).send(
+      utills.createResult(null, null, error.message)
+    );
+  }
+};
+
+
 module.exports = firmPolicyController;

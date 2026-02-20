@@ -3,49 +3,42 @@ const User = require("../schemas/user.schema");
 const checkPermission = (requiredPermission) => {
   return async (req, res, next) => {
     try {
-      const userId = req.user?.id; // comes from tokenVerification
+      const userId = req.user?.id || req.user?._id;
 
       if (!userId) {
-        return res.status(401).json({
-          message: "Unauthorized"
-        });
+        return res.status(401).json({ message: "Unauthorized" });
       }
 
       const user = await User.findById(userId)
-        .select("permissionsHolding role");
+        .select("role permissionsHolding");
 
       if (!user) {
-        return res.status(401).json({
-          message: "User not found"
-        });
+        return res.status(401).json({ message: "User not found" });
       }
 
-      // ✅ SUPER ADMIN & CLIENT ADMIN → FULL ACCESS
-      if (
-        user.role === "super_admin" ||
-        user.role === "client_admin"
-      ) {
+      // ✅ SUPER ADMIN / CLIENT ADMIN → FULL ACCESS
+      if (user.role === "super_admin" || user.role === "client_admin") {
         return next();
       }
 
-      // safety check
-      if (!user.permissionsHolding || !Array.isArray(user.permissionsHolding)) {
+      // ❌ normal users must have permissions
+      if (!Array.isArray(user.permissionsHolding)) {
         return res.status(403).json({
           message: "No permissions assigned"
         });
       }
 
-      // exact permission OR manage permission
+      // manage permission auto-allows create/update/delete/view
       const managePermission = requiredPermission.replace(
         /\.(create|view|update|delete)$/,
         ".manage"
       );
 
-      const hasPermission =
+      const allowed =
         user.permissionsHolding.includes(requiredPermission) ||
         user.permissionsHolding.includes(managePermission);
 
-      if (!hasPermission) {
+      if (!allowed) {
         return res.status(403).json({
           message: "You do not have permission to perform this action"
         });
@@ -53,9 +46,7 @@ const checkPermission = (requiredPermission) => {
 
       next();
     } catch (error) {
-      return res.status(500).json({
-        message: error.message
-      });
+      return res.status(500).json({ message: error.message });
     }
   };
 };

@@ -16,6 +16,12 @@ const firmPolicySchema = new mongoose.Schema({
     percent: Number         // % of CTC
   }],
 
+   status: {
+    type: String,
+    enum: ["active", "inactive"],
+    default: "active"
+  },
+
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User"
